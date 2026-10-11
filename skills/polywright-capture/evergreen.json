@@ -36,20 +36,22 @@
   ],
   "counts": {
     "learnings": 2,
-    "changes": 1,
+    "changes": 2,
     "research": 3,
     "tests": 6
   },
   "consolidate_every": 25,
   "tests": {
-    "last_run": null,
-    "harness": null,
-    "env": null,
+    "last_run": "2026-10-11T23:59",
+    "harness": "headless claude -p, one run per case",
+    "env": "dev-machine",
     "cases": 6,
-    "passed": 0,
-    "failed": 0,
-    "failing": [],
-    "last_failure": null,
+    "passed": 4,
+    "failed": 1,
+    "failing": [
+      "action-1"
+    ],
+    "last_failure": "2026-10-11",
     "research_after_days": null
   }
 }

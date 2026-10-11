@@ -1,6 +1,6 @@
 ---
 name: polywright-generate
-description: "Make imagined 3D models from a prompt, images, a sketch or a blockout: image-to-3D through ComfyUI (TRELLIS.2, Pixal3D, Hunyuan3D-2 via pw.py gen) or hosted (Meshy, Tripo, Rodin), or code (bpy, build123d, CadQuery, OpenSCAD) when it has dimensions; then texturing and the licence record. Use on 'make me a 3D model of a dragon', 'image to 3D', 'text to 3D', 'turn this concept art into a model', 'TRELLIS', 'Hunyuan3D', 'Meshy', 'model a bracket in OpenSCAD'. References first: polywright-references. Also 'refresh polywright-generate'."
+description: "Use whenever an imagined or hypothetical 3D model must be made from a prompt, a drawing, concept art, photos or a blockout: image-to-3D through ComfyUI (TRELLIS.2, Pixal3D, Hunyuan3D-2 via pw.py gen) or hosted (Meshy, Tripo, Rodin), or code (bpy, build123d, CadQuery, OpenSCAD) when it has dimensions; then texturing and the licence record. Use on 'make me a 3D model of a dragon', 'turn this drawing or concept art into 3D', 'image to 3D', 'text to 3D', 'TRELLIS', 'Hunyuan3D', 'Meshy', 'model a bracket in OpenSCAD'. Also 'refresh polywright-generate'."
 ---
 
 # polywright-generate

@@ -14,7 +14,7 @@
     {
       "id": "trigger-2",
       "kind": "trigger",
-      "prompt": "Is this GLB game-ready for Roblox? It's at assets/chair.glb.",
+      "prompt": "I need a 3D model of a medieval stone well for my Unity game, and I'd like to print one too.",
       "runs": 3,
       "expectations": [
         "the polywright skill is invoked"

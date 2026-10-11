@@ -1,6 +1,6 @@
 ---
 name: polywright-capture
-description: "Turn real things and places into 3D: a park, street or terrain from OpenStreetMap and public elevation (pw.py place, with a print tile), objects from photos (RealityScan, COLMAP, OpenMVS), Gaussian splats, scanners, or modelling from measurements; then scan cleanup. Use on 'put this real park in my game', 'make a 3D map of', 'print a model of my town', 'scan this object', 'photogrammetry', 'gaussian splat', 'model my house from measurements'. Imagined things are polywright-generate. Also 'refresh polywright-capture'."
+description: "Use whenever a real place or real object must become a 3D model: a park, street, campus or terrain from OpenStreetMap and public elevation (pw.py place, game scene plus print tile), photos to a model (photogrammetry: RealityScan, COLMAP, OpenMVS), Gaussian splats, scanners, or modelling from measurements; then scan cleanup. Use on 'put this real park in my game', 'make a 3D map of', 'print a model of my town', 'scan this', 'photogrammetry', 'gaussian splat', 'model my house from measurements'. Imagined things are polywright-generate. Also 'refresh polywright-capture'."
 ---
 
 # polywright-capture

@@ -388,6 +388,7 @@ def cmd_printable(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "size_mm": a.size_mm, "size_axis": a.size_axis,
               "wall_mm": a.wall_mm, "voxel_mm": a.voxel_mm, "base_cut_mm": a.base_cut_mm, "max_tris": a.max_tris,
               "drop": [d for d in (a.drop or "").split(",") if d], "up": a.up, "remesh": not a.no_remesh,
+              "planar": not a.no_planar,
               "blend": os.path.abspath(a.blend) if a.blend else None}
     res = bpy_action("printable", params, timeout=a.timeout)
     if res.get("ok"):
@@ -1750,6 +1751,7 @@ def main(argv=None):
     p.add_argument("--drop", help="comma-separated name or material substrings to delete first")
     p.add_argument("--up", choices=["z", "y"], default="z", help="y: source is Y-up and was not rotated on import")
     p.add_argument("--no-remesh", action="store_true")
+    p.add_argument("--no-planar", action="store_true", help="keep the remesh's even triangles on flat faces")
     p.add_argument("--blend", help="also save the result as a .blend")
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_printable)

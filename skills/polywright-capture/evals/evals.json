@@ -43,7 +43,7 @@
     {
       "id": "action-1",
       "kind": "action",
-      "prompt": "Build the place in tests/fixtures/osm-small.json offline: copy it to <tmp>/data/osm.json and run pw.py place --bbox 40.0000,-75.0000,40.0010,-74.9987 --dem flat --out <tmp>.",
+      "prompt": "Turn the little OpenStreetMap extract in tests/fixtures/osm-small.json into a 3D scene I could drop into a game. Work offline (flat ground is fine) and tell me what's in it.",
       "expectations": [
         "ran pw.py place (tool call) and reported the scene.glb path and the OSM credit"
       ],

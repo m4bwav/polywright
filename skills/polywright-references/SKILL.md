@@ -1,6 +1,6 @@
 ---
 name: polywright-references
-description: "Decide, gather and generate the references a 3D model is built from: orthographic views with a height bar, A-pose turnarounds, multi-view sets for image-to-3D, blockout renders repainted into consistent views, seamless textures and quick normal/height/roughness maps (pw.py texture). Use on 'what references do I need', 'make a reference sheet', 'front side back views', 'turnaround', 'seamless texture', 'PBR maps from this photo', or before generating or modelling without a ready-made source. Meshing is polywright-generate. Also 'refresh polywright-references'."
+description: "Use whenever reference images, views or textures for a 3D model are needed, before modelling or image-to-3D: orthographic front, side and back views with a height bar, A-pose turnarounds, multi-view sets, blockout renders repainted into consistent views, seamless textures and quick normal/height/roughness maps (pw.py texture). Use on 'what references do I need', 'reference sheet', 'front side back views', 'turnaround', 'seamless texture', 'PBR maps from this photo'. Meshing is polywright-generate. Also 'refresh polywright-references'."
 ---
 
 # polywright-references

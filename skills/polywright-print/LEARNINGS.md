@@ -13,3 +13,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261011-1, confirmed 2026-10-11
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
+
+### L-002 · 2026-10-11 · A voxel remesh tiles flat faces as finely as curves
+- Trigger: an action eval made two plain 40 mm boxes printable and got 381k triangles in a 19 MB STL (T-20261011-3)
+- Hypothesis: the remesh voxel follows the model size, not its shape, and collapse decimation keeps flat areas dense up to the triangle cap
+- Rule: after the final decimation, dissolve coplanar faces (0.5 degrees) and triangulate; undo it if the solid breaks (thin organic parts)
+- Evidence: C-20261011-3, confirmed 2026-10-11 (boxes 488 triangles, fountain unchanged and watertight)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11

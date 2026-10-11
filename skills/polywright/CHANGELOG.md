@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261011-2 · 2026-10-11 · Description says when to fire
+- because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
+- files: SKILL.md frontmatter description, evals/evals.json trigger-2
+- Descriptions open with 'Use whenever ...' and name the requests each skill owns; the hub only takes requests no sibling owns.
+
 ### C-20261011-1 · 2026-10-11 · Created as an evergreen unit
 - because: user request (an evergreen 3D modelling plugin); research R-20261011-1 to R-20261011-3
 - files: SKILL.md, references/, RESEARCH.md, LEARNINGS.md, TESTS.md, evals/evals.json, evergreen.json
