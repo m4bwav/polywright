@@ -565,6 +565,22 @@ def act_printable(p):
         steps.append("flat base: clamped below %.2f mm" % cut)
     tris = decimate_to(obj, int(p.get("max_tris", 400000)))
     cleanup(obj, merge=voxel * 0.01)
+    if p.get("planar", True):  # voxel remesh tiles flat faces as finely as curves: merge coplanar faces again
+        keep = obj.data.copy()
+        before = len(obj.data.polygons)
+        m = obj.modifiers.new("pw_planar", "DECIMATE")
+        m.decimate_type = "DISSOLVE"
+        m.angle_limit = math.radians(float(p.get("planar_deg", 0.5)))
+        apply_modifier(obj, m)
+        m = obj.modifiers.new("pw_tri", "TRIANGULATE")
+        apply_modifier(obj, m)
+        cleanup(obj)
+        st = mesh_stats(obj, obj.data)
+        if st.get("boundary_edges") or st.get("non_manifold_edges"):  # dissolve can break thin organic parts: undo
+            obj.data = keep
+            steps.append("planar dissolve skipped (it broke the solid)")
+        else:
+            steps.append("planar dissolve %.1f deg: %d -> %d faces" % (float(p.get("planar_deg", 0.5)), before, len(obj.data.polygons)))
     st = mesh_stats(obj, obj.data)
     lo, hi = bounds([obj])
     out = export(p["out"], p)

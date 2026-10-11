@@ -117,9 +117,14 @@ These come from real runs, not from a model's say-so:
   caught and fixed four bugs: roads outside the box, an inside-out terrain block that made the Manifold union
   drop every building silently, missing enclosing areas, and water painted over islands.
 
-Not verified yet: Blender discovery on macOS and Linux installs, the TRELLIS.2 workflow (the nodes are present but
-the weights were not downloaded), any hosted generator, and agent eval runs of the skills (cases are written in
-each `evals/evals.json`).
+- Agent evals, headless in fresh sessions: 23 of 28 trigger and decoy cases pass with every decoy passing (the
+  misses are a bpy traceback and a batch export the model handled without the skill, a drawing that was not
+  attached, and two requests the hub or a sibling took instead); the print and capture action cases ran `pw.py`
+  for real. Details in each skill's TESTS.md.
+
+Not verified yet: Blender discovery on macOS and Linux installs (the CI Blender job uses the bpy wheel), the
+TRELLIS.2 workflow (the nodes are present but the weights were not downloaded), any hosted generator, and three
+runs per eval case.
 
 ## Testing
 
@@ -128,7 +133,7 @@ CI (`.github/workflows/tests.yml`):
 - Linux, macOS and Windows, Python 3.9 and 3.14: `tests/check_skills.py` (frontmatter, description limits,
   companions, manifests, relative links, public-safety guards) and `tests/test_pw.py` (Blender parts skip).
 - A Blender job on Linux with the `bpy` 5.2.2 wheel: the Blender tests and every recipe.
-- `scripts/budget.py`: what every session loads (about 950 tokens of descriptions) and the installed size stay green.
+- `scripts/budget.py`: what every session loads (about 1,000 tokens of descriptions) and the installed size stay green.
 
 ## Privacy
 

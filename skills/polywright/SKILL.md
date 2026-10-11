@@ -1,6 +1,6 @@
 ---
 name: polywright
-description: "Start here for any job that needs a 3D model, real or imagined, for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py: inspect, render a contact sheet, convert, check against a target's budget, run bpy headless. Use on 'make a 3D model of', 'turn this photo into 3D', 'is this mesh game-ready', 'check this STL', or when another plugin needs a mesh. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
+description: "Start here whenever a task needs a 3D model and no sibling below clearly owns it: a model of a real or imagined thing for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR, or another plugin asking for a mesh. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py (inspect, render a contact sheet, convert, check a target's budget, bpy headless). Use on 'I need a 3D model of', 'make a 3D model of', 'model this for my game and a print'. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
 ---
 
 # polywright

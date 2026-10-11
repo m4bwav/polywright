@@ -1,6 +1,6 @@
 ---
 name: polywright-print
-description: "Make any 3D model printable: one watertight solid in millimetres (pw.py printable, union), FDM and resin design rules (walls, overhangs, clearances, text), splitting with pins, multi-colour 3MF (pw.py 3mf), terrain tiles and miniatures, slicer CLIs. Use on 'make this printable', '3D print this', 'game model to STL', 'is this STL watertight', 'my slicer says non-manifold', 'split it to fit the bed', 'multi-colour print'. Printer-specific settings go to a printer or slicer skill when installed. Also 'refresh polywright-print'."
+description: "Use whenever a model is going to a 3D printer or a slicer complains: one watertight solid in millimetres (pw.py printable, union), FDM and resin design rules (walls, overhangs, clearances, text), splitting with pins, multi-colour 3MF (pw.py 3mf), terrain tiles and miniatures, slicer CLIs. Use on 'make this printable', '3D print this', 'as a 100 mm figure', 'game model to STL', 'is this STL watertight', 'non-manifold', 'split to fit the bed', 'multi-colour print'. Printer-specific settings go to a printer or slicer skill when installed. Also 'refresh polywright-print'."
 ---
 
 # polywright-print

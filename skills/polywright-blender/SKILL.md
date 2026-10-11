@@ -1,6 +1,6 @@
 ---
 name: polywright-blender
-description: "Drive Blender 5.x from an agent on any OS: headless runs that report errors (pw.py bpy), the bpy API traps models still write, tested recipes (modifiers, booleans, remesh, UVs, bakes, reference images, turntables, depth passes, exports), Blender MCP servers and their risks, and the other 3D tools per OS. Use on 'write a Blender script', 'automate Blender', 'bpy error', a Blender traceback, 'Blender MCP', 'headless Blender', 'which 3D tool on Mac or Linux'. Also 'refresh polywright-blender'."
+description: "Use whenever Blender is scripted, automated or debugged, before writing any bpy code: headless runs that report errors (pw.py bpy), the bpy API traps models still write in Blender 5.x (removed importers, renamed sockets, EEVEE names), tested recipes (modifiers, booleans, remesh, UVs, bakes, turntables, depth passes, batch exports), Blender MCP servers and their risks, and other 3D tools per OS. Use on 'write a Blender script', 'automate Blender', 'batch export .blend', any bpy traceback or AttributeError, 'Blender MCP', 'headless Blender'. Also 'refresh polywright-blender'."
 ---
 
 # polywright-blender

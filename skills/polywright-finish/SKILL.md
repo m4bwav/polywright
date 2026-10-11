@@ -1,6 +1,6 @@
 ---
 name: polywright-finish
-description: "Make a raw, scanned or generated mesh fit its target: scale and pivot, decimation and LODs, retopology, UVs, baking, PBR and normal-map conventions, collision, rigging pointers, and axis, unit and format export for Roblox, Unity, Unreal, Godot, three.js (meshopt, KTX2), USDZ and video blockouts. Use on 'make this game-ready', 'optimise for Roblox/Unity/web', 'too many polygons', 'add LODs', 'retopologise', 'bake normals', 'imports sideways or tiny', 'flip the normal map'. Printing is polywright-print. Also 'refresh polywright-finish'."
+description: "Use whenever a mesh must be made ready for a game engine, the web or AR: is it game-ready, too many polygons, LODs, retopology, UVs, baking, PBR and normal-map conventions, collision, rigging, and axis, unit and format export for Roblox, Unity, Unreal, Godot, three.js (meshopt, KTX2), USDZ and video blockouts. Use on 'is this game-ready', 'make this work in Roblox/Unity', 'optimise for the web', 'reduce polygons', 'add LODs', 'retopologise', 'bake normals', 'imports sideways or tiny', 'flip the normal map'. Printing is polywright-print. Also 'refresh polywright-finish'."
 ---
 
 # polywright-finish
