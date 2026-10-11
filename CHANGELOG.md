@@ -6,7 +6,6 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 - Skill descriptions say when to fire; the hub only takes requests no sibling owns. Headless trigger evals went from 17/28 to 23/28 with every decoy passing (each skill's TESTS.md, T-20261011-2).
 - `pw.py printable` merges coplanar faces after the remesh (undone when it breaks the solid): two plain boxes went from 381k to 488 triangles; `--no-planar` keeps the old output.
-- `pw.py place`: narrower Overpass query, `is_in` for areas that enclose the box, multipolygon rings stitched with holes, smaller areas painted over larger, water hydro-flattened.
 - CI: Mesa EGL so the Linux Blender job can render.
 
 ## 0.1.0 (2026-10-11)
