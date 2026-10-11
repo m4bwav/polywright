@@ -1,0 +1,104 @@
+{
+  "checked": "2026-10-11",
+  "_about": "Budgets and rules per target, read by `pw.py check`. Numbers come from the research notes of 2026-10-11 (ai-docs/research); severity fail blocks delivery, warn is reported. Change a number only with a source: log it in the owning skill's RESEARCH.md and CHANGELOG.md.",
+  "targets": {
+    "game-roblox": {
+      "about": "Roblox MeshPart through the 3D Importer (FBX, OBJ or glTF)",
+      "units": "m",
+      "rules": {"max_tris_per_object": 20000, "max_tris": 20000, "max_tris_severity": "warn", "max_materials": 1, "max_image_px": 1024, "require_uvs": true, "forbid_unapplied_scale": true},
+      "advice": [
+        "20,000 triangles per mesh (create.roblox.com specifications, checked 2026-10-11; vendors quote 21,000, test the importer). Split bigger models into several MeshParts.",
+        "One material per mesh; SurfaceAppearance takes colour, normal (OpenGL, Y+), roughness, metalness. Texture size limit unverified (historically 1024 px).",
+        "1 stud = 0.28 m: a 1.8 m person is about 6.4 studs. Export in metres and scale in Studio, or scale by 1/0.28 before export.",
+        "At most 4 bone influences per vertex, root joint at the origin, no zero-thickness surfaces. CollisionFidelity Box or Hull for props."
+      ]
+    },
+    "game-unity": {
+      "about": "Unity prop or character (GLB through glTFast or FBX)",
+      "units": "m",
+      "rules": {"max_tris": 50000, "max_tris_severity": "warn", "max_materials": 4, "max_image_px": 4096, "require_uvs": true, "forbid_unapplied_scale": true},
+      "advice": [
+        "Y-up, metres. FBX: scale 1 with Apply Scalings 'FBX All' and bake the axis change (`convert --fbx-bake-axes`) so the root is not rotated -90 on X; GLB needs nothing.",
+        "Normal maps OpenGL (Y+). URP/HDRP mask maps pack differently from glTF ORM.",
+        "LODs: name children <name>_LOD0, _LOD1 ... (`pw.py lods`). Collision: a simple box, capsule or convex hull, never the render mesh for moving objects.",
+        "The prop budget is a project choice: 50k is a generous hero-prop ceiling for desktop; mobile props are often 1k to 10k."
+      ]
+    },
+    "game-unreal": {
+      "about": "Unreal Engine 5 static mesh (FBX, glTF or USD)",
+      "units": "m",
+      "rules": {"max_image_px": 8192, "require_uvs": true, "forbid_unapplied_scale": true},
+      "advice": [
+        "Unreal is Z-up and centimetres; the importer converts from metres. Check scale on import.",
+        "Nanite (UE 5.8 docs) takes dense opaque and masked static and skeletal meshes, no manual LODs. Not for translucent materials or morph targets: those still need a budget and LODs.",
+        "Normal maps DirectX (Y-): flip the green channel or tick Flip Green Channel. Collision pieces prefixed UCX_."
+      ]
+    },
+    "web-threejs": {
+      "about": "three.js, model-viewer or Babylon page (GLB)",
+      "units": "m",
+      "rules": {"max_tris": 150000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 10, "require_uvs": true},
+      "advice": [
+        "GLB with meshopt or Draco geometry and KTX2 textures: `gltf-transform optimize in.glb out.glb --compress meshopt --texture-compress ktx2`, then gltf_validator.",
+        "1 unit = 1 m, +Y up, front faces +Z (glTF spec). Origin at the bottom centre for product models.",
+        "The 10 MB and 150k triangle figures are a page-weight choice, not a spec; the threewright plugin checks the page itself."
+      ]
+    },
+    "ar-usdz": {
+      "about": "Apple AR Quick Look (USDZ)",
+      "units": "m",
+      "rules": {"max_tris": 100000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 25, "require_uvs": true},
+      "advice": [
+        "Blender `wm.usd_export` to .usdz with a preview surface and downscaled textures; check with `usdchecker --arkit`.",
+        "About 100k polygons and one set of 2048 px textures is Apple's long-standing guidance (secondary source, 2021); real size, origin on the floor."
+      ]
+    },
+    "commerce-gltf": {
+      "about": "Product model for e-commerce viewers (Khronos 3D Commerce guidelines)",
+      "units": "m",
+      "rules": {"max_image_px": 2048, "max_file_mb": 5, "require_uvs": true, "forbid_unapplied_scale": true},
+      "advice": [
+        "Real size, 1 unit = 1 m, origin at the bottom centre, triangles only, metalness 0 or 1 (Khronos 3D Commerce, checked 2026-10-11).",
+        "The current guideline text gives no numeric triangle or size presets; 5 MB is the commonly quoted v1.0 figure (secondary)."
+      ]
+    },
+    "print-fdm": {
+      "about": "FDM print, 0.4 mm nozzle, 256 mm cube bed (Bambu P1S, X1, A1 class)",
+      "units": "mm",
+      "rules": {"require_watertight": true, "single_part": true, "max_dims": [256, 256, 256], "min_feature": 0.9, "max_tris": 1000000, "max_tris_severity": "warn"},
+      "advice": [
+        "Walls at least 2 perimeters (about 0.9 mm), better 1.2 to 1.6 mm. Details under 0.5 mm vanish.",
+        "Overhangs past about 45 degrees need support; chamfer rather than fillet bed-facing edges; 0.3 mm clearance for parts that move or slot together (Prusa guide).",
+        "Too big for the bed: split with pins (3 mm, 0.2 mm clearance) or the slicer's Cut tool.",
+        "Hand the slicer a 3MF when a printer-specific skill or the slicer CLI is available; the STL stays the verified artefact."
+      ]
+    },
+    "print-resin": {
+      "about": "Resin (MSLA) print: miniatures and fine detail",
+      "units": "mm",
+      "rules": {"require_watertight": true, "max_dims": [218, 123, 220], "min_feature": 0.3, "max_tris": 2000000, "max_tris_severity": "warn"},
+      "advice": [
+        "Bed size varies by printer: the default is a mid-size 9 to 10 inch class; pass the real one in the brief.",
+        "Hollow large solids (2 to 3 mm walls) and add drain holes; tilt and support in the slicer."
+      ]
+    },
+    "video-blockout": {
+      "about": "Blockout or proxy for AI video and previs (structure guides, depth and normal passes)",
+      "units": "m",
+      "rules": {"max_tris": 500000, "max_tris_severity": "warn"},
+      "advice": [
+        "Real scale matters more than detail: the camera, the depth pass and the character height must agree.",
+        "Render turntables and the camera path with `pw.py render` or a bpy script with Z/Mist and Normal passes; hand them to the video plugin as conditioning."
+      ]
+    },
+    "cad-step": {
+      "about": "Engineering interchange (STEP from code CAD), with a mesh preview",
+      "units": "mm",
+      "rules": {"require_watertight": true},
+      "advice": [
+        "A mesh cannot become a true STEP; model in build123d, CadQuery, OpenSCAD or FreeCAD and export STEP from the B-rep, plus STL or GLB for previews.",
+        "Check the preview mesh here; check the STEP by reopening it and comparing volume."
+      ]
+    }
+  }
+}

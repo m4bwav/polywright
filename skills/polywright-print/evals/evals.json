@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-print",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "Make this game model printable as a 100 mm figure.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-print skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "My slicer says the STL is non-manifold, can you fix it?",
+      "runs": 3,
+      "expectations": [
+        "the polywright-print skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Get this model into Unity.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-print skill is not invoked (polywright-finish)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Which filament is best for outdoor use?",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-print skill is not invoked (materials advice, not the model)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Make tests/fixtures/two.glb printable at 40 mm and check it for FDM.",
+      "expectations": [
+        "ran pw.py printable and check (tool calls) and reported watertight"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*(printable|check)"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "How thin can walls be on a 0.4 mm nozzle?",
+      "expectations": [
+        "about 0.9 mm minimum (two perimeters), 1.2 to 1.6 mm for structure",
+        "regex on the answer: (?i)0\\.9|two perimeters|2 perimeters"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

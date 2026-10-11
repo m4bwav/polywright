@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-finish",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "This model has 400k triangles, make it work in Roblox.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-finish skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "Export my character for Unreal, it keeps importing tiny and sideways.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-finish skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Make this model printable on my Bambu.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-finish skill is not invoked (polywright-print)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Write a Roblox script for a door.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-finish skill is not invoked (code, not a mesh)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Convert tests/fixtures/two.glb for Roblox: under 20k triangles with UVs, then check it.",
+      "expectations": [
+        "ran pw.py convert and check (tool calls) and reported the check status"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*(convert|check)"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "Which normal map format does Unreal want?",
+      "expectations": [
+        "DirectX (Y-), flip green from Blender's OpenGL bakes",
+        "regex on the answer: (?i)directx"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

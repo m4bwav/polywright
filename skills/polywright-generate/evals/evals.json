@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-generate",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "Make me a 3D model of a cartoon dragon from this drawing.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-generate skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "Turn this concept art of a sci-fi crate into a 3D model with TRELLIS.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-generate skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Scan my coffee mug into 3D from photos.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-generate skill is not invoked (real object: polywright-capture)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Draw a dragon for my book cover.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-generate skill is not invoked (2D image)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Write and run a bpy script that builds a 1.2 m park bench from named box parts and prints its length.",
+      "expectations": [
+        "ran the script headless (tool call) and quoted the printed length"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*bpy|blender.*--background"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "Should I generate a printable phone stand with an image-to-3D model?",
+      "expectations": [
+        "recommends code CAD (OpenSCAD, build123d or CadQuery) for a dimensioned functional part",
+        "regex on the answer: (?i)(openscad|build123d|cadquery)"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

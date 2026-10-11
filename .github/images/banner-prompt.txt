@@ -1,0 +1,3 @@
+Z-Image Turbo, banner-workflow.api.json (1536x640, 9 steps, cfg 1, res_multistep/simple), seed 22.
+
+wide cheerful photograph across a wooden workbench: a small white robot arm gently setting a freshly 3D printed grey stone fountain figurine onto a 3D printed miniature park tile with tiny lollipop trees, little houses and a winding creek, beside it an open laptop whose screen shows a glowing blue wireframe 3D model of the same fountain, a sheet of orthographic reference drawings pinned to the bench, a caliper and spools of colorful filament, warm late afternoon window light from the left, shallow depth of field, tilt-shift miniature look, saturated playful colors, no text, no logos, no letters

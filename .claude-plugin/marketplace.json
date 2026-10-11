@@ -1,0 +1,8 @@
+{
+  "name": "polywright",
+  "owner": { "name": "Mark Rogers" },
+  "metadata": { "description": "Skills that let AI agents make 3D models of real and imagined things for games, prints, video and AR, with Blender run headless and every step checked" },
+  "plugins": [
+    { "name": "polywright", "source": "./", "description": "Seven evergreen 3D skills: route and contract hub, references and textures, real places and capture, generators and code modelling, headless Blender, finishing per engine, and printable solids, with the pw.py CLI" }
+  ]
+}

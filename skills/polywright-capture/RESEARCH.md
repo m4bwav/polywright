@@ -1,0 +1,64 @@
+# Research: polywright-capture
+
+Findings that back [SKILL.md](SKILL.md). Changes they caused are logged in [CHANGELOG.md](CHANGELOG.md); procedural lessons live in [LEARNINGS.md](LEARNINGS.md); test runs in [TESTS.md](TESTS.md); schedule and state in `evergreen.json`. Protocol: MAINTENANCE.md. The full research notes of the first pass are in the repository's [ai-docs/research](../../ai-docs/research/index.md).
+
+Topic: Real things and places into 3D: OSM and elevation places, photogrammetry, splats, scanners, measurements, scan cleanup. Tier `moderate`. Last refresh 2026-10-11; next due per `evergreen.json`.
+
+## Current understanding
+
+- Places: USGS 3DEP 1 m bare-earth (US) or Copernicus GLO-30 (global DSM) plus OSM features; pw.py place does OSM, USGS or terrarium tiles, land-use colouring, building heights, roads, trees and a print tile (verified on two real parks, 2026-10-11).
+- Google Photorealistic 3D Tiles cannot be exported, cached or traced; new EEA-billed projects cannot use them at all since 2025-07-08.
+- Photogrammetry: RealityScan 2.2 (free under USD 1M, headless CLI) or COLMAP 4.2 plus OpenMVS; feed-forward VGGT and relatives as a fallback for sparse photos (only VGGT-1B-Commercial is licensed for commercial use).
+- Splats show places best but are not meshes; KHR_gaussian_splatting is listed as ratified; splat-transform converts formats and builds collision.
+
+## Open questions
+
+- Does Overture's building height beat OSM where OSM has no height tags?
+- Is the 4 km2 default limit right for Overpass load?
+- Does pw.py place need NAIP or other open imagery for ground textures?
+
+## Search plan
+
+Subject:
+
+- USGS 3DEP and Copernicus DEM news; Overture releases
+- Google Map Tiles API policies page
+
+Tooling:
+
+- RealityScan, COLMAP, OpenMVS, Brush, splat-transform releases
+- `path:SKILL.md photogrammetry` and `path:SKILL.md openstreetmap` on GitHub
+
+Practice:
+
+- r/photogrammetry and r/GaussianSplatting RSS
+- radiancefields.com news
+
+Testing:
+
+- tests/test_pw.py offline place fixture; a real place run per refresh
+
+Best sources: project repositories' releases and READMEs, official docs, dated practitioner posts. Noisy: vendor SEO comparison pages (mark them third party).
+
+## Findings log
+
+### R-20261011-3 · 2026-10-11 · Testing: pw.py place on a real park
+- summary: 249 buildings, 203 with OSM heights, 1 m lidar, 6 s; print tile unioned watertight after two fixes (clipping, block winding).
+- track: testing
+- sources: local run 2026-10-11
+- magnitude: n/a (initial)
+- applied: C-20261011-1
+
+### R-20261011-2 · 2026-10-11 · Tooling: Capture engines October 2026
+- summary: RealityScan 2.2, COLMAP 4.2 with built-in global mapper, OpenMVS 2.4, Postshot, Brush, splat-transform 3.10.
+- track: tooling
+- sources: [2026-10-11-reality-capture.md](../../ai-docs/research/2026-10-11-reality-capture.md)
+- magnitude: n/a (initial)
+- applied: C-20261011-1
+
+### R-20261011-1 · 2026-10-11 · Subject: Places from open data and the Google tiles ban
+- summary: DEM plus OSM is the scalable, licensed route; Google tiles are view-only.
+- track: subject
+- sources: [2026-10-11-reality-capture.md](../../ai-docs/research/2026-10-11-reality-capture.md)
+- magnitude: n/a (initial)
+- applied: C-20261011-1

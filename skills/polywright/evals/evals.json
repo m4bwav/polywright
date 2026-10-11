@@ -1,0 +1,78 @@
+{
+  "skill": "polywright",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "I want a 3D model of the old stone fountain in my local park for my game and maybe a print.",
+      "runs": 3,
+      "expectations": [
+        "the polywright skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "Is this GLB game-ready for Roblox? It's at assets/chair.glb.",
+      "runs": 3,
+      "expectations": [
+        "the polywright skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Write a three.js page that spins a cube.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright skill is not invoked (threewright's job (a page, not a model))"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Generate a 2D sprite of a fountain for my game.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright skill is not invoked (an image skill's job, not a 3D model)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Inspect tests/fixtures/osm-small.json's place: build it offline with pw.py place --dem flat into a temp folder and report the building count.",
+      "expectations": [
+        "the skill ran pw.py place (proven by the tool call) and reported 1 building"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*place"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "A generator gave me a mesh and said it is ready to print. Can I send it straight to the slicer?",
+      "expectations": [
+        "says not to trust the generator's word: inspect or check for watertightness (pw.py check --target print-fdm or printable)",
+        "regex on the answer: (?i)(watertight|manifold).{0,200}(check|inspect|printable)|(check|inspect|printable).{0,200}(watertight|manifold)"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

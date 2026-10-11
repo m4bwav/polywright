@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+dist/
+*-workspace/
+# outputs of pw.py runs and Blender backups
+*.blend1
+renders/
+work/

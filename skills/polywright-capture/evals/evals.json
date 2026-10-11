@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-capture",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "Put the real park at the end of my street into a game level.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-capture skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "I have 200 photos of a statue, how do I turn them into a 3D model?",
+      "runs": 3,
+      "expectations": [
+        "the polywright-capture skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Generate a fantasy castle from this concept art.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-capture skill is not invoked (imagined: polywright-generate)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Make this STL printable.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-capture skill is not invoked (polywright-print)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Build the place in tests/fixtures/osm-small.json offline: copy it to <tmp>/data/osm.json and run pw.py place --bbox 40.0000,-75.0000,40.0010,-74.9987 --dem flat --out <tmp>.",
+      "expectations": [
+        "ran pw.py place (tool call) and reported the scene.glb path and the OSM credit"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*place"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "Can I download Google's 3D city tiles and use them as my game level?",
+      "expectations": [
+        "says no: Google's terms forbid exporting, caching or tracing them; offers OSM plus elevation",
+        "regex on the answer: (?i)(no|not allowed|forbid|cannot).{0,200}(google|tiles)|(google|tiles).{0,200}(forbid|not allowed|cannot|terms)"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

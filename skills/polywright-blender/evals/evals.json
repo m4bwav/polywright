@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-blender",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "My Blender script says AttributeError: module 'bpy.ops.import_scene' has no attribute 'obj'.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-blender skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "Automate Blender to batch-export all my .blend files to GLB.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-blender skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "How do I sculpt faster in ZBrush?",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-blender skill is not invoked (not Blender automation)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Make a 3D model of a lamp.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-blender skill is not invoked (the hub routes; not a Blender scripting question)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Run skills/polywright-blender's turntable recipe headless and report how many frames it wrote.",
+      "expectations": [
+        "ran the recipe headless (tool call) and reported 8 frames"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*bpy|blender.*--background"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "Is it safe to let the agent use blender-mcp on my main project file?",
+      "expectations": [
+        "warns that MCP servers run unsandboxed code and recommends headless runs on a copy",
+        "regex on the answer: (?i)(copy|sandbox|arbitrary)"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

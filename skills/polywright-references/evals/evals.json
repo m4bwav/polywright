@@ -1,0 +1,78 @@
+{
+  "skill": "polywright-references",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "What reference images should I make before generating a 3D model of a robot character?",
+      "runs": 3,
+      "expectations": [
+        "the polywright-references skill is invoked"
+      ]
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "Make me front, side and back views of a lantern so I can model it.",
+      "runs": 3,
+      "expectations": [
+        "the polywright-references skill is invoked"
+      ]
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "prompt": "Generate a logo for my bakery.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-references skill is not invoked (a 2D design job)"
+      ]
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "prompt": "Make a seamless pattern for wrapping paper.",
+      "runs": 3,
+      "decoy": true,
+      "expectations": [
+        "the polywright-references skill is not invoked (2D, not for a 3D model)"
+      ]
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "Make quick normal and height maps from tests/fixtures/stone.png into a temp folder.",
+      "expectations": [
+        "the skill ran pw.py texture (proven by the tool call) and named the normal-map convention"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py.*texture"
+      },
+      "baseline": "not yet run",
+      "runs": 3
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "For image-to-3D, should my character be in a T-pose?",
+      "expectations": [
+        "recommends a relaxed A-pose and says why (T-pose distorts proportions; riggers want A-pose)",
+        "regex on the answer: (?i)a-pose"
+      ],
+      "baseline": "not yet run",
+      "runs": 3,
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash",
+        "WebFetch"
+      ],
+      "max_turns": 12
+    }
+  ]
+}

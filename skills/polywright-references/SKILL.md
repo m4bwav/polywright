@@ -1,0 +1,73 @@
+---
+name: polywright-references
+description: "Decide, gather and generate the references a 3D model is built from: orthographic views with a height bar, A-pose turnarounds, multi-view sets for image-to-3D, blockout renders repainted into consistent views, seamless textures and quick normal/height/roughness maps (pw.py texture). Use on 'what references do I need', 'make a reference sheet', 'front side back views', 'turnaround', 'seamless texture', 'PBR maps from this photo', or before generating or modelling without a ready-made source. Meshing is polywright-generate. Also 'refresh polywright-references'."
+---
+
+# polywright-references
+
+References decide most of a 3D result: an image-to-3D model copies its input's lighting, perspective and
+mistakes; a modeller or a bpy script needs dimensions and views. Gather or generate them first, put them in
+the asset's `refs/`, record each with `pw.py manifest --add-source` (generated ones name the model and seed).
+
+Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Prompt templates and checks:
+[references/reference-kit.md](references/reference-kit.md).
+
+## Step 1: what this model needs
+
+| Model | Collect (real) | Generate (imagined or missing) |
+|---|---|---|
+| Real object | photos from 6 sides with a ruler in the plane, close-ups, real dimensions (maker's sheet, Wikipedia, a tape) | orthographic clean-ups only if photos are poor |
+| Vehicle, product, furniture | blueprints or CAD drawings (check one known dimension), maker's dimensions | front, side, top elevations in technical-drawing style |
+| Building | footprint (OSM), height or floor count, photos of each face, roof shape | elevations per face, roof plan |
+| Real place | map extract, elevation, aerial photo, ground photos of landmarks | none: places come from data (polywright-capture) |
+| Imagined prop | style references | a three-quarter hero image, then front/left/back/right at the same scale |
+| Character or creature | style and costume references | turnaround: front, side, back, three-quarter, A-pose, height bar, plain background |
+| Surfaces (walls, ground, terrain) | photo of the material, flat and evenly lit | seamless tileable albedo, then maps (Step 4) |
+
+Always add a **scale reference**: a known dimension, a 1.8 m human silhouette, a height bar on the sheet.
+
+## Step 2: generate the views (rules that matter)
+
+Ask the image tool for: one object, centred, filling about two thirds of the frame; plain white or light grey
+background; flat, even, shadowless light; no strong perspective (long lens or orthographic look); 1024 px or
+more; no text. Characters stand in a relaxed A-pose (arms 30 to 45 degrees down, legs slightly apart): T-poses
+distort proportions and action poses fail in generators and riggers. Templates per kind are in the kit.
+
+For consistent extra views from one image, an image-edit model with a multi-angle adapter (Qwen Image Edit
+with a Multiple Angles LoRA, 2025-2026) keeps identity better than prompting each view; expect colour drift and
+colour-match each view to the front. Check every generated view against the front: same proportions, same
+number of arms, same items, nothing re-aimed. Drop a view that disagrees; a wrong back view is worse than none.
+
+A ready workflow for a Z-Image Turbo host: [references/zimage-reference.api.json](references/zimage-reference.api.json)
+(`{SUBJECT}` placeholder; tested 2026-10-11).
+
+## Step 3: views from a blockout (when views keep disagreeing)
+
+Build a rough blockout (primitives, or a first front-only generated mesh), render it with
+`pw.py render <file> --out refs/blockout --views front,right,back,left --color clay`, then have an image-edit
+model repaint each grey render in the subject's colours and detail (image-to-image with the render as the
+first reference and the front view as the second). Only the camera moves, so nothing can be re-aimed or grow
+extra limbs; the back can only show what the blockout implies. Feed the repainted set to multi-view generation.
+
+## Step 4: textures and materials
+
+- Prefer a CC0 material (Poly Haven, ambientCG) over a generated one.
+- Generated tileable: ask for "seamless, tileable, top-down, flat even light" at a power of two, then
+  `pw.py texture <img> --out refs/tex --seamless` (offset-blend seams) and look at a 2x2 tiling.
+- Quick maps from a photo or albedo: `pw.py texture <img> --out refs/tex [--convention opengl|directx]`
+  writes height, normal and roughness derived from luminance. Fine for props and terrain, wrong for measured
+  materials. Normal maps: OpenGL (Y+) for Blender, Unity, Godot, glTF, three.js, Roblox; DirectX (Y-) for Unreal.
+- Baked shadows in a photo become baked shadows in the albedo: fix upstream with flat light, or delight.
+
+## Step 5: put them to work
+
+- In Blender: reference images as empties in front, right and top views, scaled to a known dimension
+  (orthographic renders from `pw.py render` report `metres_per_px`); recipe in polywright-blender.
+- For image-to-3D: square, padded, 1024 px; `pw.py gen` pads and removes backgrounds itself.
+- On a board (PureRef 2.1) for a human: group by view, note dimensions on the board.
+
+## Maintenance
+
+Evergreen unit, tier `fast`. Companions: [RESEARCH.md](RESEARCH.md), [CHANGELOG.md](CHANGELOG.md),
+[LEARNINGS.md](LEARNINGS.md), [TESTS.md](TESTS.md) with `evals/evals.json`, [MAINTENANCE.md](MAINTENANCE.md),
+state in `evergreen.json`. Read `evergreen.json` at each use; refresh when due.
