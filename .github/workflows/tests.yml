@@ -44,6 +44,33 @@ jobs:
         env:
           POLYWRIGHT_BPY_PYTHON: python
         run: python tests/test_recipes.py
+  blender-app:
+    # The real Blender app where users install it, found by pw.py's install-folder search (not PATH, not the wheel):
+    # /Applications/Blender.app from the Homebrew cask on macOS, the blender.org tarball unpacked in ~ on Linux.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Blender app (macOS, Homebrew cask)
+        if: runner.os == 'macOS'
+        run: brew install --cask blender
+      - name: Blender app (Linux, blender.org tarball in ~)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q libegl1 libegl-mesa0 libgl1-mesa-dri libgl1 libxkbcommon0 libsm6 libxi6 libxrender1 libxxf86vm1 libxfixes3
+          f=Blender5.2/blender-5.2.2-linux-x64.tar.xz
+          curl -fsSL -o /tmp/b.tar.xz https://download.blender.org/release/$f || curl -fsSL -o /tmp/b.tar.xz https://mirrors.ocf.berkeley.edu/blender/release/$f
+          tar -xJf /tmp/b.tar.xz -C ~
+      - name: install-folder discovery finds it
+        run: python tests/check_discovery.py
+      - name: pw.py tests with the Blender app
+        run: python tests/test_pw.py
   budget:
     runs-on: ubuntu-latest
     steps:
