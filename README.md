@@ -108,7 +108,7 @@ Needs: Python 3.9+ and Blender 4.5 or newer (5.2 LTS tested) for most commands. 
 
 These come from real runs, not from a model's say-so:
 
-- `tests/test_pw.py`: 21 tests: geometry, file formats, manifest, an offline `place`, and Blender-backed inspect,
+- `tests/test_pw.py`: 24 tests: geometry, file formats, manifest, an offline `place`, and Blender-backed inspect,
   render, convert, printable, union and the bpy runner. They pass with the Blender executable and with the PyPI
   `bpy` 5.2.2 wheel.
 - `tests/test_recipes.py`: all ten recipes in `polywright-blender` run in Blender. The test caught two 5.x API
@@ -122,9 +122,13 @@ These come from real runs, not from a model's say-so:
   attached, and two requests the hub or a sibling took instead); the print and capture action cases ran `pw.py`
   for real. Details in each skill's TESTS.md.
 
-Not verified yet: Blender discovery on macOS and Linux installs (the CI Blender job uses the bpy wheel), the
-TRELLIS.2 workflow (the nodes are present but the weights were not downloaded), any hosted generator, and three
-runs per eval case.
+- TRELLIS.2 and Pixal3D through ComfyUI's own template, run as is by `pw.py gen --workflow` on the 16 GB card:
+  TRELLIS.2 377 s of GPU time for an upright 699k-triangle model with 4096 px PBR textures; Pixal3D 329 s, in the
+  camera's frame.
+
+Not verified yet: Blender discovery on macOS and Linux installs (the CI Blender job uses the bpy wheel), any hosted
+generator, and three runs per eval case. The [wiki](https://github.com/m4bwav/polywright/wiki) has every command
+with real output.
 
 ## Testing
 

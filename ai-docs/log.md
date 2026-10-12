@@ -15,3 +15,10 @@ Append-only. Newest last.
 - Action evals in a throwaway clone: print passed and found the flat-face tessellation problem (fixed with a guarded planar dissolve); capture ran pw.py correctly without loading the skill because the prompt named the command (prompt rewritten).
 - Not tagged: tagging and publishing a release wait for the owner's go-ahead.
 
+## 2026-10-11 (release, TRELLIS.2, wiki)
+
+- Owner approved: release v0.1.1, download the TRELLIS.2 models, and saved the wiki's first page. Released v0.1.1, then v0.1.2.
+- The wiki's verification run against the published 0.1.1 found `--version` printing 0.1.0, `printable` crushing open flat surfaces (base clamp before re-grounding), and a ten-minute planar dissolve; fixed in 0.1.2 (PR #3) with a regression test and a VERSION check.
+- Downloaded the seven TRELLIS.2/Pixal3D template files (14.5 GB) into the local ComfyUI. The browser could not reach the local ComfyUI, and ComfyUI has no conversion endpoint, so pw.py gained `ui_to_api` (PR #4): the unmodified template ran. GPU times: TRELLIS.2 377 s (upright, best detail), Pixal3D 329 s (camera frame, tilted), Hunyuan3D-2 99 s. Another session's video job held the GPU queue for about 25 minutes; it was left alone.
+- Wiki: 11 pages, all outputs from the verification program against 0.1.2, gates clean, live check clean (notes/2026-10-11-github-wiki.md).
+

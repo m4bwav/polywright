@@ -35,8 +35,9 @@ a coded pedestal with a generated lion-head spout boolean-joined on.
      converts it with the host's node definitions): `pw.py gen --image refs/front.png --workflow <file> --out work/raw.glb`.
      TRELLIS.2 and Pixal3D with PBR textures: ComfyUI's template `3d_pixal3d_trellis2_image_to_model.json` (in the
      ComfyUI install's `comfyui_workflow_templates_json/templates`); its switch picks Pixal3D by default, so add
-     `--set 316.value=true` for TRELLIS.2. On a 16 GB card Pixal3D took 331 s for a 700k-triangle model with 4096 px
-     PBR textures, in the camera's frame (tilted: level it before use). `--set NODE.input=VALUE` changes any input.
+     `--set 316.value=true` for TRELLIS.2. On a 16 GB card (GPU time): TRELLIS.2 377 s, upright, the best detail;
+     Pixal3D 329 s, in the camera's frame (tilted: level it); both about 700k triangles with 4096 px PBR textures;
+     Hunyuan3D-2 99 s, shape only. `--set NODE.input=VALUE` changes any input.
    - Hosted APIs (Meshy has the clearest public price list; Tripo, Rodin, Hunyuan 3.x): through their own API
      or MCP, or ComfyUI's partner nodes. Say the cost before spending it.
 4. Every run writes `<out>.gen.json` (host, model, seed, steps). Record the model and its licence:
