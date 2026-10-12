@@ -21,3 +21,12 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261011-3, confirmed 2026-10-11 (boxes 488 triangles, fountain unchanged and watertight)
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
+
+### L-003 · 2026-10-11 · Re-ground after thickening, before clamping a flat base
+- Trigger: a flat terrain sheet made printable came out with 59,198 non-manifold edges and 0 volume (wiki verification run)
+- Hypothesis: the model was grounded before the inward solidify, which pushed the sheet 1.2 mm below z=0; the clamp then flattened the whole slab into one plane
+- Rule: measure and move the model back to z=0 after the remesh, then clamp; test with an open flat sheet
+- Evidence: C-20261011-4, confirmed 2026-10-11
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
+

@@ -263,6 +263,18 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(out["watertight"])
         self.assertAlmostEqual(max(out["dims_mm"]), 40, delta=0.8)
 
+    def test_printable_flat_open_surface(self):
+        # an open flat sheet sits at z=0; the inward wall pushes it below zero, and the base clamp must not crush it
+        m = pw.Mesh("sheet", (0.5, 0.5, 0.5))
+        m.v = [(0, 0, 0), (4, 0, 0), (4, 4, 0), (0, 4, 0)]
+        m.f = [(0, 1, 2), (0, 2, 3)]
+        src = os.path.join(self.tmp, "sheet.glb")
+        pw.write_glb(src, [m])
+        code, out = run("printable", src, os.path.join(self.tmp, "sheet.stl"), "--size-mm", "40", "--wall-mm", "1.5")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["watertight"], out)
+        self.assertGreater(out["dims_mm"][2], 0.5)
+
     def test_render_sheet(self):
         d = os.path.join(self.tmp, "r")
         code, out = run("render", self.glb, "--out", d, "--views", "front,top,iso", "--size", "128")

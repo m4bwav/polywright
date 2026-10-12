@@ -2,6 +2,12 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.1.2 (2026-10-11)
+
+- `pw.py printable`: an open surface lying on the ground (a terrain sheet) was crushed by the base clamp after the inward wall pushed it below zero; the model now sits on the ground again before the clamp. The planar dissolve runs on a 100k-triangle copy and is kept only when it watertightly halves that copy (minutes became seconds; organic models keep full detail).
+- `pw.py --version` printed 0.1.0 in 0.1.1; it now matches plugin.json, and `tests/check_skills.py` fails when they differ.
+- Both found by the wiki's verification run against the published 0.1.1.
+
 ## 0.1.1 (2026-10-11)
 
 - Skill descriptions say when to fire; the hub only takes requests no sibling owns. Headless trigger evals went from 17/28 to 23/28 with every decoy passing (each skill's TESTS.md, T-20261011-2).

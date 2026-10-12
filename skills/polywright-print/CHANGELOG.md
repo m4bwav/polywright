@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261011-4 · 2026-10-11 · printable re-grounds before the base clamp; faster, stricter planar dissolve
+- because: L-003; the wiki verification run of the published 0.1.1 (ai-docs/notes/2026-10-11-wiki-verify.out.txt) made a flat park scene printable and got 59,198 non-manifold edges; the dissolve on 368k faces ran over ten minutes
+- files: ../polywright/scripts/pw_bpy.py act_printable, tests/test_pw.py test_printable_flat_open_surface
+- The model is moved back to z=0 after the remesh, so the clamp cuts only the bottom 0.6 mm; the dissolve works on a 100k copy and is kept only when it halves that copy without breaking the solid.
+
 ### C-20261011-3 · 2026-10-11 · printable merges coplanar faces after the remesh
 - because: T-20261011-3 (two 40 mm boxes came out as 381k triangles, 19 MB), L-002
 - files: ../polywright/scripts/pw_bpy.py act_printable, ../polywright/scripts/pw.py --no-planar
