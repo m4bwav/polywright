@@ -7,6 +7,8 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 - `pw.py printable`: an open surface lying on the ground (a terrain sheet) was crushed by the base clamp after the inward wall pushed it below zero; the model now sits on the ground again before the clamp. The planar dissolve runs on a 100k-triangle copy and is kept only when it watertightly halves that copy (minutes became seconds; organic models keep full detail).
 - `pw.py --version` printed 0.1.0 in 0.1.1; it now matches plugin.json, and `tests/check_skills.py` fails when they differ.
 - Both found by the wiki's verification run against the published 0.1.1.
+- `pw.py gen --workflow` takes workflows saved by ComfyUI's editor (template files) and converts them with the host's node definitions; `--save-api` writes the graph sent; a rejected graph prints ComfyUI's node_errors. Pixal3D ran through the unmodified TRELLIS.2/Pixal3D template on a 16 GB card in 331 s.
+- `check` names its backend when Blender inspected the file; `place` rounds `center`.
 
 ## 0.1.1 (2026-10-11)
 

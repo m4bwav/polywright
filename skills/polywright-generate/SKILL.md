@@ -31,10 +31,12 @@ a coded pedestal with a generated lion-head spout boolean-joined on.
 3. Run one:
    - Built-in Hunyuan3D-2 (shape only, about 100 s on a 16 GB card at 30 steps, octree 256):
      `pw.py gen --image refs/front.png [--left L --back B --right R] --out work/raw.glb [--seed N]`
-   - Any other workflow saved from ComfyUI in API format (TRELLIS.2 or Pixal3D with PBR textures, Hunyuan 2.1,
-     a partner-API node): `pw.py gen --image refs/front.png --workflow trellis2.api.json --out work/raw.glb`
-     (`--set NODE.input=VALUE` to change a step count or resolution). ComfyUI's template
-     `3d_pixal3d_trellis2_image_to_model` is the starting point; it needs its seven model files downloaded.
+   - Any other ComfyUI workflow, in API format or as saved by the editor (a template file works as is; pw.py
+     converts it with the host's node definitions): `pw.py gen --image refs/front.png --workflow <file> --out work/raw.glb`.
+     TRELLIS.2 and Pixal3D with PBR textures: ComfyUI's template `3d_pixal3d_trellis2_image_to_model.json` (in the
+     ComfyUI install's `comfyui_workflow_templates_json/templates`); its switch picks Pixal3D by default, so add
+     `--set 316.value=true` for TRELLIS.2. On a 16 GB card Pixal3D took 331 s for a 700k-triangle model with 4096 px
+     PBR textures, in the camera's frame (tilted: level it before use). `--set NODE.input=VALUE` changes any input.
    - Hosted APIs (Meshy has the clearest public price list; Tripo, Rodin, Hunyuan 3.x): through their own API
      or MCP, or ComfyUI's partner nodes. Say the cost before spending it.
 4. Every run writes `<out>.gen.json` (host, model, seed, steps). Record the model and its licence:

@@ -40,6 +40,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -330,6 +331,7 @@ def inspect_file(path, fast=False):
     ext = os.path.splitext(path)[1].lower()
     if backend() and ext != ".3mf":
         res = bpy_action("inspect", {"file": os.path.abspath(path), "deep": not fast})
+        res.setdefault("backend", "blender")
     else:
         try:
             import trimesh  # noqa: F401
@@ -660,8 +662,17 @@ def prep_image(path, tmpdir):
 
 
 def comfy_run(host, graph, timeout):
-    res = http_json(host + "/prompt", data=json.dumps({"prompt": graph, "client_id": "polywright"}).encode(), timeout=60,
-                    headers={"Content-Type": "application/json"})
+    try:
+        res = http_json(host + "/prompt", data=json.dumps({"prompt": graph, "client_id": "polywright"}).encode(), timeout=60,
+                        headers={"Content-Type": "application/json"})
+    except urllib.error.HTTPError as e:  # ComfyUI explains a rejected graph in the body
+        body = e.read().decode("utf-8", "replace")
+        try:
+            body = json.loads(body)
+            body = {"error": body.get("error"), "node_errors": body.get("node_errors")}
+        except ValueError:
+            pass
+        raise RuntimeError("graph rejected (HTTP %d): %s" % (e.code, json.dumps(body)[:1500]))
     if res.get("node_errors"):
         raise RuntimeError("graph rejected: %s" % json.dumps(res["node_errors"])[:600])
     pid = res["prompt_id"]
@@ -703,16 +714,91 @@ def apply_sets(graph, sets, uploaded):
     return done
 
 
+WIDGET_TYPES = {"INT", "FLOAT", "STRING", "BOOLEAN", "COMBO", "COLOR", "LOAD_3D", "COMFY_DYNAMICCOMBO_V3"}
+UI_ONLY = {"Note", "MarkdownNote", "Reroute", "PrimitiveNode"}
+PREVIEWS = {"PreviewImage", "MaskPreview", "Preview3D", "Preview3DAdvanced", "PreviewAny"}
+
+
+def ui_to_api(ui, info, drop_previews=True):
+    """Convert a workflow saved from ComfyUI's editor (nodes and links) into the API format /prompt takes, using
+    the host's own node definitions to map each node's widget values to input names. Muted nodes and notes are
+    left out; a bypassed node passes its first input of the matching type through; preview nodes are dropped."""
+    links = {l[0]: (l[1], l[2]) for l in ui.get("links", [])}  # link id -> (from node, from slot)
+    nodes = {n["id"]: n for n in ui.get("nodes", [])}
+
+    def source(link_id, seen=0):
+        if link_id is None or link_id not in links or seen > 50:
+            return None
+        nid, slot = links[link_id]
+        n = nodes.get(nid)
+        if n is None or n.get("mode") == 2:
+            return None
+        if n.get("mode") == 4 or n["type"] == "Reroute":  # pass through
+            want = (n.get("outputs") or [{}])[slot].get("type") if n.get("outputs") else None
+            for i in n.get("inputs", []):
+                if i.get("link") is not None and (n["type"] == "Reroute" or i.get("type") == want):
+                    return source(i["link"], seen + 1)
+            return None
+        return [str(nid), slot]
+
+    used = {links[i["link"]][0] for m in nodes.values() for i in m.get("inputs", []) if i.get("link") in links}
+    api = {}
+    for nid, n in nodes.items():
+        t = n["type"]
+        if t in UI_ONLY or n.get("mode") in (2, 4) or t not in info:
+            continue
+        if drop_previews and t in PREVIEWS and nid not in used:  # some previews pass their image on: keep those
+            continue
+        spec = info[t]["input"]
+        order = info[t].get("input_order") or {k: list(spec.get(k, {})) for k in ("required", "optional")}
+        inputs = {}
+        wv = n.get("widgets_values")
+        if isinstance(wv, dict):
+            inputs.update({k: v for k, v in wv.items() if not isinstance(v, dict)})
+        else:
+            vals = list(wv or [])
+            for group in ("required", "optional"):
+                for name in order.get(group, []):
+                    s = spec.get(group, {}).get(name)
+                    if not s:
+                        continue
+                    typ, opts = s[0], (s[1] if len(s) > 1 and isinstance(s[1], dict) else {})
+                    if not (isinstance(typ, list) or typ in WIDGET_TYPES) or not vals:
+                        continue
+                    inputs[name] = vals.pop(0)
+                    if typ == "COMFY_DYNAMICCOMBO_V3":  # the chosen option's own widgets follow, as name.sub
+                        chosen = next((o for o in opts.get("options", []) if o.get("key") == inputs[name]), {})
+                        for sub in chosen.get("inputs", {}).get("required", {}):
+                            if vals:
+                                inputs["%s.%s" % (name, sub)] = vals.pop(0)
+                    if opts.get("control_after_generate") or opts.get("image_upload") or name in ("seed", "noise_seed"):
+                        if vals and isinstance(vals[0], str) and (vals[0] in ("fixed", "increment", "decrement", "randomize", "image")):
+                            vals.pop(0)
+        for name, s_ in spec.get("required", {}).items():  # a template older than the host lacks new widgets
+            if name not in inputs and (isinstance(s_[0], list) or s_[0] in WIDGET_TYPES) and len(s_) > 1 and isinstance(s_[1], dict) and "default" in s_[1]:
+                inputs[name] = s_[1]["default"]
+        for i in n.get("inputs", []):
+            src = source(i.get("link"))
+            if src is not None and src[0] in {str(k) for k, v in nodes.items() if v["type"] not in UI_ONLY}:
+                inputs[i["name"]] = src
+        api[str(nid)] = {"class_type": t, "inputs": inputs}
+    # inputs pointing at dropped nodes go away; then drop nodes nothing reaches from an output node
+    for v in api.values():
+        v["inputs"] = {k: x for k, x in v["inputs"].items() if not (isinstance(x, list) and len(x) == 2 and x[0] not in api)}
+    return api
+
+
 def run_workflow(a):
-    """Any ComfyUI workflow saved in API format (Workflow > Export (API)): TRELLIS.2, Pixal3D, Hunyuan3D 2.1,
-    a partner-API node. The image goes into every LoadImage node unless --set says otherwise."""
+    """Any ComfyUI workflow: API format (Workflow > Export (API)) or the editor's own format (a template, a saved
+    workflow), converted with ui_to_api. The image goes into every LoadImage node unless --set says otherwise."""
     graph = json.load(open(a.workflow, encoding="utf-8"))
-    if "nodes" in graph and "links" in graph:
-        return emit({"ok": False, "error": "this is a UI workflow; export it with Workflow > Export (API) in ComfyUI"}, 2)
+    ui = graph if ("nodes" in graph and "links" in graph) else None
     host, tried = None, []
     for h in comfy_hosts(a.host):
         try:
             info = http_json(h + "/object_info", timeout=20)
+            if ui is not None:
+                graph = ui_to_api(ui, info)
             missing = sorted({v.get("class_type") for v in graph.values() if v.get("class_type") not in info})
             tried.append({"host": h, "missing_nodes": missing})
             if not missing:
@@ -733,6 +819,9 @@ def run_workflow(a):
             if v.get("class_type") == "LoadImage":
                 v["inputs"]["image"] = uploaded[a.image]
     sets = apply_sets(graph, a.set, uploaded)
+    if a.save_api:
+        with open(a.save_api, "w", encoding="utf-8") as f:
+            json.dump(graph, f, indent=1)
     if a.seed is not None:
         for v in graph.values():
             if "seed" in v.get("inputs", {}) and not isinstance(v["inputs"]["seed"], list):
@@ -1634,7 +1723,7 @@ def cmd_place(a):
     scene_path = os.path.join(out, "scene.glb")
     write_glb(scene_path, meshes)
     relief = max(vals) - zmin
-    res = {"ok": True, "out": out, "scene": scene_path, "bbox": [s, w, n, e], "center": [loc.lat0, loc.lon0],
+    res = {"ok": True, "out": out, "scene": scene_path, "bbox": [s, w, n, e], "center": [round(loc.lat0, 7), round(loc.lon0, 7)],
            "size_m": [round(width_m, 1), round(height_m, 1)], "grid": [nx, ny], "res_m": res_m, "dem": dem,
            "relief_m": round(relief, 2), "elevation_min_m": round(zmin, 2),
            "counts": {"water_points_flattened": flattened, "buildings": bcount, "building_height_source": hsrc, "road_segments": len(road_lines), "trees": tcount,
@@ -1827,6 +1916,7 @@ def main(argv=None):
     p.add_argument("--no-prep", action="store_true")
     p.add_argument("--timeout", type=int, default=3600)
     p.add_argument("--workflow", help="any ComfyUI workflow in API format (TRELLIS.2, Pixal3D, ...) instead of the built-in Hunyuan3D-2 graph")
+    p.add_argument("--save-api", help="also write the graph as sent (API format), e.g. after converting a UI workflow")
     p.add_argument("--set", action="append", help="NODE.input=VALUE (node id or class_type; @file uploads an image); repeatable")
     p.set_defaults(fn=cmd_gen)
 

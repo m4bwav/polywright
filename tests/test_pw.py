@@ -162,6 +162,44 @@ class Formats(unittest.TestCase):
         self.assertAlmostEqual(g.at(0.5, 1.0), 2.0, places=2)
 
 
+class UiToApi(unittest.TestCase):
+    INFO = {
+        "LoadImage": {"input": {"required": {"image": [["a.png"], {"image_upload": True}]}}, "input_order": {"required": ["image"]}},
+        "KSampler": {"input": {"required": {"model": ["MODEL", {}], "seed": ["INT", {"control_after_generate": True}], "steps": ["INT", {}],
+                                            "latent_image": ["LATENT", {}]}}, "input_order": {"required": ["model", "seed", "steps", "latent_image"]}},
+        "Remesh": {"input": {"required": {"mesh": ["MESH", {}], "mode": ["COMFY_DYNAMICCOMBO_V3", {"options": [
+            {"key": "udf", "inputs": {"required": {"qef": ["BOOLEAN", {}]}}}]}], "smooth": ["INT", {"default": 2}]}},
+                   "input_order": {"required": ["mesh", "mode", "smooth"]}},
+        "Blur": {"input": {"required": {"image": ["IMAGE", {}]}}, "input_order": {"required": ["image"]}},
+        "PreviewImage": {"input": {"required": {"images": ["IMAGE", {}]}}, "input_order": {"required": ["images"]}},
+    }
+
+    def test_widgets_links_bypass_and_defaults(self):
+        ui = {"nodes": [
+            {"id": 1, "type": "LoadImage", "mode": 0, "widgets_values": ["fountain.png", "image"], "outputs": [{"type": "IMAGE"}]},
+            {"id": 2, "type": "Blur", "mode": 4, "inputs": [{"name": "image", "type": "IMAGE", "link": 10}], "outputs": [{"type": "IMAGE"}]},
+            {"id": 3, "type": "PreviewImage", "mode": 0, "inputs": [{"name": "images", "type": "IMAGE", "link": 11}]},
+            {"id": 4, "type": "KSampler", "mode": 0, "widgets_values": [42, "fixed", 12], "inputs": [{"name": "model", "link": None}]},
+            {"id": 5, "type": "Remesh", "mode": 0, "widgets_values": ["udf", True], "inputs": [{"name": "mesh", "link": None}]},
+            {"id": 6, "type": "Note", "mode": 0, "widgets_values": ["hello"]}],
+            "links": [[10, 1, 0, 2, 0, "IMAGE"], [11, 2, 0, 3, 0, "IMAGE"]]}
+        api = pw.ui_to_api(ui, self.INFO)
+        self.assertEqual(api["1"]["inputs"], {"image": "fountain.png"})
+        self.assertNotIn("2", api)                               # bypassed
+        self.assertNotIn("3", api)                               # an unused preview is dropped
+        self.assertNotIn("6", api)                               # notes never reach the server
+        self.assertEqual(api["4"]["inputs"], {"seed": 42, "steps": 12})  # "fixed" is the seed's control value
+        self.assertEqual(api["5"]["inputs"], {"mode": "udf", "mode.qef": True, "smooth": 2})  # default filled in
+
+    def test_bypass_passes_the_link_through(self):
+        ui = {"nodes": [
+            {"id": 1, "type": "LoadImage", "mode": 0, "widgets_values": ["a.png", "image"], "outputs": [{"type": "IMAGE"}]},
+            {"id": 2, "type": "Blur", "mode": 4, "inputs": [{"name": "image", "type": "IMAGE", "link": 10}], "outputs": [{"type": "IMAGE"}]},
+            {"id": 3, "type": "Blur", "mode": 0, "inputs": [{"name": "image", "type": "IMAGE", "link": 11}], "outputs": [{"type": "IMAGE"}]}],
+            "links": [[10, 1, 0, 2, 0, "IMAGE"], [11, 2, 0, 3, 0, "IMAGE"]]}
+        self.assertEqual(pw.ui_to_api(ui, self.INFO)["3"]["inputs"], {"image": ["1", 0]})
+
+
 class Commands(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="pwtest_")
