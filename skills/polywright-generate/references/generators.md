@@ -8,7 +8,7 @@ where it says tested). Re-check versions and licences at each refresh: this tabl
 
 | Model | Input | Output | Licence | VRAM | ComfyUI | Best for |
 |---|---|---|---|---|---|---|
-| TRELLIS.2 4B (Microsoft, 2025-12) | 1 image | GLB with PBR (base colour, roughness, metallic, opacity), textures to 4096 | MIT | 24 GB stated; about 15 GB on a Mac port; INT8 checkpoint exists | native since 2026-08-22 (with remesh, decimate, UV, bake nodes) | best open all-rounder |
+| TRELLIS.2 4B (Microsoft, 2025-12) | 1 image | GLB with PBR (base colour, roughness, metallic, opacity), textures to 4096 | MIT | 24 GB stated; the INT8 template ran on 16 GB (tested) | native since 2026-08-22 (with remesh, decimate, UV, bake nodes) | best open all-rounder |
 | Pixal3D (Tencent ARC, 2026-05) | 1 image; multi-view reported 2026-09 | GLB with PBR | MIT | low-VRAM mode | native since 2026-08-22 | faithful to the input |
 | Hunyuan3D 2.0 / 2mv / turbo | 1 image or 4 views | shape | Tencent community | about 6 GB shape | native | multi-view shape; **tested** on a 16 GB card: 100 s at 30 steps |
 | Hunyuan3D 2.1 | 1 image | shape plus PBR paint | Tencent community | 10 GB shape, 21 GB paint | community wrappers | shape plus texture on 24 GB+ |
@@ -57,9 +57,13 @@ RAIL), anything research-only.
   to `pw.py gen --workflow`: editor-format workflows are converted with the host's node definitions (previews whose
   image feeds other nodes are kept; widgets a template predates get the host's defaults). The template's switch
   (node 316, PrimitiveBoolean) picks Pixal3D when false (the default) and TRELLIS.2 when true.
-- Tested 2026-10-11 on an RTX 5060 Ti 16 GB, ComfyUI 0.38.2, with a fountain reference: Pixal3D ran in 331 s and
-  gave one 700k-triangle object, 4096 px PBR textures, a 55 MB GLB, 515 non-manifold edges, in the camera's frame
-  (leaning by the camera's elevation: rotate it level before finishing). TRELLIS.2: see RESEARCH.md R-20261011-3.
+- Tested 2026-10-11 on an RTX 5060 Ti 16 GB, ComfyUI 0.38.2, one fountain reference, GPU time from ComfyUI's history:
+
+  | Model | Time | Result |
+  |---|---|---|
+  | TRELLIS.2 (template, `--set 316.value=true`) | 377 s | upright, one part, 699k triangles, 4096 px PBR, 610 non-manifold edges; the sharpest lion head of the three |
+  | Pixal3D (template default) | 329 s | 700k triangles, 4096 px PBR, 55 MB, 515 non-manifold edges; in the camera's frame, leaning by the camera's elevation: level it |
+  | Hunyuan3D-2 (built in) | 99 s | shape only, 405k triangles, 3,048 non-manifold edges |
 - `pw.py gen` checks every node class in the workflow against each host's `/object_info` and uses the first host
   that has them all.
 
