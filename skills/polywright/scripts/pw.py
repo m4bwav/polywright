@@ -45,7 +45,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.1.0"
+VERSION = "0.1.2"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 REFS = os.path.join(os.path.dirname(HERE), "references")

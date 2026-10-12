@@ -108,6 +108,10 @@ def check_json():
         m = json.load(open(manifest, encoding="utf-8"))
         if not re.match(r"^\d+\.\d+\.\d+$", str(m.get("version", ""))):
             problems.append(".claude-plugin/plugin.json: version is not X.Y.Z")
+        pw = open(os.path.join(SKILLS, "polywright", "scripts", "pw.py"), encoding="utf-8").read()
+        v = re.search(r'^VERSION = "([^"]+)"', pw, re.M)
+        if not v or v.group(1) != m.get("version"):
+            problems.append("skills/polywright/scripts/pw.py: VERSION %s differs from plugin.json %s" % (v and v.group(1), m.get("version")))
     except (OSError, ValueError):
         problems.append(".claude-plugin/plugin.json: missing or unreadable")
 

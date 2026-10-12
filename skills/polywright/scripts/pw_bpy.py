@@ -556,6 +556,8 @@ def act_printable(p):
     parts = keep_largest_part(obj)
     if parts > 1:
         steps.append("kept the largest of %d parts" % parts)
+    lo, hi = bounds([obj])  # solidify can push an open surface below z=0: sit it on the ground again first
+    transform_mesh(obj, 1.0, (0, 0, -lo[2]))
     cut = float(p.get("base_cut_mm", 0.6))
     if cut > 0:
         for v in obj.data.vertices:
@@ -565,9 +567,14 @@ def act_printable(p):
         steps.append("flat base: clamped below %.2f mm" % cut)
     tris = decimate_to(obj, int(p.get("max_tris", 400000)))
     cleanup(obj, merge=voxel * 0.01)
-    if p.get("planar", True):  # voxel remesh tiles flat faces as finely as curves: merge coplanar faces again
+    if p.get("planar", True):
+        # A voxel remesh tiles flat faces as finely as curves. Try merging coplanar faces on a copy decimated to
+        # planar_tris first (dissolve is slow on hundreds of thousands of faces), and keep it only when it stays
+        # watertight and the dissolve itself at least halves the faces; organic shapes keep their full-detail mesh.
         keep = obj.data.copy()
         before = len(obj.data.polygons)
+        decimate_to(obj, int(p.get("planar_tris", 100000)))
+        mid = len(obj.data.polygons)
         m = obj.modifiers.new("pw_planar", "DECIMATE")
         m.decimate_type = "DISSOLVE"
         m.angle_limit = math.radians(float(p.get("planar_deg", 0.5)))
@@ -576,11 +583,12 @@ def act_printable(p):
         apply_modifier(obj, m)
         cleanup(obj)
         st = mesh_stats(obj, obj.data)
-        if st.get("boundary_edges") or st.get("non_manifold_edges"):  # dissolve can break thin organic parts: undo
+        after = len(obj.data.polygons)
+        if st.get("boundary_edges") or st.get("non_manifold_edges") or after > mid / 2:
             obj.data = keep
-            steps.append("planar dissolve skipped (it broke the solid)")
+            steps.append("planar dissolve not kept (%s)" % ("it broke the solid" if st.get("boundary_edges") or st.get("non_manifold_edges") else "little flat area"))
         else:
-            steps.append("planar dissolve %.1f deg: %d -> %d faces" % (float(p.get("planar_deg", 0.5)), before, len(obj.data.polygons)))
+            steps.append("planar dissolve %.1f deg: %d -> %d faces" % (float(p.get("planar_deg", 0.5)), before, after))
     st = mesh_stats(obj, obj.data)
     lo, hi = bounds([obj])
     out = export(p["out"], p)
