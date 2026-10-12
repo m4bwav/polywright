@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261011-3 · 2026-10-11 · Editor-format workflows run as is; Pixal3D tested
+- because: L-002, R-20261011-3
+- files: SKILL.md Step 2, references/generators.md (Running on ComfyUI), ../polywright/scripts/pw.py (ui_to_api, --save-api, node_errors in failures)
+- `pw.py gen --workflow` converts a workflow saved by ComfyUI's editor (a template file) with the host's node definitions; a rejected graph now prints ComfyUI's node_errors; Pixal3D's run and its camera-frame tilt are recorded.
+
 ### C-20261011-2 · 2026-10-11 · Description says when to fire
 - because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
 - files: SKILL.md frontmatter description

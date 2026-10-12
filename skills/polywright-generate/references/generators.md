@@ -53,7 +53,13 @@ RAIL), anything research-only.
   (octree 256), VoxelToMesh (surface net, threshold 0.6), SaveGLB.
 - TRELLIS.2 and Pixal3D: ComfyUI's template `3d_pixal3d_trellis2_image_to_model` uses `trellis_2_int8_convrot`,
   the shape and texture VAEs, `dino_v3_L_naf_fp32` (CLIP vision), `moge_2_vitl_normal_fp16` and `birefnet`
-  (template read 2026-10-11). Download those, open the template, Export (API), then `pw.py gen --workflow`.
+  (template read 2026-10-11; 14.5 GB in all, downloaded from Comfy-Org on Hugging Face). Pass the template file itself
+  to `pw.py gen --workflow`: editor-format workflows are converted with the host's node definitions (previews whose
+  image feeds other nodes are kept; widgets a template predates get the host's defaults). The template's switch
+  (node 316, PrimitiveBoolean) picks Pixal3D when false (the default) and TRELLIS.2 when true.
+- Tested 2026-10-11 on an RTX 5060 Ti 16 GB, ComfyUI 0.38.2, with a fountain reference: Pixal3D ran in 331 s and
+  gave one 700k-triangle object, 4096 px PBR textures, a 55 MB GLB, 515 non-manifold edges, in the camera's frame
+  (leaning by the camera's elevation: rotate it level before finishing). TRELLIS.2: see RESEARCH.md R-20261011-3.
 - `pw.py gen` checks every node class in the workflow against each host's `/object_info` and uses the first host
   that has them all.
 
