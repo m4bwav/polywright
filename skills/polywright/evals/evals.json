@@ -73,6 +73,29 @@
         "WebFetch"
       ],
       "max_turns": 12
+    },
+    {
+      "id": "trigger-crowd",
+      "kind": "trigger",
+      "prompt": "Video models keep mangling my battle scene. Can you build a Blender blockout of two armies clashing that I can drive Wan VACE with?",
+      "runs": 3,
+      "expectations": [
+        "the polywright skill is invoked"
+      ]
+    },
+    {
+      "id": "action-crowd",
+      "kind": "action",
+      "prompt": "Make a preview blockout of two spear armies marching toward each other for an AI video shot, in ./crowdtest.",
+      "runs": 1,
+      "evidence": [
+        "a tool call runs pw.py crowd with --preview",
+        "./crowdtest/sheet.png exists"
+      ],
+      "expectations": [
+        "pw.py crowd is run, not a hand-written bpy script",
+        "the agent reads sheet.png before reporting"
+      ]
     }
   ]
 }

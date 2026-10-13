@@ -45,6 +45,14 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261013-1 · 2026-10-13 · Subject: Crowds and battles: Blender blockout drives the video model
+- summary: No open video model holds more than about 4 distinct identities; practitioners build battles from layers and cuts (House of David season 2: under 200 extras, AI crowds and Unreal bases composited). The local route that scales is a 3D crowd blockout rendered to control passes (depth first, pose for the front ranks) for Wan VACE (`WanVaceToVideo`) or Wan 2.2 Fun Control: 4n+1 frames, sides divisible by 16, 81 frames at 16 fps. Paid Blender crowd add-ons (Procedural Crowds, iCrowds) document no scripting API, so plain bpy wins for an agent. Coarse proxies beat detailed ones as driving references (smixs visual-skills, idea only). Depth convention for VACE is unstated anywhere; Depth Anything outputs inverse depth, so pw.py writes that.
+- track: subject
+- sources: docs.comfy.org (wan-vace-to-video node, wan2-2-fun-control, checked 2026-10-13); github.com/ali-vilab/VACE; runcomfy.com Blender to ComfyUI AI Renderer 2.0; superhivemarket.com procedural-crowds (2026-10-13); vp-land.com House of David season 2 (2025-10-16); seedance.tv/blog/comfyui-crowd-video-workflow (2026-09-13); github.com/smixs/visual-skills; full note in cinewright ai-docs/research/2026-10-13-battle-crowd-compositing.md
+- magnitude: minor (new capability, no change to existing claims)
+- applied: C-20261013-1
+
+
 ### R-20261011-3 · 2026-10-11 · Testing: pw.py proven end to end
 - summary: Park (249 buildings, 1 m lidar, watertight 150 mm tile) and fountain (Hunyuan3D-2 in 100 s, Roblox GLB 15k tris passing check, 80 mm watertight print, 3MF accepted by Bambu Studio CLI).
 - track: testing

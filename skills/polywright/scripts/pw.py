@@ -1846,6 +1846,126 @@ def cmd_place(a):
     return emit(res)
 
 
+# ------------------------------------------------------------------------------------------ crowd
+
+# OpenPose COCO-18 limbs (joint index pairs) and colours, the convention the pose ControlNets and Wan's pose
+# control were trained on: one colour per limb, drawn at 60 percent over black, joints as dots.
+POSE_LIMBS = [(1, 2), (1, 5), (2, 3), (3, 4), (5, 6), (6, 7), (1, 8), (8, 9), (9, 10), (1, 11), (11, 12), (12, 13),
+              (1, 0), (0, 14), (14, 16), (0, 15), (15, 17)]
+POSE_COLORS = [(255, 0, 0), (255, 85, 0), (255, 170, 0), (255, 255, 0), (170, 255, 0), (85, 255, 0), (0, 255, 0),
+               (0, 255, 85), (0, 255, 170), (0, 255, 255), (0, 170, 255), (0, 85, 255), (0, 0, 255), (85, 0, 255),
+               (170, 0, 255), (255, 0, 255), (255, 0, 170), (255, 0, 85)]
+
+
+def draw_pose_frames(joints_path, out_dir):
+    """OpenPose skeleton PNGs from the 2D joints pw_bpy wrote, far figures first so near ones overdraw them.
+    Line width scales with each figure's height in pixels."""
+    from PIL import Image, ImageDraw
+    with open(joints_path, encoding="utf-8") as f:
+        data = json.load(f)
+    W, H = data["size"]
+    os.makedirs(out_dir, exist_ok=True)
+    drawn = 0
+    for fr in data["frames"]:
+        img = Image.new("RGB", (W, H), (0, 0, 0))
+        d = ImageDraw.Draw(img)
+        for _, pts in fr["people"]:
+            tall = abs(pts[0][1] - (pts[10][1] + pts[13][1]) / 2)
+            width = max(1, int(round(tall / 45)))
+            for i, (a, b) in enumerate(POSE_LIMBS):
+                c = tuple(int(v * 0.6) for v in POSE_COLORS[i])
+                d.line([tuple(pts[a]), tuple(pts[b])], fill=c, width=width * 2)
+            r = max(1, width)
+            for i, (x, y) in enumerate(pts):
+                d.ellipse([x - r, y - r, x + r, y + r], fill=POSE_COLORS[i])
+            drawn += 1
+        img.save(os.path.join(out_dir, "%04d.png" % fr["frame"]))
+    return {"frames": len(data["frames"]), "skeletons": drawn}
+
+
+def encode_passes(out, passes, fps):
+    """One H.264 video per pass (what ComfyUI's video loaders take), when ffmpeg is on PATH."""
+    ff = shutil.which("ffmpeg")
+    if not ff:
+        return {"skipped": "ffmpeg not found; load the PNG folders with an image-sequence loader"}
+    vids = {}
+    for name in passes:
+        src = os.path.join(out, name)
+        if not os.path.isdir(src) or not any(n.endswith(".png") for n in os.listdir(src)):
+            continue
+        dst = os.path.join(out, name + ".mp4")
+        cmd = [ff, "-y", "-loglevel", "error", "-framerate", str(fps), "-start_number", "1",
+               "-i", os.path.join(src, "%04d.png"), "-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv420p", dst]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        vids[name] = dst if r.returncode == 0 and os.path.isfile(dst) else {"error": (r.stderr or "")[-300:]}
+    return vids
+
+
+def crowd_sheet(out, passes):
+    """First, middle and last rendered frame of every pass in one image, for one look."""
+    from PIL import Image
+    rows = []
+    for name in passes:
+        d = os.path.join(out, name)
+        if os.path.isdir(d):
+            fs = sorted(n for n in os.listdir(d) if n.endswith(".png"))
+            if fs:
+                rows.append([os.path.join(d, n) for n in sorted({fs[0], fs[len(fs) // 2], fs[-1]})])
+    if not rows:
+        return None
+    w, h = Image.open(rows[0][0]).size
+    tw, th = w // 2, h // 2
+    sheet = Image.new("RGB", (tw * 3, th * len(rows)), (0, 0, 0))
+    for r, row in enumerate(rows):
+        for c, pth in enumerate(row):
+            sheet.paste(Image.open(pth).convert("RGB").resize((tw, th)), (c * tw, r * th))
+    path = os.path.join(out, "sheet.png")
+    sheet.save(path)
+    return path
+
+
+def cmd_crowd(a):
+    W, H = (int(v) for v in a.size.lower().split("x"))
+    problems = []
+    if W % 16 or H % 16:
+        problems.append("--size %dx%d: Wan wants both sides divisible by 16 (832x480, 1280x720)" % (W, H))
+    if (a.frames - 1) % 4 and (a.frames - 5) % 17:
+        problems.append("--frames %d: Wan wants 4n+1 frames (49, 65, 81), MiniMax H3 17k+5 at 24 fps (56, 73, 209)" % a.frames)
+    if problems and not a.any_size:
+        return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips this check"}, 2)
+    passes = [x.strip() for x in a.passes.split(",") if x.strip()]
+    bad = [x for x in passes if x not in ("depth", "mask", "clay", "pose")]
+    if bad:
+        return emit({"ok": False, "error": "unknown pass %s (depth, mask, clay, pose)" % ",".join(bad)}, 2)
+    pt = lambda t: [float(v) for v in t.split(",")] if t else None
+    out = os.path.abspath(a.out)
+    params = {"out": out, "size": [W, H], "frames": a.frames, "fps": a.fps, "sides": a.sides, "ranks": a.ranks,
+              "cols": a.cols, "spacing": a.spacing, "rank_spacing": a.rank_spacing, "gap": a.gap, "jitter": a.jitter,
+              "action": a.action, "action_b": a.action_b, "kit": [k for k in a.kit.split(",") if k],
+              "view": a.view, "lens": a.lens, "cam_dist": a.cam_dist, "cam_height": a.cam_height,
+              "cam": pt(a.cam), "aim": pt(a.aim), "move": a.move, "seed": a.seed, "passes": passes,
+              "pose_min_px": a.pose_min_px, "samples": a.samples, "gpu": a.gpu, "far": a.far,
+              "preview": a.preview, "save_blend": a.save_blend}
+    res = bpy_action("crowd", params, timeout=a.timeout)
+    if not res.get("ok"):
+        return emit(res, 1)
+    if "pose" in passes:
+        try:
+            res["pose"] = draw_pose_frames(os.path.join(out, "joints.json"), os.path.join(out, "pose"))
+        except ImportError:
+            res["pose"] = {"skipped": "drawing skeletons needs Pillow (pip install pillow); joints.json is written"}
+    if not a.preview:
+        res["videos"] = encode_passes(out, passes, a.fps)
+    try:
+        res["sheet"] = crowd_sheet(out, passes)
+    except ImportError:
+        pass
+    res["next"] = ("Read sheet.png: both sides in frame, readable ranks, no figure crossing the camera. Then feed "
+                   "depth.mp4 (and pose.mp4 for the front ranks) to Wan VACE or Fun Control with a start frame "
+                   "repainted from clay frame 1 (polywright hub, 'Crowd and battle blockouts')")
+    return emit(res)
+
+
 # ------------------------------------------------------------------------------------------ main
 
 def main(argv=None):
@@ -2032,6 +2152,40 @@ def main(argv=None):
     p.add_argument("--road-mm", type=float, default=0.4)
     p.add_argument("--no-union", action="store_true")
     p.set_defaults(fn=cmd_place)
+
+    p = sub.add_parser("crowd", help="an army blockout in Blender with depth, pose, mask and clay passes for a video model")
+    p.add_argument("--out", required=True, help="folder: depth/ mask/ clay/ pose/ PNGs, <pass>.mp4, joints.json, camera.json, sheet.png")
+    p.add_argument("--size", default="832x480", help="WxH, both divisible by 16 for Wan")
+    p.add_argument("--frames", type=int, default=81, help="4n+1 for Wan (49, 65, 81); 17k+5 for MiniMax H3 (56, 73, 209, with --fps 24)")
+    p.add_argument("--fps", type=int, default=16)
+    p.add_argument("--sides", type=int, choices=[1, 2], default=2)
+    p.add_argument("--ranks", type=int, default=6, help="rows deep per side")
+    p.add_argument("--cols", type=int, default=30, help="figures across the frontage per side")
+    p.add_argument("--spacing", type=float, default=1.1, help="metres between figures in a rank")
+    p.add_argument("--rank-spacing", type=float, default=1.4, help="metres between ranks")
+    p.add_argument("--gap", type=float, help="metres between the front ranks at frame 1 (default: they meet on screen for clash and charge, 30 otherwise)")
+    p.add_argument("--jitter", type=float, default=0.25, help="metres of random placement per figure")
+    p.add_argument("--action", choices=["hold", "march", "advance", "charge", "clash"], default="march", help="side A (and B unless --action-b)")
+    p.add_argument("--action-b", choices=["hold", "march", "advance", "charge", "clash"])
+    p.add_argument("--kit", default="spear,shield,helmet", help="any of spear, shield, helmet; empty for bare figures")
+    p.add_argument("--view", choices=["side", "behind", "high"], default="side")
+    p.add_argument("--lens", type=float, default=50.0, help="mm on a 36 mm sensor; long lenses stack the ranks")
+    p.add_argument("--cam-dist", type=float, help="metres (default: both armies fit the frame)")
+    p.add_argument("--cam-height", type=float, default=6.0)
+    p.add_argument("--cam", help="x,y,z camera position, overrides --view (battle line x=0, frontage along +y)")
+    p.add_argument("--aim", help="x,y,z point the camera looks at")
+    p.add_argument("--move", choices=["static", "push", "crane", "truck"], default="static")
+    p.add_argument("--passes", default="depth,mask,clay,pose")
+    p.add_argument("--pose-min-px", type=float, default=40, help="skip skeletons of figures shorter than this on screen")
+    p.add_argument("--far", type=float, help="metres where depth reaches black (default: past the farthest figure)")
+    p.add_argument("--samples", type=int, default=4, help="Cycles samples for the depth pass")
+    p.add_argument("--gpu", action="store_true", help="Cycles on the GPU (default CPU: the GPU is often busy)")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--preview", action="store_true", help="render only the first, middle and last frame")
+    p.add_argument("--save-blend", action="store_true", help="also save crowd.blend")
+    p.add_argument("--any-size", action="store_true", help="skip the Wan size and frame-count check")
+    p.add_argument("--timeout", type=int, default=3600)
+    p.set_defaults(fn=cmd_crowd)
 
     p = sub.add_parser("texture", help="quick height, normal and roughness maps from a photo")
     p.add_argument("image")

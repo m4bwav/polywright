@@ -4,6 +4,7 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+- `pw.py crowd`: an army blockout for AI video. Two sides of low-poly soldiers (spear, shield, helmet) with offset walk cycles march, advance, charge, clash or hold; per frame it renders inverse depth (one range per shot), a side mask, clay and OpenPose skeletons, then encodes one video per pass and writes camera.json and a contact sheet. Hub section "Crowd and battle blockouts", references/crowd-blockouts.md.
 - `pw.py match`: render a model from an existing picture's camera (fixed lens, horizon row, an anchor pixel at a depth, an exact aim pixel), RGBA; with `--still` it also pastes the render and writes a blend mask (`--hide` boxes in front of the model, `--mask-add` for the hands). Hub section "Compose a model into a picture".
 - `pw.py bpy SCRIPT --blend X`: options written after the script name went to the script; they now reach pw.py.
 - polywright-blender: tested recipe for a designed prop from a written description; polywright-references: Step 2b, sheets from the model.
