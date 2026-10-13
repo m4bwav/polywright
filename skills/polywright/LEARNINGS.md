@@ -21,3 +21,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261011-1, confirmed 2026-10-11
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
+
+### L-003 · 2026-10-12 · To fix a prop in a picture, match the picture's camera and paste the model; the solve needs only two pixels and a depth
+- Trigger: the No-God film's set still showed a plain spear where the designed one belonged; text and whole-picture edits redraw the prop (comfyui-gen L-091). The camera was unknown.
+- Hypothesis: with a fixed lens (35 mm) and the horizon row for pitch, a hand pixel at a guessed depth plus the exact tip pixel fix the pose; depth alone sets the size in frame (match the stand-in's width in pixels: width = f_px x diameter / depth). Depth 3.3 m drew the Spear twice too thick and crossing the king's head; 6.5 m matched.
+- Rule: `pw.py match` (new) renders the model RGBA from that camera, pastes it, drops boxes in front of it (`--hide`, the fist) and writes a blend mask (alpha grown, plus `--mask-add` ellipses for the hands). Then blend inside the mask with a low-denoise edit and paste back through the mask. Hub section "Compose a model into a picture".
+- Evidence: 2026-10-12 No-God film: D:/ComfyUI/output/video/nogod/refs/spear/ (build_spear.py, render_views.py, camera_match.py, _sheet_v1..v5c.png); pw.py match reproduced the hand-rolled solve exactly (aim 720,404; yaw 31.9, pitch 5.88).
+- Scope: skill (pw.py, hub)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-12

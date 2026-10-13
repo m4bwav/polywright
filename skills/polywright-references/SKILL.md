@@ -41,6 +41,15 @@ number of arms, same items, nothing re-aimed. Drop a view that disagrees; a wron
 A ready workflow for a Z-Image Turbo host: [references/zimage-reference.api.json](references/zimage-reference.api.json)
 (`{SUBJECT}` placeholder; tested 2026-10-11).
 
+## Step 2b: a designed prop's sheet comes from the model
+
+When the prop is designed (a weapon, a tool, a vehicle part described in words or on a fan sheet) and text
+prompts keep giving half the shape, stop prompting: build it with a bpy script (polywright-blender recipe
+"A designed prop from a written description") and render the sheet from the model, side and top orthographic
+on flat mid-grey, Cycles on the CPU when the GPU is busy. A model is exact, re-renders in seconds after each
+note, and the same file later composes the prop into pictures (hub: "Compose a model into a picture"). Raise
+the side camera 10 to 15 degrees when parts come in mirror-image pairs, or one hides behind the other.
+
 ## Step 3: views from a blockout (when views keep disagreeing)
 
 Build a rough blockout (primitives, or a first front-only generated mesh), render it with

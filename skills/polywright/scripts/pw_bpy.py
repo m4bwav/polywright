@@ -6,7 +6,7 @@ or with any Python that can `import bpy` (the bpy module from PyPI):
 
     python pw_bpy.py -- <action> <params.json> <result.json>
 
-Actions: inspect, render, convert, printable, union. Each reads its parameters from params.json and writes one
+Actions: inspect, render, match, convert, printable, union. Each reads its parameters from params.json and writes one
 JSON object to result.json. Units: Blender scene units are treated as metres, except in `printable` and
 `union`, which work in millimetres because their output is for a slicer.
 Checked against Blender 5.2.1 LTS (2026-10-11).
@@ -407,6 +407,110 @@ def act_render(p):
     return res
 
 
+def act_match(p):
+    """Render a model from the camera of an existing picture, RGBA, so it can be pasted into it.
+
+    The picture's camera is unknown, so fix the lens and the horizon row, then pose the model in camera space:
+    the local anchor point (a hand's grip) lands on anchor_px at the guessed depth, and the local aim point (a
+    tip) lands exactly on aim_px. The model's forward axis is +X and up is +Z; up stays as near world up as the
+    aim allows, then roll turns it about the forward axis."""
+    objs = load(p["file"])
+    if not objs:
+        raise ValueError("no mesh objects to render")
+    sc = bpy.context.scene
+    W, H = (int(v) for v in p["size"])
+    lens = float(p.get("lens", 35.0))
+    f_px = W * lens / 36.0
+    horizon = p.get("horizon")
+    pitch = math.atan(((horizon if horizon is not None else H / 2) - H / 2) / f_px)
+    cam_data = bpy.data.cameras.new("pw_match")
+    cam_data.lens, cam_data.sensor_width, cam_data.sensor_fit = lens, 36.0, "HORIZONTAL"
+    cam_data.clip_start = 0.01
+    cam = bpy.data.objects.new("pw_match", cam_data)
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    cam.rotation_euler = (math.pi / 2 + pitch, 0, 0)
+    bpy.context.view_layer.update()
+    R = cam.matrix_world.to_3x3()
+
+    def ray(px, py):
+        return (R @ Vector(((px - W / 2) / f_px, -(py - H / 2) / f_px, -1.0))).normalized()
+
+    def project(q):
+        d = R.transposed() @ (q - cam.location)
+        return [round(W / 2 + f_px * d.x / -d.z, 1), round(H / 2 - f_px * d.y / -d.z, 1)]
+
+    anchor_l, aim_l = Vector(p["anchor_local"]), Vector(p["aim_local"])
+    off = aim_l - anchor_l
+    if off.x <= 0:
+        raise ValueError("aim_local must lie ahead of anchor_local along +X (the model's forward axis)")
+    G = ray(*p["anchor_px"]) * float(p.get("depth", 3.0))
+    rt = ray(*p["aim_px"])
+    up_w = Vector((0, 0, 1))
+    roll = math.radians(float(p.get("roll", 0.0)))
+
+    def frame(u):
+        v = (up_w - up_w.dot(u) * u)
+        if v.length < 1e-6:
+            raise ValueError("the aim points straight up or down; give a different aim_px or depth")
+        v = Matrix.Rotation(roll, 3, u) @ v.normalized()
+        return v, u.cross(v)
+
+    u = (rt * (G.length + off.length) - G).normalized()
+    for _ in range(60):  # fixed point: the axis direction that puts the (off-axis) aim point on its ray
+        v, w = frame(u)
+        lateral = v * off.z + w * off.y
+        b = rt.dot(lateral + G)
+        disc = b * b - ((lateral + G).length_squared - off.x ** 2)
+        if disc < 0:
+            raise ValueError("no pose reaches aim_px from anchor_px at this depth; try a larger depth")
+        u = (rt * (b + math.sqrt(disc)) - lateral - G).normalized()
+    v, w = frame(u)
+    M = Matrix.Translation(G) @ Matrix((u, w, v)).transposed().to_4x4() @ Matrix.Translation(-anchor_l)
+    root = bpy.data.objects.new("pw_match_root", None)
+    sc.collection.objects.link(root)
+    for o in sc.objects:
+        if o.parent is None and o not in (cam, root) and o.type != "LIGHT":
+            o.parent = root
+    root.matrix_world = M
+    bpy.context.view_layer.update()
+
+    if not p.get("keep_lights") or not any(o.type == "LIGHT" for o in sc.objects):
+        for o in [o for o in sc.objects if o.type == "LIGHT"]:
+            bpy.data.objects.remove(o)
+        sun = bpy.data.objects.new("pw_key", bpy.data.lights.new("pw_key", "SUN"))
+        sun.data.energy = float(p.get("sun_energy", 3.0))
+        sun.data.angle = math.radians(12)
+        sd = Vector(p.get("sun_dir", (-0.8, 0.6, 0.25))).normalized()  # direction TO the light, world axes
+        sun.rotation_euler = (-sd).to_track_quat("-Z", "Y").to_euler()
+        sc.collection.objects.link(sun)
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("pw_world")
+    sc.world.use_nodes = True
+    bg = sc.world.node_tree.nodes.get("Background")
+    if bg:
+        bg.inputs[0].default_value = (*p.get("world_rgb", (0.32, 0.30, 0.27)), 1)
+        bg.inputs[1].default_value = float(p.get("world_strength", 0.6))
+    engines = [e.identifier for e in sc.render.bl_rna.properties["engine"].enum_items]
+    sc.render.engine = "CYCLES" if p.get("engine", "cycles") == "cycles" else next(e for e in engines if e.startswith("BLENDER_EEVEE"))
+    if sc.render.engine == "CYCLES":
+        sc.cycles.device = "GPU" if p.get("gpu") else "CPU"  # CPU by default: the GPU is often busy (training, video)
+        sc.cycles.samples = int(p.get("samples", 128))
+        sc.cycles.use_denoising = True
+    sc.render.film_transparent = True
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = W, H, 100
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGBA"
+    sc.view_settings.view_transform = "AgX"
+    sc.render.filepath = os.path.abspath(p["out"])  # relative render paths do not land in the working folder
+    bpy.ops.render.render(write_still=True)
+    aim_w = M @ aim_l
+    return {"out": sc.render.filepath, "aim_lands": project(aim_w), "aim_px": list(p["aim_px"]),
+            "anchor_lands": project(M @ anchor_l), "aim_depth_m": round((aim_w - cam.location).length, 3),
+            "forward_pitch_deg": round(math.degrees(math.asin(max(-1, min(1, u.z)))), 2),
+            "forward_yaw_deg": round(math.degrees(math.atan2(u.x, u.y)), 2), "f_px": round(f_px, 1)}
+
+
 def stitch(paths, out, cols):
     imgs = [bpy.data.images.load(pth) for pth in paths]
     w, h = imgs[0].size
@@ -667,7 +771,7 @@ def act_union(p):
             "watertight": st.get("boundary_edges") == 0 and st.get("non_manifold_edges") == 0}
 
 
-ACTIONS = {"inspect": act_inspect, "render": act_render, "convert": act_convert,
+ACTIONS = {"inspect": act_inspect, "render": act_render, "match": act_match, "convert": act_convert,
            "printable": act_printable, "union": act_union}
 
 

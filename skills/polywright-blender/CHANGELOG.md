@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261012-1 · 2026-10-12 · Prop-from-description recipe; absolute output paths; options after the script
+- because: L-003, L-004, L-005, L-006 (the No-God film's Spear, built and revised headless through six owner notes)
+- files: SKILL.md Step 2 and Step 4; references/bpy-recipes.md "A designed prop from a written description"; LEARNINGS.md
+- New tested recipe `prop-from-description`; Step 2 says pw.py options may follow the script (pw.py fix) and outputs must be absolute paths; Step 4 points at the recipe and the raised side view for paired parts.
+
 ### C-20261011-2 · 2026-10-11 · Description says when to fire
 - because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
 - files: SKILL.md frontmatter description

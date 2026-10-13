@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261012-1 · 2026-10-12 · Step 2b: a designed prop's sheet comes from the model
+- because: L-002 (five failed text rounds for the No-God Spear; six owner notes each a seconds-long re-render from the model)
+- files: SKILL.md Step 2b; LEARNINGS.md
+- Build the prop with bpy and render side and top on flat grey; raise the side view for paired parts.
+
 ### C-20261011-2 · 2026-10-11 · Description says when to fire
 - because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
 - files: SKILL.md frontmatter description

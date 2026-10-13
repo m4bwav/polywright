@@ -2,6 +2,12 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## Unreleased
+
+- `pw.py match`: render a model from an existing picture's camera (fixed lens, horizon row, an anchor pixel at a depth, an exact aim pixel), RGBA; with `--still` it also pastes the render and writes a blend mask (`--hide` boxes in front of the model, `--mask-add` for the hands). Hub section "Compose a model into a picture".
+- `pw.py bpy SCRIPT --blend X`: options written after the script name went to the script; they now reach pw.py.
+- polywright-blender: tested recipe for a designed prop from a written description; polywright-references: Step 2b, sheets from the model.
+
 ## 0.1.2 (2026-10-11)
 
 - `pw.py printable`: an open surface lying on the ground (a terrain sheet) was crushed by the base clamp after the inward wall pushed it below zero; the model now sits on the ground again before the clamp. The planar dissolve runs on a 100k-triangle copy and is kept only when it watertightly halves that copy (minutes became seconds; organic models keep full detail).
