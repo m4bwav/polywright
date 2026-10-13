@@ -366,6 +366,53 @@ def cmd_render(a):
     return emit(res, 0 if res.get("ok") else 1)
 
 
+def cmd_match(a):
+    pt = lambda t: [float(v) for v in t.split(",")]
+    W, H = (int(v) for v in a.size.lower().split("x"))
+    if a.still:
+        try:
+            from PIL import Image
+            W, H = Image.open(a.still).size
+        except ImportError:
+            return emit({"ok": False, "error": "--still needs Pillow (pip install pillow)"}, 1)
+    params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "size": [W, H],
+              "anchor_px": pt(a.anchor_px), "anchor_local": pt(a.anchor_local), "aim_px": pt(a.aim_px),
+              "aim_local": pt(a.aim_local), "depth": a.depth, "lens": a.lens, "horizon": a.horizon, "roll": a.roll,
+              "samples": a.samples, "engine": a.engine, "gpu": a.gpu, "sun_dir": pt(a.sun_dir), "keep_lights": a.keep_lights}
+    res = bpy_action("match", params)
+    if res.get("ok") and a.still:
+        res.update(paste_and_mask(a.still, res["out"], [pt(b) for b in a.hide], a.grow, [pt(b) for b in a.mask_add]))
+    if res.get("ok"):
+        res["next"] = ("Read the paste crop at full size: shape, size in frame, aim; then blend inside the mask with a "
+                       "low-denoise image edit (polywright hub, 'Compose a model into a picture')")
+    return emit(res, 0 if res.get("ok") else 1)
+
+
+def paste_and_mask(still, render, hide, grow, mask_add):
+    """Alpha-composite the render over the still (minus `hide` boxes: whatever stands in front of the model,
+    such as the fist holding it) and write a blend mask: the render's alpha grown by `grow` px, plus ellipses."""
+    from PIL import Image, ImageDraw, ImageFilter
+    st = Image.open(still).convert("RGBA")
+    r = Image.open(render).convert("RGBA")
+    alpha = r.getchannel("A")
+    d = ImageDraw.Draw(alpha)
+    for b in hide:
+        d.rectangle([int(v) for v in b], fill=0)
+    r.putalpha(alpha)
+    st.alpha_composite(r)
+    stem = os.path.splitext(render)[0]
+    paste, mask = stem + "_paste.png", stem + "_mask.png"
+    st.convert("RGB").save(paste)
+    m = alpha.point(lambda v: 255 if v > 8 else 0)
+    if grow:
+        m = m.filter(ImageFilter.MaxFilter(2 * int(grow) + 1))
+    d = ImageDraw.Draw(m)
+    for b in mask_add:
+        d.ellipse([int(v) for v in b], fill=255)
+    m.save(mask)
+    return {"paste": paste, "mask": mask, "mask_bbox": m.getbbox()}
+
+
 def cmd_convert(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "scale": a.scale, "size_m": a.size_m,
               "ground": a.ground, "center": a.center, "join": a.join, "max_tris": a.max_tris, "ratio": a.ratio,
@@ -584,7 +631,29 @@ def cmd_manifest(a):
 
 # ------------------------------------------------------------------------------------------ run a bpy script
 
+def split_bpy_args(a):
+    """`pw.py bpy build.py --blend x.blend -- --out y`: argparse's REMAINDER swallows options written after the
+    script name, so pull pw.py's own options out of the part before the first `--`; the rest goes to the script."""
+    rest = list(a.args)
+    cut = rest.index("--") if "--" in rest else len(rest)
+    head, tail = rest[:cut], rest[cut + 1:]
+    keep, i = [], 0
+    while i < len(head):
+        opt = head[i]
+        name = opt.split("=", 1)[0]
+        if name in ("--blend", "--timeout", "--lines"):
+            val = opt.split("=", 1)[1] if "=" in opt else (head[i + 1] if i + 1 < len(head) else None)
+            i += 1 if "=" in opt else 2
+            setattr(a, name[2:], val if name == "--blend" else int(val))
+            continue
+        keep.append(opt)
+        i += 1
+    a.args = keep + tail
+    return a
+
+
 def cmd_bpy(a):
+    a = split_bpy_args(a)
     r = run_blender_script(os.path.abspath(a.script), a.args, blend=os.path.abspath(a.blend) if a.blend else None, timeout=a.timeout)
     if "stdout" not in r:
         return emit(r, 1)
@@ -1803,6 +1872,29 @@ def main(argv=None):
     p.add_argument("--cols", type=int, default=3)
     p.add_argument("--no-sheet", action="store_true")
     p.set_defaults(fn=cmd_render)
+
+    p = sub.add_parser("match", help="render a model from an existing picture's camera (RGBA), paste it in, write a blend mask")
+    p.add_argument("file", help="the model (.blend, .glb, ...), forward axis +X, up +Z")
+    p.add_argument("--out", required=True, help="RGBA render (.png); with --still also <out>_paste.png and <out>_mask.png")
+    p.add_argument("--still", help="the picture to match (sets the size) and paste into")
+    p.add_argument("--size", default="1344x768", help="WxH when there is no --still")
+    p.add_argument("--anchor-px", required=True, help="x,y pixel where the anchor lands (a hand holding it)")
+    p.add_argument("--anchor-local", default="0,0,0", help="x,y,z of that point on the model, metres")
+    p.add_argument("--aim-px", required=True, help="x,y pixel where the aim point must land (the tip)")
+    p.add_argument("--aim-local", required=True, help="x,y,z of the aim point on the model (ahead of the anchor along +X)")
+    p.add_argument("--depth", type=float, default=3.0, help="metres from camera to anchor: sets the size in frame (match a known width)")
+    p.add_argument("--lens", type=float, default=35.0, help="mm on a 36 mm sensor")
+    p.add_argument("--horizon", type=float, help="pixel row of the horizon (camera pitch); default the image centre")
+    p.add_argument("--roll", type=float, default=0.0, help="degrees about the forward axis")
+    p.add_argument("--sun-dir", default="-0.8,0.6,0.25", help="direction to the key light (x right, y into the picture, z up)")
+    p.add_argument("--keep-lights", action="store_true", help="use the .blend's own lights")
+    p.add_argument("--engine", choices=["cycles", "eevee"], default="cycles")
+    p.add_argument("--gpu", action="store_true", help="Cycles on the GPU (default CPU: the GPU is often busy)")
+    p.add_argument("--samples", type=int, default=128)
+    p.add_argument("--hide", action="append", default=[], help="x0,y0,x1,y1 box of the render to drop (in front of the model); repeatable")
+    p.add_argument("--grow", type=int, default=10, help="px to grow the mask around the model")
+    p.add_argument("--mask-add", action="append", default=[], help="x0,y0,x1,y1 ellipse added to the mask (the hands); repeatable")
+    p.set_defaults(fn=cmd_match)
 
     p = sub.add_parser("convert", help="convert, scale, decimate")
     p.add_argument("input")

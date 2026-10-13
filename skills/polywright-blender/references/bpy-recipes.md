@@ -149,6 +149,81 @@ bsdf.inputs["Emission Strength"].default_value = 0.0     # with "Emission Color"
 print("[pw] ok material sockets", len(bsdf.inputs))
 ```
 
+## A designed prop from a written description: lathe, sweep, mirror
+
+For a prop someone describes in words (a weapon, a staff, a lamp): turned parts by revolving a profile, bent
+parts by sweeping a tapering circle along a curve, paired parts by building one and mirroring its mesh data.
+Plain bmesh, so it is exact and exports to glTF as it is. Proven on a 2.5 m spear with an S-curved central
+prong and two mirror-image crescent blades (polywright LEARNINGS of polywright-blender, L-003).
+
+```python
+# recipe: prop-from-description
+import bpy, bmesh, math, os
+from mathutils import Vector as V, Matrix
+bpy.ops.wm.read_factory_settings(use_empty=True)
+sc = bpy.context.scene
+
+def material(name, rgb, metallic, rough):          # 5.x materials have a node tree already: no use_nodes
+    m = bpy.data.materials.new(name)
+    p = next(n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    p.inputs["Base Color"].default_value = (*rgb, 1)
+    p.inputs["Metallic"].default_value, p.inputs["Roughness"].default_value = metallic, rough
+    return m
+
+def finish(name, bm, mat):
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    for f in me.polygons: f.use_smooth = True
+    ob = bpy.data.objects.new(name, me); sc.collection.objects.link(ob); me.materials.append(mat)
+    return ob
+
+def lathe(name, profile, mat, segs=48):            # profile: (x, radius) pairs; revolved about +X
+    bm = bmesh.new()
+    rings = [[bm.verts.new((x, r * math.cos(2 * math.pi * i / segs), r * math.sin(2 * math.pi * i / segs)))
+              for i in range(segs)] for x, r in profile]
+    for a, b in zip(rings, rings[1:]):
+        for i in range(segs):
+            bm.faces.new((a[i], a[(i + 1) % segs], b[(i + 1) % segs], b[i]))
+    bm.faces.new(list(reversed(rings[0]))); bm.faces.new(rings[-1])
+    return finish(name, bm, mat)
+
+def bezier(p0, p1, p2, p3, n):
+    return [(1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t * t * p2 + t ** 3 * p3
+            for t in (i / n for i in range(n + 1))]
+
+def sweep(name, path, radii, mat, segs=24):        # tube along a polyline, parallel-transport frames: no twist
+    bm = bmesh.new(); n = len(path)
+    tang = [(path[min(i + 1, n - 1)] - path[max(i - 1, 0)]).normalized() for i in range(n)]
+    nrm = V((0, 1, 0)); rings = []                 # any vector not parallel to the first tangent
+    for p, t, r in zip(path, tang, radii):
+        nrm = (nrm - nrm.dot(t) * t).normalized(); b = t.cross(nrm)
+        rings.append([bm.verts.new(p + r * (math.cos(2 * math.pi * k / segs) * nrm + math.sin(2 * math.pi * k / segs) * b))
+                      for k in range(segs)])
+    for a, c in zip(rings, rings[1:]):
+        for k in range(segs):
+            bm.faces.new((a[k], a[(k + 1) % segs], c[(k + 1) % segs], c[k]))
+    bm.faces.new(list(reversed(rings[0]))); bm.faces.new(rings[-1])
+    return finish(name, bm, mat), tang[-1]
+
+black, gold = material("black", (0.02, 0.02, 0.02), 0.85, 0.55), material("gold", (1.0, 0.7, 0.28), 1.0, 0.22)
+lathe("shaft", [(-1.8, 0.018), (0.0, 0.018)], black)                          # adapt: your turned parts
+lathe("grip", [(-0.9, 0.019), (-0.6, 0.019)], gold)
+path = bezier(V((0, 0, 0)), V((0.15, 0, 0)), V((0.08, 0, 0.18)), V((0.2, 0, 0.24)), 30)      + bezier(V((0.2, 0, 0.24)), V((0.28, 0, 0.3)), V((0.35, 0, 0.12)), V((0.5, 0, 0.11)), 30)[1:]   # an S
+prong, end_dir = sweep("prong", path, [0.018 - 0.01 * i / (len(path) - 1) for i in range(len(path))], black)
+blade, _ = sweep("blade_l", bezier(V((0.02, 0.01, 0)), V((-0.04, 0.12, 0)), V((0.1, 0.2, 0)), V((0.3, 0.12, 0)), 30),
+                 [0.012] * 31, black)
+blade.data.transform(Matrix.Rotation(math.radians(-30), 4, "X"))              # tilt (anhedral) before mirroring
+twin = blade.copy(); twin.data = blade.data.copy(); twin.name = "blade_r"; sc.collection.objects.link(twin)
+twin.data.transform(Matrix.Diagonal((1, -1, 1, 1))); twin.data.flip_normals()   # mirror the data, then fix normals
+assert twin.data.vertices[5].co.y == -blade.data.vertices[5].co.y
+out = os.path.join(os.environ.get("PW_OUT", bpy.app.tempdir), "prop.glb")
+bpy.ops.export_scene.gltf(filepath=out, export_format="GLB")
+print("[pw] ok prop parts", sorted(o.name for o in sc.objects), "tip direction", tuple(round(v, 2) for v in end_dir))
+```
+
+Check it from more than a true side view: mirror-image parts sit exactly behind each other there, so a reviewer
+sees one wing where there are two. Raise the side camera 10 to 15 degrees for the sheet (L-005).
+
 ## Turntable stills
 
 ```python

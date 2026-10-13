@@ -233,6 +233,16 @@ class Commands(unittest.TestCase):
         code, out = run("manifest", d, "--validate")
         self.assertTrue(any("changed" in p for p in out["problems"]))
 
+    def test_bpy_options_after_script(self):
+        import argparse
+        a = argparse.Namespace(script="s.py", blend=None, timeout=1800, lines=40,
+                               args=["--blend", "x.blend", "--timeout=60", "--", "--out", "v"])
+        pw.split_bpy_args(a)
+        self.assertEqual((a.blend, a.timeout, a.args), ("x.blend", 60, ["--out", "v"]))
+        a = argparse.Namespace(script="s.py", blend="y.blend", timeout=1800, lines=40, args=["--", "--blend", "z"])
+        pw.split_bpy_args(a)  # after `--` everything belongs to the script
+        self.assertEqual((a.blend, a.args), ("y.blend", ["--blend", "z"]))
+
     def test_place_offline_from_fixture(self):
         out = os.path.join(self.tmp, "place")
         os.makedirs(os.path.join(out, "data"))
@@ -265,6 +275,27 @@ class WithBlender(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def test_match_lands_the_aim_and_writes_paste_and_mask(self):
+        rod = pw.Mesh("rod", (0.1, 0.1, 0.1))
+        rod.v, rod.f = pw.prism([(0, -0.03), (2, -0.03), (2, 0.03), (0, 0.03)], -0.03, 0.03)
+        stl = os.path.join(self.tmp, "rod.stl")
+        pw.write_stl(stl, [rod])
+        still = os.path.join(self.tmp, "still.png")
+        with open(still, "wb") as f:
+            f.write(make_png(320, 180, [[128, 128, 130] * 320] * 180))
+        out = os.path.join(self.tmp, "m.png")
+        code, res = run("match", stl, "--still", still, "--out", out, "--anchor-px", "100,120", "--aim-px", "220,90",
+                        "--aim-local", "2,0,0", "--depth", "3", "--samples", "4", "--hide", "0,0,95,180")
+        if code and "Pillow" in res.get("error", ""):
+            self.skipTest("Pillow not installed")
+        self.assertEqual(code, 0, res)
+        self.assertAlmostEqual(res["aim_lands"][0], 220, delta=0.5)
+        self.assertAlmostEqual(res["aim_lands"][1], 90, delta=0.5)
+        self.assertAlmostEqual(res["anchor_lands"][0], 100, delta=0.5)
+        for k in ("out", "paste", "mask"):
+            self.assertTrue(os.path.isfile(res[k]), k)
+        self.assertGreaterEqual(res["mask_bbox"][0], 95 - 10)  # the hidden box stays out of the mask
 
     def test_inspect(self):
         code, out = run("inspect", self.glb)

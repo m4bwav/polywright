@@ -1,6 +1,6 @@
 ---
 name: polywright
-description: "Start here whenever a task needs a 3D model and no sibling below clearly owns it: a model of a real or imagined thing for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR, or another plugin asking for a mesh. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py (inspect, render a contact sheet, convert, check a target's budget, bpy headless). Use on 'I need a 3D model of', 'make a 3D model of', 'model this for my game and a print'. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
+description: "Start here whenever a task needs a 3D model and no sibling below clearly owns it: a model of a real or imagined thing for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR, or another plugin asking for a mesh. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py (inspect, render a contact sheet, convert, check a target's budget, bpy headless, match a picture's camera to paste a model into it). Use on 'I need a 3D model of', 'make a 3D model of', 'model this for my game and a print'. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
 ---
 
 # polywright
@@ -64,6 +64,27 @@ most of an image-to-3D result.
 Plan, act and critique are separate passes: after building, look at the sheet as a critic would and list
 defects before claiming done. Two rounds of fixing a traceback are worth it; past that, rethink the approach.
 Save a numbered `.blend` per milestone (`work/<name>_v03.blend`) so a long job can restart from disk.
+
+## Compose a model into a picture
+
+When an image or video model keeps drawing a designed prop wrong (a storyboard still, a set reference, a
+poster), take the composition from the picture and the shape from the model:
+
+1. Pick the picture for composition only: where people stand, the light, the aim. A plain stand-in prop is fine.
+2. `pw.py match model.blend --still pic.png --out work/match.png --anchor-px X,Y --anchor-local=X,Y,Z
+   --aim-px X,Y --aim-local=X,Y,Z --depth M --horizon ROW --hide BOX --mask-add BOX`: the model's anchor (a
+   grip) lands on the hand, its aim point (a tip) on the exact pixel, rendered RGBA with the picture's lens and
+   horizon. Set `--depth` so its width in pixels matches the stand-in's (width = f_px x diameter / depth;
+   `f_px` is in the result). `--hide` drops the part behind a hand; `--mask-add` adds the hands to the mask.
+3. Read `match_paste.png` cropped at 3x: shape, size in frame, aim. Fix depth and pixels, re-run (seconds).
+4. Blend inside `match_mask.png` with a masked low-denoise image edit (FLUX.2 Klein or any inpaint model:
+   denoise 0.3 to 0.5, low cfg), then paste the result back through the mask so every pixel outside stays the
+   picture's own. A whole-picture edit redraws everything (HDR colour, a bigger prop).
+5. Check at full size; keep two or more seeds.
+
+Worked example and the reasons: the No-God film's storyboard method (comfyui-gen LEARNINGS L-091
+`compose-the-hero-prop`; `nogod/storyboard-method.md` in the owner's video folder). Reference sheets of the
+prop come from the model too (polywright-references, Step 2b).
 
 ## Step 5: finish and hand over
 

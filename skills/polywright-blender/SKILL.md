@@ -24,6 +24,7 @@ into the script's first comment; API facts below are for 5.2.
 python ../polywright/scripts/pw.py bpy build.py [--blend in.blend] [--timeout 1800] -- <script args>
 ```
 
+pw.py's own options may sit before or after the script name; everything after `--` goes to the script.
 It runs `blender --background --factory-startup --python-exit-code 3 --python build.py -- args`, strips
 Blender's log noise and returns `ok`, the script's own output lines and the traceback. Without
 `--python-exit-code` a Python error inside Blender still exits 0: never judge success by exit code alone
@@ -40,6 +41,8 @@ Script rules:
 - Read enum items instead of guessing names: `m.bl_rna.properties["solver"].enum_items`.
 - Real size in metres; apply transforms before measuring; glTF imports come in quaternion mode with the axis fix
   on a parent: clear parents keeping transforms, then apply, then measure.
+- Write every output path absolute (`os.path.abspath`) and print whether the file exists afterwards: a
+  relative `render.filepath` reported success and wrote nothing visible (L-004).
 - Save a numbered `.blend` per milestone in `work/`; restart from it rather than carrying a long live session.
 - Two retries on a traceback; then look up the API (traps file, introspection, the official MCP's docs
   search) instead of guessing a third time.
@@ -63,7 +66,8 @@ Script rules:
 [references/bpy-recipes.md](references/bpy-recipes.md): reference images at scale, modifiers and apply, Boolean
 with the Manifold solver and an EXACT fallback, voxel remesh, QuadriFlow, Smart UV and lightmap UVs, normal and
 AO bake from high to low, materials with 5.x sockets, turntable stills, depth and normal passes for video,
-exports per engine.
+exports per engine, and a designed prop from a written description (lathe, sweep, mirror; L-003). Sheets of
+a model with mirror-image parts: raise the side camera 10 to 15 degrees, or one part hides the other (L-005).
 
 ## Step 5: live sessions (MCP)
 
