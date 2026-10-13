@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261013-1 · 2026-10-13 · pw.py crowd and "Crowd and battle blockouts"
+- because: user request (offload big battle and crowd scenes from video models to Blender); R-20261013-1; L-004
+- files: SKILL.md description and new section "Crowd and battle blockouts"; references/crowd-blockouts.md (new); references/cli.md; scripts/pw.py (`crowd`, pose drawing, video encode, sheet); scripts/pw_bpy.py (`act_crowd`); tests/test_pw.py
+- New command builds two armies of low-poly soldiers with offset walk cycles and renders depth, mask, clay and OpenPose passes plus camera.json for Wan VACE or Fun Control.
+
 ### C-20261012-1 · 2026-10-12 · pw.py match and "Compose a model into a picture"
 - because: L-003 (a designed prop pasted into the No-God film's set still from a camera solved from two pixels and a depth); polywright-blender L-004 (bpy option order)
 - files: SKILL.md description and new section "Compose a model into a picture"; scripts/pw.py (`match`, `split_bpy_args`), scripts/pw_bpy.py (`act_match`); references/cli.md; tests/test_pw.py

@@ -28,3 +28,10 @@ Append-only. Newest last.
 - Owner did not want to install Blender on the Mac by hand. The Mac refuses SSH (port 22), so macOS was tested on GitHub's macOS runner instead (public repo, free): new CI job `blender-app` installs the Homebrew cask and the Linux tarball, runs `tests/check_discovery.py` (the install-folder search must find it with PATH and env vars ignored for the decision) and `tests/test_pw.py`. Both green: macOS found `/Applications/Blender.app/Contents/MacOS/Blender` (5.2.1), 24 tests in 186 s including render; Linux found `~/blender-5.2.2-linux-x64/blender`.
 - Also run locally in WSL (Ubuntu 26.04): Blender 5.2.2 tarball unpacked in `~`, discovery, test_pw.py (24) and test_recipes.py (10) pass.
 - download.blender.org answers 403 to curl from the home PC (with or without a browser user agent); the official mirror https://mirrors.ocf.berkeley.edu/blender/release/ works. The CI step tries blender.org first and falls back to that mirror.
+
+## 2026-10-13: pw.py crowd (army blockouts for AI video)
+
+- New `pw.py crowd`: two armies of low-poly soldiers with offset walk cycles, rendered per frame to inverse depth (one range per shot), a side mask, clay and OpenPose skeletons; one mp4 per pass, camera.json, joints.json, sheet.png. Reason: video models fail at crowds; the owner wants Blender to carry the crowd and the model to paint it. Research: cinewright ai-docs/research/2026-10-13-battle-crowd-compositing.md.
+- Verified: 240 figures, 81 frames, four passes at 832x480 in 81 s on the CPU (Blender 5.2.1, Windows 11). The depth video drove MiniMax H3 through Fun ControlNet Union 2.0 on a 16 GB card (608x352, 56 frames, 27 to 36 s): formation, direction and timing followed the blockout. Wan VACE untested.
+- Defaults were derived, not fixed, after three bad previews (polywright LEARNINGS L-004): camera distance from reach and lens, depth range from nearest ground to farthest figure over the whole shot, clash gap from both sides' speed.
+- Checks: tests/test_pw.py 28 OK (two new crowd tests), check_skills ok, budget YELLOW: installed skills folder 380 to 418 KB (green to 400), all from the new code.

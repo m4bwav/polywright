@@ -1,6 +1,6 @@
 ---
 name: polywright
-description: "Start here whenever a task needs a 3D model and no sibling below clearly owns it: a model of a real or imagined thing for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR, or another plugin asking for a mesh. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py (inspect, render a contact sheet, convert, check a target's budget, bpy headless, match a picture's camera to paste a model into it). Use on 'I need a 3D model of', 'make a 3D model of', 'model this for my game and a print'. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
+description: "Start here whenever a task needs a 3D model and no sibling below clearly owns it: a model of a real or imagined thing for a game (Unity, Roblox, Unreal, three.js), a 3D print, AI video or AR, or another plugin asking for a mesh. Picks the route (find, capture, generate, code), scaffolds the asset folder and manifest other plugins read, and runs pw.py (inspect, render a sheet, convert, check a budget, bpy headless, match a picture's camera, army blockouts with depth and pose passes for AI video). Use on 'I need a 3D model of', 'model this for my game and a print', 'army blockout'. Siblings: polywright-references, -capture, -generate, -blender, -finish, -print. Also 'refresh polywright'."
 ---
 
 # polywright
@@ -85,6 +85,20 @@ poster), take the composition from the picture and the shape from the model:
 Worked example and the reasons: the No-God film's storyboard method (comfyui-gen LEARNINGS L-091
 `compose-the-hero-prop`; `nogod/storyboard-method.md` in the owner's video folder). Reference sheets of the
 prop come from the model too (polywright-references, Step 2b).
+
+## Crowd and battle blockouts (AI video)
+
+Video models break on crowds; Blender does not. Let Blender place the army and the video model paint the look:
+
+1. `pw.py crowd --out work/crowd --action clash --preview` (or march, advance, charge, hold; `--ranks`,
+   `--cols`, `--view side|behind|high`, `--lens`, `--move`), then read `work/crowd/sheet.png`.
+2. Drop `--preview` for the full shot: `depth.mp4` (main control), `pose.mp4` (front ranks), `mask.mp4` (side A
+   red, side B blue), `clay.mp4`, `camera.json`; 832x480, 81 frames at 16 fps by default (Wan's 4n+1 and /16).
+3. Repaint clay frame 1 into an approved start still; drive Wan VACE or Wan 2.2 Fun Control with the depth video
+   and that still. Prompt costume, colour per side, light and haze, not the head count.
+
+Depth convention, views, screen direction, your own soldier and what is untested:
+[references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
 
 ## Step 5: finish and hand over
 

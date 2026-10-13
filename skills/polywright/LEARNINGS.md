@@ -22,6 +22,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
+### L-004 · 2026-10-13 · A crowd blockout's defaults decide whether anything is in frame
+- Trigger: the first `pw.py crowd` previews showed empty frames (armies starting outside a 14 m camera's view), a white smear of clamped near ground in the depth pass, and a clash whose sides never met in 81 frames.
+- Hypothesis: the camera distance, the depth range and the starting gap all depend on the formation and the shot length, so fixed numbers fail for most inputs.
+- Rule: derive them: camera distance from the armies' reach and the lens (half width = distance x 18 / lens); depth range from the nearest ground in frame to past the farthest figure, sampled over the whole shot and fixed for it; the clash or charge gap from both sides' speed over two thirds of the shot. Always `--preview` and read `sheet.png` before the full render.
+- Evidence: previews in the 2026-10-13 build session; final run 240 figures, 81 frames, four passes in 81 s on the CPU, both sides in frame from frame 1 and meeting at the line.
+- Scope: skill (pw.py crowd)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-13
+
 ### L-003 · 2026-10-12 · To fix a prop in a picture, match the picture's camera and paste the model; the solve needs only two pixels and a depth
 - Trigger: the No-God film's set still showed a plain spear where the designed one belonged; text and whole-picture edits redraw the prop (comfyui-gen L-091). The camera was unknown.
 - Hypothesis: with a fixed lens (35 mm) and the horizon row for pitch, a hand pixel at a guessed depth plus the exact tip pixel fix the pose; depth alone sets the size in frame (match the stand-in's width in pixels: width = f_px x diameter / depth). Depth 3.3 m drew the Spear twice too thick and crossing the king's head; 6.5 m matched.

@@ -351,6 +351,26 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(os.path.isfile(out["sheet"]["path"]))
         self.assertEqual(len(out["shots"]), 3)
 
+    def test_crowd_preview_passes_and_pose(self):
+        d = os.path.join(self.tmp, "crowd")
+        code, out = run("crowd", "--out", d, "--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4",
+                        "--action", "clash", "--preview", "--pose-min-px", "10")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["figures"], {"a": 8, "b": 8})
+        self.assertEqual(out["frames_rendered"], 3)
+        for name in ("depth", "mask", "clay"):
+            self.assertEqual(len(os.listdir(os.path.join(d, name))), 3, name)
+        self.assertLess(out["near_m"], out["far_m"])
+        if "skipped" not in out["pose"]:
+            self.assertGreater(out["pose"]["skeletons"], 0)
+        with open(os.path.join(d, "camera.json")) as f:
+            self.assertEqual(len(json.load(f)["matrix_world_rows"]), 17)
+
+    def test_crowd_rejects_sizes_wan_cannot_take(self):
+        code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
+        self.assertEqual(code, 2)
+        self.assertIn("4n+1", out["error"])
+
     def test_bpy_runner_reports_tracebacks(self):
         s = os.path.join(self.tmp, "bad.py")
         with open(s, "w") as f:

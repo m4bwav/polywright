@@ -6,7 +6,7 @@ or with any Python that can `import bpy` (the bpy module from PyPI):
 
     python pw_bpy.py -- <action> <params.json> <result.json>
 
-Actions: inspect, render, match, convert, printable, union. Each reads its parameters from params.json and writes one
+Actions: inspect, render, match, convert, printable, union, crowd. Each reads its parameters from params.json and writes one
 JSON object to result.json. Units: Blender scene units are treated as metres, except in `printable` and
 `union`, which work in millimetres because their output is for a slicer.
 Checked against Blender 5.2.1 LTS (2026-10-11).
@@ -771,8 +771,364 @@ def act_union(p):
             "watertight": st.get("boundary_edges") == 0 and st.get("non_manifold_edges") == 0}
 
 
+# ------------------------------------------------------------------------------------------ crowd
+
+# OpenPose COCO-18 order: nose, neck, r shoulder, r elbow, r wrist, l shoulder, l elbow, l wrist, r hip, r knee,
+# r ankle, l hip, l knee, l ankle, r eye, l eye, r ear, l ear. A figure faces local +X with up +Z, so its right
+# is local -Y.
+CROWD_ACTIONS = {  # step cycles per second, metres per second, leg swing (rad), forward lean (rad)
+    "hold": (0.0, 0.0, 0.0, 0.02), "march": (0.9, 1.3, 0.35, 0.05), "advance": (1.1, 2.0, 0.45, 0.1),
+    "charge": (1.5, 5.0, 0.7, 0.25), "clash": (1.1, 2.0, 0.45, 0.1),
+}
+CROWD_PARTS = ["torso", "head", "rthigh", "lthigh", "rshin", "lshin", "rupper", "lupper", "rfore", "lfore"]
+
+
+def crowd_meshes(kit):
+    """Low-poly parts shared by every figure. Limbs hang from their origin along -Z."""
+    def make(name, build):
+        bm = bmesh.new()
+        build(bm)
+        me = bpy.data.meshes.new(name)
+        bm.to_mesh(me)
+        bm.free()
+        return me
+
+    def cyl(r, length, segs=6):
+        return lambda bm: bmesh.ops.create_cone(bm, cap_ends=True, segments=segs, radius1=r, radius2=r, depth=length,
+                                                matrix=Matrix.Translation((0, 0, -length / 2)))
+
+    def box(sx, sy, sz, z0=0.0):
+        def b(bm):
+            bmesh.ops.create_cube(bm, size=1.0)
+            bmesh.ops.scale(bm, vec=(sx, sy, sz), verts=bm.verts)
+            bmesh.ops.translate(bm, vec=(0, 0, z0 + sz / 2), verts=bm.verts)
+        return b
+
+    m = {"torso": make("pw_torso", box(0.24, 0.40, 0.55)),
+         "head": make("pw_head", lambda bm: bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.12)),
+         "thigh": make("pw_thigh", cyl(0.075, 0.46)), "shin": make("pw_shin", cyl(0.06, 0.46)),
+         "upper": make("pw_upper", cyl(0.055, 0.30)), "fore": make("pw_fore", cyl(0.05, 0.30))}
+    if "spear" in kit:
+        m["spear"] = make("pw_spear", cyl(0.018, 2.6, 5))
+    if "shield" in kit:
+        m["shield"] = make("pw_shield", box(0.05, 0.55, 0.75, -0.375))
+    if "helmet" in kit:
+        m["helmet"] = make("pw_helmet", lambda bm: bmesh.ops.create_cone(bm, cap_ends=True, segments=8, radius1=0.15,
+                                                                         radius2=0.03, depth=0.2))
+    return m
+
+
+def seg(top, d):
+    """Matrix for a part whose origin is its top end and which hangs along -Z, turned to point along d."""
+    return Matrix.Translation(top) @ d.normalized().to_track_quat("-Z", "Y").to_matrix().to_4x4()
+
+
+def crowd_pose(fig, t):
+    """World matrices of each part and the 18 OpenPose joints of one figure at time t (seconds)."""
+    cad, speed, amp, lean = CROWD_ACTIONS[fig["action"]]
+    t = max(0.0, t - fig["delay"])
+    travel = speed * fig["speed"] * t
+    stopped = fig["stop"] is not None and travel >= fig["stop"]
+    if stopped:  # a clash rank that reached its line: small steps, lean in, spear thrusts
+        travel, amp, lean = fig["stop"], 0.08, 0.12
+    phase = fig["phase"] + 2 * math.pi * cad * fig["speed"] * t
+    sw = amp * math.sin(phase)
+    yaw = Matrix.Rotation(fig["yaw"], 4, "Z")
+    s = fig["scale"]
+    root = Vector(fig["pos"]) + (yaw.to_3x3() @ Vector((travel, 0, 0)))
+    Rt = Matrix.Rotation(lean, 3, "Y")
+
+    def Ry(a):
+        return Matrix.Rotation(a, 3, "Y")
+
+    down = Vector((0, 0, -1))
+    L = {}  # joints relative to the hip centre, metres, before scale
+    for side, sgn, ang in (("r", -1, sw), ("l", 1, -sw)):
+        hip = Vector((0, 0.1 * sgn, 0))
+        knee_bend = 0.15 + amp * 0.9 * max(0.0, math.cos(phase + (0 if sgn < 0 else math.pi)))
+        thigh, shin = Ry(-ang) @ down, Ry(-ang + knee_bend) @ down
+        L[side + "hip"], L[side + "knee"] = hip, hip + thigh * 0.46
+        L[side + "ankle"] = L[side + "knee"] + shin * 0.46
+        L[side + "thigh_d"], L[side + "shin_d"] = thigh, shin
+    L["neck"] = Rt @ Vector((0, 0, 0.55))
+    L["head"] = L["neck"] + Rt @ Vector((0, 0, 0.15))
+    thrust = 0.35 * math.sin(phase * 2.2) if stopped else 0.0
+    for side, sgn in (("r", -1), ("l", 1)):
+        sh = Rt @ Vector((0, 0.22 * sgn, 0.48))
+        if side == "r" and "spear" in fig["kit"]:  # spear hand: forearm forward
+            up_d, fo_d = Rt @ (Ry(-0.25 - thrust) @ down), Rt @ (Ry(-1.45 - thrust) @ down)
+        elif side == "l" and "shield" in fig["kit"]:  # shield arm: forearm across the front
+            up_d, fo_d = Rt @ (Ry(-0.3) @ down), Rt @ Vector((0.6, -0.8, 0.05)).normalized()
+        else:
+            a = (-sw if side == "r" else sw) * 0.8
+            up_d, fo_d = Rt @ (Ry(-a) @ down), Rt @ (Ry(-a - 0.35) @ down)
+        L[side + "sh"], L[side + "up_d"], L[side + "fo_d"] = sh, up_d, fo_d
+        L[side + "elbow"] = sh + up_d * 0.30
+        L[side + "wrist"] = L[side + "elbow"] + fo_d * 0.30
+    lift = 0.06 - min(L["rankle"].z, L["lankle"].z)  # the lower foot stays on the ground
+    base = Matrix.Translation(root) @ yaw @ Matrix.Diagonal((s, s, s, 1.0)) @ Matrix.Translation((0, 0, lift))
+    parts = {"torso": base @ Rt.to_4x4(), "head": base @ Matrix.Translation(L["head"])}
+    for side in "rl":
+        parts[side + "thigh"] = base @ seg(L[side + "hip"], L[side + "thigh_d"])
+        parts[side + "shin"] = base @ seg(L[side + "knee"], L[side + "shin_d"])
+        parts[side + "upper"] = base @ seg(L[side + "sh"], L[side + "up_d"])
+        parts[side + "fore"] = base @ seg(L[side + "elbow"], L[side + "fo_d"])
+    if "helmet" in fig["kit"]:
+        parts["helmet"] = base @ Matrix.Translation(L["head"] + Rt @ Vector((0, 0, 0.12)))
+    if "spear" in fig["kit"]:
+        levelled = fig["action"] == "charge" or stopped
+        sd = (Rt @ Vector((1, 0, 0.08))).normalized() if levelled else Vector((0.05, 0, 1)).normalized()
+        parts["spear"] = base @ seg(L["rwrist"] + sd * 1.0, -sd)
+    if "shield" in fig["kit"]:
+        parts["shield"] = base @ (Matrix.Translation(L["lwrist"] + Rt @ Vector((0.08, 0.1, 0.25))) @ Rt.to_4x4())
+    fwd, hd = Rt @ Vector((1, 0, 0)), L["head"]
+    joints = [hd + fwd * 0.12, L["neck"], L["rsh"], L["relbow"], L["rwrist"], L["lsh"], L["lelbow"], L["lwrist"],
+              L["rhip"], L["rknee"], L["rankle"], L["lhip"], L["lknee"], L["lankle"],
+              hd + fwd * 0.1 + Rt @ Vector((0, -0.045, 0.03)), hd + fwd * 0.1 + Rt @ Vector((0, 0.045, 0.03)),
+              hd + Rt @ Vector((0, -0.12, 0)), hd + Rt @ Vector((0, 0.12, 0))]
+    return parts, [base @ j for j in joints]
+
+
+def crowd_gap(p):
+    """Metres between the front ranks at frame 1. Default: what both sides close in two thirds of the shot,
+    so a clash or charge meets on screen; 30 m when both sides only march or hold."""
+    if p.get("gap"):
+        return float(p["gap"])
+    secs = int(p.get("frames", 81)) / float(p.get("fps", 16))
+    acts = [p.get("action", "march"), p.get("action_b") or p.get("action", "march")]
+    if not any(a in ("clash", "charge") for a in acts):
+        return 30.0
+    v = sum(CROWD_ACTIONS[a][1] for a in acts if a in CROWD_ACTIONS)
+    return max(4.0, v * secs * 0.66)
+
+
+def crowd_layout(p):
+    """Two blocks facing each other across the battle line x = 0. Side A starts on the left and moves +X (screen
+    right in the side view), side B the other way, so screen direction never flips. Every figure gets its own
+    step phase, pace, height and jitter: no two read as clones."""
+    import random
+    rng = random.Random(int(p.get("seed", 1)))
+    gap = crowd_gap(p)
+    sp, rs = float(p.get("spacing", 1.1)), float(p.get("rank_spacing", 1.4))
+    jit = float(p.get("jitter", 0.25))
+    kit = set(p.get("kit", ["spear", "shield", "helmet"]))
+    figs = []
+    sides = [("a", -1, p.get("action", "march")), ("b", 1, p.get("action_b") or p.get("action", "march"))]
+    for side, sgn, action in sides[:int(p.get("sides", 2))]:
+        if action not in CROWD_ACTIONS:
+            raise ValueError("unknown action %s (%s)" % (action, ", ".join(CROWD_ACTIONS)))
+        for r in range(int(p.get("ranks", 6))):
+            for c in range(int(p.get("cols", 30))):
+                x0 = sgn * (gap / 2 + r * rs) + rng.uniform(-jit, jit)
+                stop = max(0.0, abs(x0) - (0.45 + r * rs + rng.uniform(0, 2 * jit))) if action in ("clash", "charge") else None  # ranks halt in order
+                figs.append({"side": side, "action": action, "kit": kit, "rank": r, "stop": stop,
+                             "pos": (x0, c * sp + rng.uniform(-jit, jit), 0.0),
+                             "yaw": (0.0 if side == "a" else math.pi) + rng.uniform(-0.1, 0.1),
+                             "phase": rng.uniform(0, 2 * math.pi), "speed": rng.uniform(0.9, 1.1),
+                             "scale": rng.uniform(0.94, 1.06),
+                             "delay": rng.uniform(0, 0.4) if action == "charge" else 0.0})
+    return figs
+
+
+def crowd_camera(p):
+    frontage = int(p.get("cols", 30)) * float(p.get("spacing", 1.1))
+    reach = crowd_gap(p) / 2 + int(p.get("ranks", 6)) * float(p.get("rank_spacing", 1.4))
+    lens = float(p.get("lens", 50))
+    # default distance: both armies' depth fits the frame width (half width = distance * 18 / lens)
+    dist = float(p.get("cam_dist") or reach * lens / 18 * 0.6)
+    h, view = float(p.get("cam_height", 6.0)), p.get("view", "side")
+    if p.get("cam"):
+        return Vector(p["cam"]), Vector(p.get("aim") or (0, frontage * 0.4, 1.0))
+    if view == "side":  # on the battle line, looking down the frontage: both sides, depth stacked by the lens
+        return Vector((0, -dist, h)), Vector((0, frontage * 0.25, 0.8))
+    if view == "behind":  # behind side A's last rank, looking at the enemy over the shoulders
+        back = reach
+        return Vector((-back - dist * 0.5, frontage * 0.5, max(h, 2.5))), Vector((0, frontage * 0.5, 1.0))
+    if view == "high":  # crane or god's eye
+        return Vector((0, -dist * 0.7, max(h, dist))), Vector((0, frontage * 0.4, 0.0))
+    raise ValueError("unknown view %s (side, behind, high, or cam and aim points)" % view)
+
+
+def act_crowd(p):
+    """An army blockout and its control passes for a video model, one PNG per frame and pass: depth (inverse
+    depth, near white, one range for the whole shot), mask (side A red, side B blue, all else black), clay (a
+    lit grey render to repaint as a start frame), and 2D OpenPose joints in joints.json for pw.py to draw."""
+    from bpy_extras.object_utils import world_to_camera_view
+    reset()
+    sc = bpy.context.scene
+    W, H = (int(v) for v in p["size"])
+    frames, fps = int(p.get("frames", 81)), int(p.get("fps", 16))
+    out = os.path.abspath(p["out"])
+    kit = set(p.get("kit", ["spear", "shield", "helmet"]))
+    figs = crowd_layout(p)
+    meshes = crowd_meshes(kit)
+    col = bpy.data.collections.new("pw_crowd")
+    sc.collection.children.link(col)
+    objs = []  # (figure index, part, object)
+    for i, f in enumerate(figs):
+        for n in CROWD_PARTS + [k for k in ("spear", "shield", "helmet") if k in kit]:
+            o = bpy.data.objects.new("f%d_%s" % (i, n), meshes[n[1:]] if n[0] in "rl" else meshes[n])
+            col.objects.link(o)
+            objs.append((i, n, o))
+    ground = bpy.data.objects.new("pw_ground", bpy.data.meshes.new("pw_ground"))
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=float(p.get("ground_m", 600)))
+    bm.to_mesh(ground.data)
+    bm.free()
+    sc.collection.objects.link(ground)
+
+    cam_data = bpy.data.cameras.new("pw_cam")
+    cam_data.lens, cam_data.sensor_width, cam_data.sensor_fit = float(p.get("lens", 50)), 36.0, "HORIZONTAL"
+    cam_data.clip_start, cam_data.clip_end = 0.1, 5000
+    cam = bpy.data.objects.new("pw_cam", cam_data)
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    loc0, aim = crowd_camera(p)
+    move, span = p.get("move", "static"), aim - loc0
+    if move not in ("static", "push", "crane", "truck"):
+        raise ValueError("unknown move %s (static, push, crane, truck)" % move)
+
+    def cam_at(k):
+        u = k / max(frames - 1, 1)
+        e = u * u * (3 - 2 * u)  # ease in and out
+        loc = {"static": loc0, "push": loc0 + span * 0.25 * e,
+               "crane": loc0 + Vector((0, 0, span.length * 0.35 * e)),
+               "truck": loc0 + Vector((span.length * 0.2 * e, 0, 0))}[move]
+        cam.location = loc
+        cam.rotation_euler = (aim - loc).to_track_quat("-Z", "Y").to_euler()
+        return loc
+
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = W, H, 100
+    sc.render.fps = fps
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGB"
+    sc.render.image_settings.color_depth = "8"
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("pw_world")
+
+    # One depth range for the whole shot: a range per frame makes the depth video pulse.
+    # It spans the nearest ground in frame (bottom edge) to beyond the farthest figure, sampled over the shot.
+    near, far = math.inf, 0.0
+    for k in list(range(0, frames, max(1, frames // 8))) + [frames - 1]:
+        loc = cam_at(k)
+        bpy.context.view_layer.update()
+        R = cam.matrix_world.to_3x3()
+        fwd = R @ Vector((0, 0, -1))
+        bottom = R @ Vector((0, -(H / 2) / (W * cam_data.lens / 36.0), -1.0))
+        if bottom.z < 0:
+            hit = bottom * (-loc.z / bottom.z)
+            near = min(near, hit.dot(fwd))
+        for f in figs:
+            neck = crowd_pose(f, k / fps)[1][1]
+            d = (neck - loc).dot(fwd)
+            if d > 0:
+                near, far = min(near, d - 1.0), max(far, d)
+    near = max(0.3, near if near < math.inf else 1.0)
+    far = float(p.get("far") or max(far, near + 1) * 1.3)
+
+    depth_mat = bpy.data.materials.new("pw_depth")
+    nt = depth_mat.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    cd, outn = nt.nodes.new("ShaderNodeCameraData"), nt.nodes.new("ShaderNodeOutputMaterial")
+    inv = nt.nodes.new("ShaderNodeMath")
+    inv.operation = "DIVIDE"
+    inv.inputs[0].default_value = 1.0
+    nt.links.new(cd.outputs["View Z Depth"], inv.inputs[1])
+    mr = nt.nodes.new("ShaderNodeMapRange")
+    mr.clamp = True
+    mr.inputs["From Min"].default_value = 1.0 / far
+    mr.inputs["From Max"].default_value = 1.0 / near
+    nt.links.new(inv.outputs[0], mr.inputs["Value"])
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (1, 1, 1, 1)
+    nt.links.new(mr.outputs["Result"], em.inputs["Strength"])
+    nt.links.new(em.outputs[0], outn.inputs["Surface"])
+
+    side_rgb = {"a": (1.0, 0.0, 0.0, 1), "b": (0.0, 0.0, 1.0, 1)}
+    clay_rgb = {"a": (0.55, 0.42, 0.36, 1), "b": (0.36, 0.42, 0.52, 1)}
+    passes = list(p.get("passes", ["depth", "mask", "clay", "pose"]))
+    for d in passes:
+        if d != "pose":
+            os.makedirs(os.path.join(out, d), exist_ok=True)
+    keys = sorted({0, frames // 2, frames - 1}) if p.get("preview") else list(range(frames))
+    pose_min = float(p.get("pose_min_px", 40))
+    joints_out = []
+    t0 = time.time()
+    for k in keys:
+        cam_at(k)
+        for f in figs:
+            f["_parts"], f["_j"] = crowd_pose(f, k / fps)
+        for i, n, o in objs:
+            o.matrix_world = figs[i]["_parts"][n]
+        bpy.context.view_layer.update()
+        if "pose" in passes:
+            people = []
+            for f in figs:
+                pj = [world_to_camera_view(sc, cam, v) for v in f["_j"]]
+                if min(q.z for q in pj) <= 0.1:
+                    continue
+                px = [(q.x * W, (1 - q.y) * H) for q in pj]
+                tall = abs(px[0][1] - (px[10][1] + px[13][1]) / 2)
+                if tall < pose_min or not any(0 <= x < W and 0 <= y < H for x, y in px):
+                    continue
+                people.append([round(sum(q.z for q in pj) / 18, 2), [[round(x, 1), round(y, 1)] for x, y in px]])
+            people.sort(key=lambda q: -q[0])  # far first, so near skeletons draw on top
+            joints_out.append({"frame": k + 1, "people": people})
+        name = "%04d.png" % (k + 1)
+        if "depth" in passes:
+            sc.render.engine = "CYCLES"
+            sc.cycles.device = "GPU" if p.get("gpu") else "CPU"
+            sc.cycles.samples = int(p.get("samples", 4))
+            sc.cycles.use_denoising = False
+            sc.view_settings.view_transform = "Raw"  # write the emission value as it is
+            sc.world.color = (0, 0, 0)
+            if sc.world.node_tree and sc.world.node_tree.nodes.get("Background"):
+                sc.world.node_tree.nodes["Background"].inputs[1].default_value = 0.0
+            bpy.context.view_layer.material_override = depth_mat
+            sc.render.filepath = os.path.join(out, "depth", name)
+            bpy.ops.render.render(write_still=True)
+            bpy.context.view_layer.material_override = None
+        for pas in ("mask", "clay"):
+            if pas not in passes:
+                continue
+            flat = pas == "mask"
+            sc.render.engine = "BLENDER_WORKBENCH"
+            sc.view_settings.view_transform = "Standard"
+            sh = sc.display.shading
+            sh.color_type = "OBJECT"
+            sh.light = "FLAT" if flat else "STUDIO"
+            sh.show_shadows = sh.show_cavity = sh.show_specular_highlight = not flat
+            sh.show_object_outline = False
+            sh.shadow_intensity = 0.5
+            sc.display.light_direction = (0.45, -0.35, 0.82)
+            for i, n, o in objs:
+                o.color = (side_rgb if flat else clay_rgb)[figs[i]["side"]]
+            ground.color = (0, 0, 0, 1) if flat else (0.48, 0.45, 0.38, 1)
+            sc.world.color = (0, 0, 0) if flat else (0.62, 0.66, 0.72)
+            sc.render.filepath = os.path.join(out, pas, name)
+            bpy.ops.render.render(write_still=True)
+    if "pose" in passes:
+        with open(os.path.join(out, "joints.json"), "w", encoding="utf-8") as fh:
+            json.dump({"size": [W, H], "frames": joints_out}, fh, separators=(",", ":"))
+    cams = []
+    for k in range(frames):
+        cam_at(k)
+        bpy.context.view_layer.update()
+        cams.append([round(v, 5) for row in cam.matrix_world for v in row])
+    with open(os.path.join(out, "camera.json"), "w", encoding="utf-8") as fh:
+        json.dump({"lens_mm": cam_data.lens, "sensor_mm": 36.0, "size": [W, H], "fps": fps,
+                   "matrix_world_rows": cams}, fh, separators=(",", ":"))
+    if p.get("save_blend"):
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "crowd.blend"))
+    return {"out": out, "figures": {s: sum(1 for f in figs if f["side"] == s) for s in ("a", "b")},
+            "objects": len(objs), "frames_rendered": len(keys), "frames": frames, "fps": fps, "size": [W, H],
+            "near_m": round(near, 2), "far_m": round(far, 2), "camera": [round(v, 2) for v in loc0],
+            "aim": [round(v, 2) for v in aim], "passes": passes, "render_seconds": round(time.time() - t0, 1)}
+
+
 ACTIONS = {"inspect": act_inspect, "render": act_render, "match": act_match, "convert": act_convert,
-           "printable": act_printable, "union": act_union}
+           "printable": act_printable, "union": act_union, "crowd": act_crowd}
 
 
 def main():
