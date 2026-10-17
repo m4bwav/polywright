@@ -32,8 +32,10 @@ python ../polywright/scripts/pw.py place --center LAT,LON --size-m 500 --out ass
   public domain) or Mapzen terrain tiles (global), resampled to `--res` metres. Max 4 km2 by default.
 - `scene.glb`: metres, +Y up, -Z north, origin at the centre, y=0 at the lowest ground. Ground coloured per
   land use (water, pitch, sand, playground, paved, wood, grass, park), buildings from OSM `height` or
-  `building:levels`, roads and paths draped on the terrain, waterways, trees (OSM points plus scatter in woods).
-- `place.json`: counts (how many building heights were guessed), the elevation source, and the credit lines
+  `building:levels` with `min_height`, `building:part` and roof shapes (gabled, hipped, pyramidal, skillion;
+  others mapped to the nearest), roads and paths draped on the terrain, waterways, trees (OSM points plus
+  scatter in woods).
+- `place.json`: counts (how many building heights were guessed, which roofs were built), the elevation source, and the credit lines
   to ship ("Map data (c) OpenStreetMap contributors, ODbL" and the elevation credit).
 - `--print-mm`: a closed terrain block with buildings (and roads) unioned into one watertight `print.stl`.
   Flat places need exaggeration (2 to 5 for a park); features under `--min-feature-mm` (1.2) are dropped.

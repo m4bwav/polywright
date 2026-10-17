@@ -6,7 +6,7 @@ or with any Python that can `import bpy` (the bpy module from PyPI):
 
     python pw_bpy.py -- <action> <params.json> <result.json>
 
-Actions: inspect, render, match, convert, printable, union, crowd. Each reads its parameters from params.json and writes one
+Actions: inspect (with an optional wall-thickness pass), render, match, convert, printable, union, crowd, turnaround, mark, lineup. Each reads its parameters from params.json and writes one
 JSON object to result.json. Units: Blender scene units are treated as metres, except in `printable` and
 `union`, which work in millimetres because their output is for a slicer.
 Checked against Blender 5.2.1 LTS (2026-10-11).
@@ -289,6 +289,82 @@ def act_inspect(p):
             res["volume"] = round(sum(r.get("volume", 0) for r in rows), 6)
             res["inside_out"] = [r["name"] for r in rows if r.get("inside_out")]
     res["object_rows"] = rows[: p.get("max_rows", 25)]
+    if p.get("thickness_min"):
+        res["thickness"] = wall_thickness(objs, float(p["thickness_min"]), int(p.get("thickness_samples", 20000)))
+    return res
+
+
+def wall_thickness(objs, minimum, samples=20000, seed=7):
+    """Local wall thickness by inward rays, the method of Blender's 3D-Print Toolbox thickness check:
+    from points on the surface, cast a ray along the inward normal and measure where it leaves the solid
+    (the first hit on a face pointing the same way). Points are spread over the surface by area, so
+    `thin_fraction` is the share of the surface thinner than `minimum`. Units are the file's."""
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    verts, tris = [], []
+    for o in objs:
+        oe = o.evaluated_get(dg)
+        me = oe.to_mesh()
+        me.calc_loop_triangles()
+        mw, base = o.matrix_world, len(verts)
+        verts.extend(mw @ v.co for v in me.vertices)
+        tris.extend(tuple(base + i for i in t.vertices) for t in me.loop_triangles)
+        oe.to_mesh_clear()
+    if not tris:
+        return {"status": "unchecked", "detail": "no faces"}
+    tree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
+    v = np.array([tuple(x) for x in verts], dtype=np.float64)
+    t = np.array(tris, dtype=np.int64)
+    a, b, c = v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
+    cross = np.cross(b - a, c - a)
+    area2 = np.linalg.norm(cross, axis=1)
+    keep = area2 > 1e-18
+    if not keep.any():
+        return {"status": "unchecked", "detail": "degenerate faces only"}
+    normals = np.zeros_like(cross)
+    normals[keep] = cross[keep] / area2[keep, None]
+    rng = np.random.default_rng(seed)
+    n = int(min(samples, max(len(t), 1) * 4))
+    pick = rng.choice(len(t), size=n, p=area2 / area2.sum())
+    r1, r2 = rng.random(n), rng.random(n)
+    flip = r1 + r2 > 1
+    r1[flip], r2[flip] = 1 - r1[flip], 1 - r2[flip]
+    pts = a[pick] + (b[pick] - a[pick]) * r1[:, None] + (c[pick] - a[pick]) * r2[:, None]
+    diag = float(np.linalg.norm(v.max(axis=0) - v.min(axis=0))) or 1.0
+    eps, reach = diag * 1e-6, minimum * 4.0
+    depth = np.full(n, np.inf)
+    for i in range(n):
+        nrm = normals[pick[i]]
+        if not nrm.any():
+            continue
+        d = Vector(-nrm)
+        origin = Vector(pts[i]) + d * eps
+        travelled = 0.0
+        for _ in range(8):  # step past faces that point back at the ray (internal or overlapping shells)
+            hit, hn, idx, dist = tree.ray_cast(origin, d, reach - travelled)
+            if hit is None:
+                break
+            travelled += dist
+            if hn.dot(d) > 0:
+                depth[i] = travelled + eps
+                break
+            origin = hit + d * eps
+    thin = depth < minimum
+    finite = depth[np.isfinite(depth)]
+    res = {"minimum": minimum, "samples": n, "thin_fraction": round(float(thin.mean()), 4),
+           "thinnest": round(float(finite.min()), 4) if finite.size else None,
+           "p05": round(float(np.percentile(finite, 5)), 4) if finite.size else None,
+           "method": "inward rays from %d surface points, area-weighted" % n}
+    spots = []
+    for i in np.argsort(depth)[:200]:
+        if not thin[i]:
+            break
+        p_ = pts[i]
+        if all(np.linalg.norm(p_ - np.array(s["at"])) > minimum * 5 for s in spots):
+            spots.append({"at": [round(float(x), 3) for x in p_], "thickness": round(float(depth[i]), 3)})
+        if len(spots) == 5:
+            break
+    res["thin_spots"] = spots
     return res
 
 
@@ -563,9 +639,74 @@ def export(path, p):
     return {"path": path, "bytes": os.path.getsize(path) if os.path.isfile(path) else None}
 
 
+def level_rotation(objs, max_tilt_deg=45.0, samples=60000, seed=3):
+    """The rotation that stands a model on its base: the largest flat face of its convex hull whose normal is
+    within max_tilt_deg of straight down, turned to face straight down. Image-to-3D models built in the camera's
+    frame (Pixal3D) lean by the camera's elevation; a pedestal, a plinth or two feet span such a face."""
+    pts = []
+    for o in objs:
+        mw = o.matrix_world
+        pts.extend(mw @ v.co for v in o.data.vertices)
+    if len(pts) < 4:
+        return None, {"error": "too few vertices"}
+    if len(pts) > samples:
+        rng = np.random.default_rng(seed)
+        arr = np.array([tuple(p_) for p_ in pts])
+        keep = set(rng.choice(len(pts), samples, replace=False).tolist())
+        for ax in range(3):  # keep the extremes so the sampled hull still touches the real base
+            keep.update(np.argsort(arr[:, ax])[:200].tolist())
+            keep.update(np.argsort(arr[:, ax])[-200:].tolist())
+        low = arr[:, 2] < np.percentile(arr[:, 2], 8)
+        keep.update(np.nonzero(low)[0][:samples].tolist())
+        pts = [pts[i] for i in sorted(keep)]
+    bm = bmesh.new()
+    for p_ in pts:
+        bm.verts.new(p_)
+    bmesh.ops.convex_hull(bm, input=bm.verts[:])
+    bm.faces.ensure_lookup_table()
+    down, best, groups = Vector((0, 0, -1)), None, []
+    cos_max = math.cos(math.radians(max_tilt_deg))
+    for f in bm.faces:
+        n = f.normal
+        if n.length < 0.5 or n.dot(down) < cos_max:
+            continue
+        for g in groups:  # merge nearly coplanar hull faces into one candidate base
+            if g["n"].dot(n) > math.cos(math.radians(2.0)):
+                g["area"] += f.calc_area()
+                g["sum"] += n * f.calc_area()
+                break
+        else:
+            groups.append({"n": n.copy(), "area": f.calc_area(), "sum": n * f.calc_area()})
+    total = sum(f.calc_area() for f in bm.faces)
+    bm.free()
+    if not groups:
+        return None, {"error": "no hull face within %.0f degrees of down" % max_tilt_deg}
+    best = max(groups, key=lambda g: g["area"])
+    n = best["sum"].normalized()
+    rot = n.rotation_difference(down).to_matrix().to_4x4()
+    return rot, {"tilt_deg": round(math.degrees(n.angle(down)), 2), "base_share": round(best["area"] / total, 4),
+                 "base_normal": [round(x, 4) for x in n]}
+
+
 def act_convert(p):
     objs = load(p["file"])
     notes = []
+    if p.get("level") or p.get("tilt_deg"):
+        objs = flatten_hierarchy()
+        if p.get("tilt_deg"):
+            rot = Matrix.Rotation(math.radians(float(p["tilt_deg"])), 4, "X")
+            info = {"tilt_deg": float(p["tilt_deg"]), "how": "given"}
+        else:
+            rot, info = level_rotation(objs, float(p.get("max_tilt_deg", 45)))
+            info["how"] = "hull base"
+        if rot is not None:
+            for o in objs:
+                o.data.transform(rot)
+                o.data.update()
+            notes.append("levelled by %.2f deg (%s)" % (info["tilt_deg"], info["how"]))
+        else:
+            notes.append("not levelled: %s" % info.get("error"))
+        p["_level"] = info
     if p.get("apply") or p.get("join") or p.get("uv") or p.get("size_m") or p.get("ground") or p.get("center") or p.get("max_tris") or p.get("ratio"):
         objs = flatten_hierarchy()
         notes.append("hierarchy flattened, transforms applied, non-mesh objects removed")
@@ -609,6 +750,8 @@ def act_convert(p):
         tris += len(o.data.loop_triangles)
     res = export(p["out"], p)
     res.update({"tris": tris, "dims": [round(hi[i] - lo[i], 6) for i in range(3)], "notes": notes})
+    if "_level" in p:
+        res["level"] = p["_level"]
     return res
 
 
@@ -660,6 +803,24 @@ def act_printable(p):
     parts = keep_largest_part(obj)
     if parts > 1:
         steps.append("kept the largest of %d parts" % parts)
+    if p.get("remesh", True) and not p.get("hollow"):
+        # image-to-3D meshes are often thin double-walled shells: the remesh above keeps them hollow, with
+        # walls a slicer drops. Fill what the outside cannot reach when it is a real share of the volume.
+        vol = mesh_stats(obj, obj.data).get("volume", 0) or 0
+        filled, cell, core = fill_cavities(obj, float(p.get("seal_mm", 1.0)))
+        if core is not None and vol > 0 and filled > float(p.get("fill_ratio", 0.1)) * vol:
+            select_only([obj, core], obj)
+            bpy.ops.object.join()
+            m = obj.modifiers.new("pw_remesh_fill", "REMESH")
+            m.mode = "VOXEL"
+            m.voxel_size = voxel
+            m.adaptivity = 0.0
+            apply_modifier(obj, m)
+            keep_largest_part(obj)
+            steps.append("hollow shell: filled %.0f mm3 the outside cannot reach (seal %.2f mm, %.3f mm cells)" % (
+                filled, float(p.get("seal_mm", 1.0)), cell))
+        elif core is not None:
+            bpy.data.objects.remove(core, do_unlink=True)
     lo, hi = bounds([obj])  # solidify can push an open surface below z=0: sit it on the ground again first
     transform_mesh(obj, 1.0, (0, 0, -lo[2]))
     cut = float(p.get("base_cut_mm", 0.6))
@@ -702,6 +863,113 @@ def act_printable(p):
             "boundary_edges": st.get("boundary_edges"), "non_manifold_edges": st.get("non_manifold_edges"),
             "parts": st.get("parts"), "volume_cm3": round(st.get("volume", 0) / 1000.0, 3),
             "watertight": st.get("boundary_edges") == 0 and st.get("non_manifold_edges") == 0}
+
+
+def _shift_or(a, k=1):
+    """Dilate a boolean grid by k voxels, 6-connected (an L1 ball)."""
+    for _ in range(k):
+        b = a.copy()
+        b[1:] |= a[:-1]
+        b[:-1] |= a[1:]
+        b[:, 1:] |= a[:, :-1]
+        b[:, :-1] |= a[:, 1:]
+        b[:, :, 1:] |= a[:, :, :-1]
+        b[:, :, :-1] |= a[:, :, 1:]
+        a = b
+    return a
+
+
+def _flood_outside(free):
+    """Cells of `free` connected to the grid's border, by sweeping whole runs of free cells along each axis in
+    turn until nothing changes (a few sweeps reach any pocket a path with a few turns can)."""
+    out = np.zeros_like(free)
+    out[0], out[-1], out[:, 0], out[:, -1], out[:, :, 0], out[:, :, -1] = (free[0], free[-1], free[:, 0], free[:, -1],
+                                                                          free[:, :, 0], free[:, :, -1])
+    for _ in range(200):
+        before = int(out.sum())
+        for ax in range(3):
+            f = np.moveaxis(free, ax, -1).reshape(-1, free.shape[ax])
+            o = np.moveaxis(out, ax, -1).reshape(-1, free.shape[ax])
+            start = f.copy()
+            start[:, 1:] &= ~f[:, :-1]
+            ids = np.cumsum(start.ravel()).reshape(f.shape)
+            hit = np.bincount(ids[f], weights=o[f], minlength=int(ids.max()) + 1) > 0
+            o = f & hit[ids]
+            out = np.moveaxis(o.reshape(np.moveaxis(free, ax, -1).shape), -1, ax).copy()
+        if int(out.sum()) == before:
+            break
+    return out
+
+
+def fill_cavities(obj, seal_mm=1.0, max_cells=12_000_000):
+    """Make a solid out of a model that is a closed or nearly closed thin shell (image-to-3D meshes often are:
+    the surface is two thin walls with air between). Voxelise the surface, seal gaps narrower than seal_mm,
+    flood the outside from the border, and build a core of every cell the outside cannot reach, ending about a
+    cell inside the surface, so a voxel remesh of the two joined unions them. Grooves narrower than seal_mm
+    fill too. Returns (mm3 enclosed, cell size, core object or None); the caller joins or deletes the core."""
+    me = obj.data
+    me.calc_loop_triangles()
+    v = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", v)
+    v = v.reshape(-1, 3)
+    t = np.empty(len(me.loop_triangles) * 3, dtype=np.int64)
+    me.loop_triangles.foreach_get("vertices", t)
+    t = t.reshape(-1, 3)
+    lo, hi = v.min(axis=0), v.max(axis=0)
+    ext = hi - lo
+    g = max(float(np.cbrt(np.prod(ext + 1e-9) / max_cells)), 1e-6)
+    k = max(1, int(round(seal_mm / 2.0 / g)))
+    pad = k + 2
+    origin = lo - pad * g
+    shape = tuple(int(x) for x in np.ceil(ext / g) + 2 * pad + 1)
+    surf = np.zeros(shape, dtype=bool)
+    a, b, c = v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
+    longest = np.maximum(np.maximum(np.linalg.norm(b - a, axis=1), np.linalg.norm(c - b, axis=1)), np.linalg.norm(a - c, axis=1))
+    steps = np.clip(np.ceil(longest / (g * 0.5)).astype(np.int64), 1, 400)
+    for s in np.unique(steps):  # sample each triangle on a barycentric grid finer than half a cell
+        sel = steps == s
+        i, j = np.meshgrid(np.arange(s + 1), np.arange(s + 1), indexing="ij")
+        m = (i + j) <= s
+        u, w = (i[m] / s)[None, :, None], (j[m] / s)[None, :, None]
+        pts = a[sel][:, None] + (b[sel] - a[sel])[:, None] * u + (c[sel] - a[sel])[:, None] * w
+        idx = np.floor((pts.reshape(-1, 3) - origin) / g).astype(np.int64)
+        surf[idx[:, 0], idx[:, 1], idx[:, 2]] = True
+    shell = _shift_or(surf, k)
+    outside = _flood_outside(~shell)
+    core = ~_shift_or(outside, k + 1)
+    cavity = core & ~_shift_or(surf, 1)
+    filled = float(cavity.sum()) * g ** 3
+    if not core.any():
+        return 0.0, g, None
+    # boundary faces of the core cells as quads
+    verts, faces, index = [], [], {}
+
+    def vid(x, y, z):
+        key = (x, y, z)
+        if key not in index:
+            index[key] = len(verts)
+            verts.append((origin[0] + x * g, origin[1] + y * g, origin[2] + z * g))
+        return index[key]
+
+    padded = np.pad(core, 1)
+    for ax in range(3):
+        for sign in (1, -1):
+            nb = np.roll(padded, -sign, axis=ax)[1:-1, 1:-1, 1:-1]
+            for x, y, z in np.argwhere(core & ~nb):
+                o = [x, y, z]
+                o[ax] += 1 if sign > 0 else 0
+                e1, e2 = [0, 0, 0], [0, 0, 0]
+                e1[(ax + 1) % 3], e2[(ax + 2) % 3] = 1, 1
+                quad = [o, [o[i] + e1[i] for i in range(3)], [o[i] + e1[i] + e2[i] for i in range(3)], [o[i] + e2[i] for i in range(3)]]
+                if sign < 0:
+                    quad.reverse()
+                faces.append([vid(*q) for q in quad])
+    core_me = bpy.data.meshes.new("pw_core")
+    core_me.from_pydata(verts, [], faces)
+    core_obj = bpy.data.objects.new("pw_core", core_me)
+    bpy.context.scene.collection.objects.link(core_obj)
+    core_obj.matrix_world = obj.matrix_world.copy()
+    return filled, g, core_obj
 
 
 def act_union(p):

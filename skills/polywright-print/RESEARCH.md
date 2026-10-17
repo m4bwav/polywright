@@ -38,6 +38,13 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261017-1 · 2026-10-17 · Tooling: how Blender's 3D-Print Toolbox measures wall thickness
+- summary: the Print3D Toolbox extension (1.4.1, GPL-3.0-or-later) checks thickness by casting a ray from six random points on every face backwards along the face normal, up to the minimum thickness, and marks the face (and the face hit) as thin. polywright's check uses the same idea, written fresh for the MIT licence: area-weighted surface points, a BVH tree over all objects, the first exit-facing hit as the local thickness, faces pointing back at the ray stepped over.
+- track: tooling
+- sources: https://projects.blender.org/extensions/print3d_toolbox (source/lib.py `bmesh_check_thick_object`, source/blender_manifest.toml), read 2026-10-17
+- magnitude: minor (new measurement, method of an established tool)
+- applied: C-20261017-1
+
 ### R-20261011-2 · 2026-10-11 · Testing: Printable fountain and 3MF into Bambu Studio
 - summary: printable gave a watertight single part; 3mf passed testzip; Bambu Studio CLI export returned Success.
 - track: testing

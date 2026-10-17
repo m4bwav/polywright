@@ -42,6 +42,13 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261017-1 · 2026-10-17 · Subject: OSM Simple 3D Buildings (heights, parts, roofs)
+- summary: `height` runs from the lowest ground point to the roof top and includes the roof; `min_height` is the clearance under a part and `building:min_level` its levels form; facade height is height minus `roof:height`; `roof:levels` are not counted in `building:levels`; when a building has `building:part` areas its outline is not used for 3D; ridges run along the longest side unless `roof:orientation` says otherwise; `roof:direction` is where the roof's front faces. The page gives no default storey height or roof height (polywright uses 3.2 m and a 30 degree pitch, labelled as its own).
+- track: subject
+- sources: https://wiki.openstreetmap.org/wiki/Simple_3D_Buildings (last edited 2026-10-15), read 2026-10-17
+- magnitude: minor (new feature)
+- applied: C-20261017-1
+
 ### R-20261011-3 · 2026-10-11 · Testing: pw.py place on a real park
 - summary: 249 buildings, 203 with OSM heights, 1 m lidar, 6 s; print tile unioned watertight after two fixes (clipping, block winding).
 - track: testing

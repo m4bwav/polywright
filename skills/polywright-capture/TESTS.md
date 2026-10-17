@@ -8,6 +8,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 12/12
+- Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
+- led to: none
+
 ### T-20261011-3 · 2026-10-11 · headless claude -p in a throwaway clone, action-1 once · Windows 11 dev machine, Blender 5.2.1 · 0/1
 - action-1 · action · no-op of the skill · pw.py place ran correctly but the prompt spelled out the command, so the skill was not loaded; prompt rewritten to a natural request
 - led to: case prompt rewritten (C-20261011-2)

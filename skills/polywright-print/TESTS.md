@@ -8,6 +8,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 12/12
+- Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
+- led to: none
+
 ### T-20261011-3 · 2026-10-11 · headless claude -p in a throwaway clone, action-1 once · Windows 11 dev machine, Blender 5.2.1 · 1/1
 - action-1 pass: polywright-print invoked; Bash ran pw.py printable on tests/fixtures/two.glb at 40 mm, then pw.py check --target print-fdm (watertight, one part)
 - led to: L-002, C-20261011-3 (planar dissolve in printable)

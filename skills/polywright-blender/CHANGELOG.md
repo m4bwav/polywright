@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-1 · 2026-10-17 · Description names the removed OBJ importer
+- because: T-20261017-1 (trigger-1 1/3: the bpy AttributeError was answered from memory)
+- files: SKILL.md frontmatter description
+- "any bpy traceback or AttributeError" now adds "(import_scene.obj and other removed operators)".
+
 ### C-20261012-1 · 2026-10-12 · Prop-from-description recipe; absolute output paths; options after the script
 - because: L-003, L-004, L-005, L-006 (the No-God film's Spear, built and revised headless through six owner notes)
 - files: SKILL.md Step 2 and Step 4; references/bpy-recipes.md "A designed prop from a written description"; LEARNINGS.md

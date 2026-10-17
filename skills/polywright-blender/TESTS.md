@@ -8,6 +8,12 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 10/12
+- trigger-1 · trigger · undertrigger: 2 of 3 runs answered the removed-importer AttributeError correctly from memory
+- after C-20261017-1: trigger-1 3/3, decoy-2 3/3
+- Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
+- led to: C-20261017-1
+
 ### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from mark-local 0.1.1 · Windows 11 dev machine · 2/4
 - trigger-1 · trigger · undertrigger: the model fixed the bpy import error from its own knowledge
 - trigger-2 · trigger · undertrigger: the model wrote a batch-export script without loading the skill

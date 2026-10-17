@@ -5,7 +5,7 @@
     {
       "id": "trigger-1",
       "kind": "trigger",
-      "prompt": "Make me a 3D model of a cartoon dragon from this drawing.",
+      "prompt": "Make me a 3D model of the cartoon dragon in my drawing, tests/fixtures/dragon.png.",
       "runs": 3,
       "expectations": [
         "the polywright-generate skill is invoked"

@@ -4,6 +4,16 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-2 · 2026-10-17 · Pixal3D output is levelled by pw.py convert --level
+- because: HANDOFF owed item 2 (Pixal3D's camera-frame output leans by the camera's elevation); tested on the 2026-10-11 Pixal3D fountain (17.7 degrees, 9 s, both side views upright)
+- files: SKILL.md Step 2; references/generators.md (Running on ComfyUI table); ../polywright/scripts/pw.py, pw_bpy.py level_rotation; ../polywright/references/cli.md
+- "level it" now names the command.
+
+### C-20261017-1 · 2026-10-17 · trigger-1 names a real drawing
+- because: T-20261017-1 (trigger-1 0/3: "from this drawing" named no file, so every run searched for it and ran out of turns)
+- files: evals/evals.json trigger-1; ../../tests/fixtures/dragon.png
+- The case now points at a small drawing in the fixtures. No change to SKILL.md.
+
 ### C-20261016-1 · 2026-10-16 · Warm TRELLIS.2 timing; markings and colour fixed with pw.py mark
 - because: L-003
 - files: SKILL.md Step 2 (run times, point 5)

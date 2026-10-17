@@ -27,9 +27,15 @@ python ../polywright/scripts/pw.py printable in.glb out/model.stl --size-mm 120 
 
 What it does: drops named parts, flattens the hierarchy, scales to `--size-mm`, gives open shells a wall
 (inward, even offset off: even offset makes spikes), voxel-remeshes everything into one closed surface, keeps
-the largest part, clamps a flat base, decimates, cleans. Voxel size defaults to size/500; smaller keeps
+the largest part, fills a hollow shell's inside (below), clamps a flat base, decimates, cleans. Voxel size defaults to size/500; smaller keeps
 detail and costs memory as (size/voxel)^3. Tested 2026-10-11: a generated 405k-triangle fountain with 3,048
 non-manifold edges became one watertight 80 mm solid (45.8 cm3) in seconds.
+
+Image-to-3D meshes are often a thin double-walled shell with air inside, open through small gaps; a remesh
+keeps them hollow with walls a slicer drops. `printable` seals gaps up to `--seal-mm` (1 mm), floods the
+outside and fills what it cannot reach when that is over a tenth of the volume ("hollow shell: filled" in
+`steps`). Grooves narrower than the seal fill too: lower `--seal-mm` to keep them, `--hollow` to skip. Tested
+2026-10-17: a TRELLIS.2 figure at 60 mm went from 74% of its surface under 0.9 mm (1.76 cm3) to 4.8% (3.43 cm3).
 
 Several closed parts that should fuse (a body and a base, buildings on terrain): `pw.py union in out.stl`
 (Manifold solver, EXACT fallback). Game models with inner skins, missing panels or through-slits need more
@@ -52,7 +58,7 @@ than this: drop the inner parts and plug gaps first, then remesh; look at a rend
 ## Step 4: check, then hand over
 
 ```
-python ../polywright/scripts/pw.py check out/model.stl --target print-fdm      # watertight, one part, fits the bed
+python ../polywright/scripts/pw.py check out/model.stl --target print-fdm      # watertight, one part, fits the bed, thin walls
 python ../polywright/scripts/pw.py render out/model.stl --out renders/print    # look for thin parts and lumps
 python ../polywright/scripts/pw.py 3mf out/model.stl [out/roof.stl ...] --out out/model.3mf   # one object per colour
 ```
@@ -62,7 +68,9 @@ defaults). A slicer CLI can open, orient, arrange and slice it: Bambu Studio
 `bambu-studio --export-3mf out.3mf in.3mf` (also `--orient`, `--arrange 1`, `--slice 0`), PrusaSlicer and
 OrcaSlicer have similar CLIs; judge success by the exit code and Bambu's `result.json`, not the console. When a
 printer-specific skill or a 3MF-settings skill is installed, hand it the 3MF for plate, filament and process
-settings. Say plainly what was not checked (wall thickness is not measured by `check`; look at the render).
+settings. With Blender found, `check` measures wall thickness (rays inward from 20,000 surface points):
+`min_feature` warns when over 0.5% of the surface is thinner than 0.9 mm and lists the thinnest spots
+(coordinates in the file's units). Without Blender it says `unchecked`; say so and look at the render.
 
 Physical items made from OpenStreetMap data carry the credit on the base or packaging.
 
