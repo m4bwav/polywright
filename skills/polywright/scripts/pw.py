@@ -1859,7 +1859,8 @@ POSE_COLORS = [(255, 0, 0), (255, 85, 0), (255, 170, 0), (255, 255, 0), (170, 25
 
 def draw_pose_frames(joints_path, out_dir):
     """OpenPose skeleton PNGs from the 2D joints pw_bpy wrote, far figures first so near ones overdraw them.
-    Line width scales with each figure's height in pixels."""
+    Line width scales with each figure's height in pixels. A joint at (-1, -1) is hidden (a face turned away):
+    it and its limbs are left out."""
     from PIL import Image, ImageDraw
     with open(joints_path, encoding="utf-8") as f:
         data = json.load(f)
@@ -1870,14 +1871,18 @@ def draw_pose_frames(joints_path, out_dir):
         img = Image.new("RGB", (W, H), (0, 0, 0))
         d = ImageDraw.Draw(img)
         for _, pts in fr["people"]:
-            tall = abs(pts[0][1] - (pts[10][1] + pts[13][1]) / 2)
+            seen = [x >= 0 and y >= 0 for x, y in pts]
+            top = pts[0] if seen[0] else pts[1]
+            tall = abs(top[1] - (pts[10][1] + pts[13][1]) / 2)
             width = max(1, int(round(tall / 45)))
             for i, (a, b) in enumerate(POSE_LIMBS):
-                c = tuple(int(v * 0.6) for v in POSE_COLORS[i])
-                d.line([tuple(pts[a]), tuple(pts[b])], fill=c, width=width * 2)
+                if seen[a] and seen[b]:
+                    c = tuple(int(v * 0.6) for v in POSE_COLORS[i])
+                    d.line([tuple(pts[a]), tuple(pts[b])], fill=c, width=width * 2)
             r = max(1, width)
             for i, (x, y) in enumerate(pts):
-                d.ellipse([x - r, y - r, x + r, y + r], fill=POSE_COLORS[i])
+                if seen[i]:
+                    d.ellipse([x - r, y - r, x + r, y + r], fill=POSE_COLORS[i])
             drawn += 1
         img.save(os.path.join(out_dir, "%04d.png" % fr["frame"]))
     return {"frames": len(data["frames"]), "skeletons": drawn}

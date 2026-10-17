@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261016-1 · 2026-10-16 · Pose passes leave out hidden face points; two-fighter previs recipe
+because: L-005; user request ("update polywright with whatever would be helpful")
+files: scripts/pw_bpy.py (`hidden_face_points`, act_crowd), scripts/pw.py (`draw_pose_frames`), references/crowd-blockouts.md ("Two fighters (previs)"), tests/test_pw.py
+The crowd pose pass no longer draws a nose and eyes on figures seen from behind, and the drawer skips joints at (-1, -1); `--passes pose` alone no longer fails for want of its output folder. The reference gains the two-fighter previs route tested for a duel (IK mannequins, rigid and thickened blades, thrown props, end-state check).
+
 ### C-20261013-1 · 2026-10-13 · pw.py crowd and "Crowd and battle blockouts"
 - because: user request (offload big battle and crowd scenes from video models to Blender); R-20261013-1; L-004
 - files: SKILL.md description and new section "Crowd and battle blockouts"; references/crowd-blockouts.md (new); references/cli.md; scripts/pw.py (`crowd`, pose drawing, video encode, sheet); scripts/pw_bpy.py (`act_crowd`); tests/test_pw.py
