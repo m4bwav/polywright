@@ -30,6 +30,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
+### L-006 · 2026-10-17 · To take an accessory off a TRELLIS.2 mesh, delete its loose pieces by their texture colour
+- Trigger: Mark ruled that the Dummy 13 Nightmare wears no shoulder pad and has two black legs, though the photo shows a teal pad and a leg that catches the light as silver. A bounding box around the pad, used to grey out its square, also caught the skull and turned half the face teal.
+- Hypothesis: TRELLIS.2 output is a soup of thousands of loose pieces (4690 here), not one surface, and an accessory is made of its own pieces, so it can be cut out piece by piece. A box in 3D overlaps whatever sits next to the accessory.
+- Rule: label the pieces (`trimesh.graph.connected_component_labels` on the face adjacency, seconds on 700k faces, where `split()` ran past two minutes), sample the base colour at each face's UV centroid, delete the pieces where most faces are the accessory's colour, then the pieces inside its box that hold its other colours (grow the box outward only). Paint any of that colour left in the texture the body's colour, scaled by brightness. A wrong colour on one part (a silver leg) is a texture fix: the part's lower-body UV islands, side chosen by which holds more pale texels. Check with `pw.py turnaround` after each step; the body under the accessory was already modelled, so nothing showed through.
+- Evidence: D:/ComfyUI/output/video/dummy13_brawl/models/_work/nm_blackleg.py, nm_nopad.py (nm_pad_grey.py is the failed box try); nightmare/renders/turnaround_blackleg_pad (teal skull) and turnaround_nopad (fixed), 2026-10-17.
+- Scope: skill (polywright-generate cleanup of an image-to-3D mesh; pw.py mark has no accessory removal yet)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-17
+
 ### L-005 · 2026-10-16 · A pose pass must leave out face points turned from the lens, and a previs checks that each end state is in frame
 - Trigger: a two-fighter previs (crowd mannequins posed by IK in a set blockout) for a rapier duel whose video takes kept turning a fighter seen from behind to face the lens. Its pose pass drew his nose and eyes though his back was to the camera, as `pw.py crowd` did for every figure. The previs of a kick card also put the felled fighter below the frame: the card's own camera (1.2 m high, level, 35 mm, 4 m off) sees the floor only beyond about 4.2 m.
 - Hypothesis: pose controls are trained on detector output, and a detector finds no nose or eyes on a back; drawn face points tell the model the figure faces the camera. A shot plan places people as points, so it cannot see that a lying body leaves the frame.
