@@ -1,6 +1,6 @@
 {
   "name": "polywright",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Evergreen 3D modelling skills for AI agents: one hub that picks the route (find, capture, generate, code), real places from OpenStreetMap and public elevation, image-to-3D through ComfyUI (TRELLIS.2, Pixal3D, Hunyuan3D-2) or hosted generators, reference sheets and textures, headless Blender with tested 5.x recipes, finishing for Roblox, Unity, Unreal, three.js, AR and video, and printable watertight solids. A stdlib Python CLI (pw.py) inspects, renders contact sheets, converts, checks targets and keeps a provenance manifest other plugins read.",
   "author": {
     "name": "Mark Rogers"
