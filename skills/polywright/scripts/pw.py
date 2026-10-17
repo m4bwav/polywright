@@ -464,7 +464,7 @@ def cmd_lineup(a):
     order = sorted(res["boxes_px"].items(), key=lambda kv: (kv[1][0] + kv[1][2]) / 2)
     res["left_to_right"] = [k for k, _ in order]
     res["next"] = ("Read colour.png: who stands where, every marking readable, nothing cut by the frame. colour.png is a "
-                   "start or guide frame; the depth video is the control (static figures: a short opening, a low end)")
+                   "guide frame at 0 (H3 guides). Do not run the looped depth video as a control over moving action: the figures freeze on their spots and double (comfyui-gen L-134)")
     return emit(res)
 
 

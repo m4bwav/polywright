@@ -41,8 +41,11 @@ Worked through on 2026-10-16 with four jointed 13 cm toy figures and five access
   meshes on a table with each team on a fixed side and writes `colour.png` (textured: a start or guide frame),
   `clay.png`, `depth.png` (inverse depth, near white, the crowd convention), `mask.png` (team a red, team b blue),
   `lineup.json` (camera, depth range, each figure's screen box, `left_to_right`) and looped control videos. The
-  figures do not move, so the control pins the layout: use it on an opening, or with a low end step, and let the
-  prompt carry the action. Whether a still control freezes the action is untested.
+  figures do not move, and a looped still control freezes the action: on the Dummy 13 brawl (2026-10-17) depth
+  at 0.6, end 0.3 over a 362-frame fight kept snapping the figures back to their spots while copies fought.
+  Pass `colour.png` as an H3 guide at frame 0 instead (four figures and the sides held, the look stayed real
+  footage) and let the prompt carry the action; use the control only in a short standoff section of its own.
+  Details: comfyui-gen L-134 `still-control-freezes`.
 
 Layout file (paths relative to it; `face` is +x, -x, +y, -y or a heading in degrees, 90 = +x):
 
