@@ -53,3 +53,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - `pw.py place`: Simple 3D Buildings (OSM wiki, edited 2026-10-15): min_height, building:min_level, building:part replacing outlines, gabled/hipped/pyramidal/skillion roofs on the minimum rectangle (others mapped), 3.2 m storeys and a 30 degree pitch as own defaults. A European old town: 229 buildings, 82 roofs, 11 left flat (not rectangular). Its print tile unions through the voxel fallback with 62 non-manifold edges, the same with flat roofs: owed.
 - Sibling pointers to the folder contract merged by subagents in fresh clones: threewright #9, cinewright #48, roblox-agent #14 (also fixed its link check, red since 2026-10-13), unity-agent #12, comfyui-gen #72.
 - TRELLIS.2 resolutions not run: the GPU held another session's job.
+
+## 2026-10-17: release 0.2.0
+
+- Owner's go-ahead ("yes, do all the things"). Version 0.2.0 in plugin.json and pw.py; tag v0.2.0 publishes the zip through release.yml.

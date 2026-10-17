@@ -2,7 +2,7 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
-## Unreleased
+## 0.2.0 (2026-10-17)
 
 - `pw.py place`: buildings follow OpenStreetMap's Simple 3D Buildings. `min_height` and `building:min_level` lift a part off the ground (a print stands it on the ground), `building:part` areas replace their outline, and `roof:shape` gabled, hipped, pyramidal and skillion are built (other shapes mapped to the nearest) from `roof:height`, `roof:levels`, `roof:angle` or a 30 degree pitch; `counts.roofs` says what was built. A European old town: 229 buildings, 82 roofs.
 - `pw.py convert --level`: stands a leaning model on its base, the largest flat face of its convex hull within 45 degrees of down (Pixal3D builds in the camera's frame and leans by the camera's elevation: the test fountain stood up by 17.7 degrees in 9 s). `--tilt-deg D` rotates by a known angle instead.
