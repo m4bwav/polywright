@@ -37,6 +37,8 @@ For consistent extra views from one image, an image-edit model with a multi-angl
 with a Multiple Angles LoRA, 2025-2026) keeps identity better than prompting each view; expect colour drift and
 colour-match each view to the front. Check every generated view against the front: same proportions, same
 number of arms, same items, nothing re-aimed. Drop a view that disagrees; a wrong back view is worse than none.
+Name a real object's colour from the photo's pixels (median hue, saturation, value), not from a word: the edit
+model follows the word over the picture (L-003). Back views tend to copy a front marking onto the back.
 
 A ready workflow for a Z-Image Turbo host: [references/zimage-reference.api.json](references/zimage-reference.api.json)
 (`{SUBJECT}` placeholder; tested 2026-10-11).

@@ -35,7 +35,7 @@ a coded pedestal with a generated lion-head spout boolean-joined on.
      converts it with the host's node definitions): `pw.py gen --image refs/front.png --workflow <file> --out work/raw.glb`.
      TRELLIS.2 and Pixal3D with PBR textures: ComfyUI's template `3d_pixal3d_trellis2_image_to_model.json` (in the
      ComfyUI install's `comfyui_workflow_templates_json/templates`); its switch picks Pixal3D by default, so add
-     `--set 316.value=true` for TRELLIS.2. On a 16 GB card (GPU time): TRELLIS.2 377 s, upright, the best detail;
+     `--set 316.value=true` for TRELLIS.2. On a 16 GB card (GPU time): TRELLIS.2 377 s cold (73 to 190 s warm), upright, the best detail;
      Pixal3D 329 s, in the camera's frame (tilted: level it); both about 700k triangles with 4096 px PBR textures;
      Hunyuan3D-2 99 s, shape only. `--set NODE.input=VALUE` changes any input.
    - Hosted APIs (Meshy has the clearest public price list; Tripo, Rodin, Hunyuan 3.x): through their own API
@@ -44,7 +44,9 @@ a coded pedestal with a generated lion-head spout boolean-joined on.
    `pw.py manifest <dir> --add-tool "<model>" --tool-version <v>`.
 5. Look: `pw.py inspect work/raw.glb` then `pw.py render work/raw.glb --out renders/raw`. Compare the sheet with
    the reference: the back and the underside are guesses; extra limbs, melted thin parts and fused gaps are
-   common. Regenerate with another seed or better views before fixing by hand.
+   common. Regenerate with another seed or better views before fixing by hand. Painted letters and numbers bake
+   as smears and colours drift: `pw.py mark` erases and redraws the marking and moves the colour to the photo's
+   (L-003; [figures for video](../polywright/references/figures-for-video.md)).
 
 Raw output is unscaled, dense (hundreds of thousands of triangles), often non-manifold, without UVs, Y-up. It is
 never game-ready and never print-ready as is: scale and finish it (polywright-finish, polywright-print).

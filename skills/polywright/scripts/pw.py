@@ -388,6 +388,86 @@ def cmd_match(a):
     return emit(res, 0 if res.get("ok") else 1)
 
 
+def floats(t, n=None):
+    v = [float(x) for x in str(t).split(",")]
+    if n and len(v) != n:
+        raise ValueError("%r: expected %d comma-separated numbers" % (t, n))
+    return v
+
+
+def cmd_turnaround(a):
+    W, H = (int(v) for v in a.size.lower().split("x"))
+    params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "yaw": a.yaw, "height_m": a.height_m,
+              "views": [v.strip() for v in a.views.split(",") if v.strip()], "size": [W, H], "lens": a.lens,
+              "samples": a.samples, "grey": a.grey, "elev": a.elev, "gpu": a.gpu, "sheet": not a.no_sheet}
+    res = bpy_action("turnaround", params, timeout=a.timeout)
+    if res.get("ok"):
+        res["next"] = ("Read sheet.png next to the source photo: markings, colour, nothing invented. The views are a "
+                       "video model's reference pictures (one figure per picture; H3 --ref)")
+    return emit(res, 0 if res.get("ok") else 1)
+
+
+def cmd_mark(a):
+    try:
+        params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "yaw": a.yaw,
+                  "height_m": a.height_m, "longest_m": a.longest_m, "erase": a.erase, "head_frac": a.head_frac,
+                  "front_dot": a.front_dot, "text": a.text, "colour": floats(a.colour, 3), "font": a.font,
+                  "text_frac": a.text_frac, "width_frac": a.width_frac, "text_dx": a.text_dx, "text_dz": a.text_dz}
+        if a.recolour:
+            h, s, v = floats(a.recolour, 3)
+            params["recolour"] = {"hue": h, "sat": s, "val": v, "from_hue": floats(a.from_hue, 2),
+                                  "min_sat": a.min_sat, "min_val": a.min_val}
+    except ValueError as e:
+        return emit({"ok": False, "error": str(e)}, 2)
+    if not (a.height_m or a.longest_m):
+        params["height_m"] = None
+    res = bpy_action("mark", params, timeout=a.timeout)
+    if res.get("ok"):
+        res["next"] = "turnaround the output and compare it with the photo: the marking's size and place, the colour"
+    return emit(res, 0 if res.get("ok") else 1)
+
+
+def loop_still(png, dst, frames, fps):
+    ff = shutil.which("ffmpeg")
+    if not ff:
+        return {"skipped": "ffmpeg not found"}
+    r = subprocess.run([ff, "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(fps), "-i", png,
+                        "-frames:v", str(frames), "-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv420p", dst],
+                       capture_output=True, text=True)
+    return dst if r.returncode == 0 and os.path.isfile(dst) else {"error": (r.stderr or "")[-300:]}
+
+
+def cmd_lineup(a):
+    try:
+        layout = json.load(open(a.layout, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return emit({"ok": False, "error": "layout: %s" % e}, 2)
+    base = os.path.dirname(os.path.abspath(a.layout))
+    for f in layout.get("figures", []):
+        f["file"] = os.path.abspath(os.path.join(base, f.get("file") or f.get("glb", "")))
+        if not os.path.isfile(f["file"]):
+            return emit({"ok": False, "error": "figure file not found: %s" % f["file"]}, 1)
+    if not layout.get("figures") or "cam" not in layout or "aim" not in layout:
+        return emit({"ok": False, "error": "layout needs figures, cam and aim (see cli.md)"}, 2)
+    out = os.path.abspath(a.out)
+    res = bpy_action("lineup", {"layout": layout, "out": out, "samples": a.samples, "preview": a.preview}, timeout=a.timeout)
+    if not res.get("ok"):
+        return emit(res, 1)
+    vids = {}
+    for n in [int(x) for x in a.frames.split(",") if x.strip()] if a.frames and not a.preview else []:
+        for name in ("depth", "clay", "mask"):
+            png = res["passes"].get(name)
+            if png:
+                vids["%s_%d" % (name, n)] = loop_still(png, os.path.join(out, "control_%s_%s_%df.mp4" % (a.card, name, n)), n, a.fps)
+    if vids:
+        res["videos"] = vids
+    order = sorted(res["boxes_px"].items(), key=lambda kv: (kv[1][0] + kv[1][2]) / 2)
+    res["left_to_right"] = [k for k, _ in order]
+    res["next"] = ("Read colour.png: who stands where, every marking readable, nothing cut by the frame. colour.png is a "
+                   "start or guide frame; the depth video is the control (static figures: a short opening, a low end)")
+    return emit(res)
+
+
 def paste_and_mask(still, render, hide, grow, mask_add):
     """Alpha-composite the render over the still (minus `hide` boxes: whatever stands in front of the model,
     such as the fist holding it) and write a blend mask: the render's alpha grown by `grow` px, plus ellipses."""
@@ -591,6 +671,8 @@ def cmd_manifest(a):
         changed = True
     if a.add_output:
         p = os.path.abspath(a.add_output)
+        if not os.path.isfile(p) and not os.path.isabs(a.add_output) and os.path.isfile(os.path.join(d, a.add_output)):
+            p = os.path.join(d, a.add_output)  # out/x.glb written relative to the asset folder
         info = inspect_file(p, fast=False) if a.inspect else {}
         entry = {"path": os.path.relpath(p, d).replace(os.sep, "/"), "target": a.target or "", "sha256": sha256(p),
                  "bytes": os.path.getsize(p), "added": time.strftime("%Y-%m-%d")}
@@ -601,6 +683,13 @@ def cmd_manifest(a):
         changed = True
     if a.add_tool:
         man["tools"].append({"name": a.add_tool, "version": a.tool_version or ""})
+        changed = True
+    if a.review:
+        rp = a.review if os.path.isabs(a.review) else os.path.join(d, a.review)  # relative: inside the asset folder
+        rel = os.path.relpath(os.path.abspath(rp), d).replace(os.sep, "/")
+        man.setdefault("reviews", [])
+        man["reviews"] = [r for r in man["reviews"] if r.get("render") != rel] + [
+            {"render": rel, "verdict": a.verdict or "", "by": a.by or "agent", "date": time.strftime("%Y-%m-%d")}]
         changed = True
     if a.status:
         man["status"] = a.status
@@ -876,7 +965,9 @@ def run_workflow(a):
         except Exception as e:
             tried.append({"host": h, "up": False, "error": str(e)[:100]})
     if not host:
-        return emit({"ok": False, "error": "no ComfyUI host has every node in the workflow", "tried": tried}, 1)
+        return emit({"ok": False, "error": "no ComfyUI host has every node in the workflow", "tried": tried,
+                     "next": "a server on another port: pass --host http://127.0.0.1:PORT or set POLYWRIGHT_COMFYUI "
+                             "(the default is only 8188)"}, 1)
     uploaded = {}
     paths = {a.image} | {it.split("=", 1)[1][1:] for it in (a.set or []) if "=@" in it}
     for pth in paths:
@@ -2108,7 +2199,61 @@ def main(argv=None):
     p.add_argument("--tool-version")
     p.add_argument("--status", choices=["brief", "references", "blockout", "model", "review", "delivered"])
     p.add_argument("--validate", action="store_true", help="also compare output hashes")
+    p.add_argument("--review", help="a review render (renders/<step>/sheet.png) to record with --verdict")
+    p.add_argument("--verdict", help="what the review found")
+    p.add_argument("--by", help="agent or user (default agent)")
     p.set_defaults(fn=cmd_manifest)
+
+    p = sub.add_parser("turnaround", help="eye-level views of a textured model on flat grey, a video model's reference pictures")
+    p.add_argument("file")
+    p.add_argument("--out", required=True)
+    p.add_argument("--views", default="front,3q,side,back", help="front, 3q, side, 3q_back, back, 3q_left, left")
+    p.add_argument("--yaw", type=float, default=0.0, help="degrees about +Z that turn the model's face to -Y")
+    p.add_argument("--height-m", type=float, help="scale to this height first (the picture is framed either way)")
+    p.add_argument("--size", default="768x1152")
+    p.add_argument("--lens", type=float, default=85.0)
+    p.add_argument("--elev", type=float, default=4.0, help="camera degrees above the model's middle (20 for props)")
+    p.add_argument("--grey", type=float, default=0.5, help="backdrop as an sRGB value (0.5 = mid-grey)")
+    p.add_argument("--samples", type=int, default=48)
+    p.add_argument("--gpu", action="store_true")
+    p.add_argument("--no-sheet", action="store_true")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.set_defaults(fn=cmd_turnaround)
+
+    p = sub.add_parser("mark", help="finish a generated figure: recolour, erase a smeared painted marking, put a clean one on, real size")
+    p.add_argument("file")
+    p.add_argument("--out", required=True, help="GLB (or any export format); the fixed texture lands beside it")
+    p.add_argument("--recolour", help="H,S,V (0-1) measured on the photo's plastic: matching texels get hue H, "
+                                      "saturation and value scaled so their medians become S and V")
+    p.add_argument("--from-hue", default="0,1", help="only texels whose hue is in LO,HI")
+    p.add_argument("--min-sat", type=float, default=0.12)
+    p.add_argument("--min-val", type=float, default=0.0, help="leave darker texels alone (a black body's faint tint)")
+    p.add_argument("--erase", choices=["white", "red"], help="clear this colour on the head's front faces only")
+    p.add_argument("--head-frac", type=float, default=0.13, help="top share of the model that is the head")
+    p.add_argument("--front-dot", type=float, default=0.5)
+    p.add_argument("--text", help="the marking, e.g. A or 2, as a thin text mesh on the head's front face")
+    p.add_argument("--colour", default="0.95,0.95,0.95", help="sRGB 0-1")
+    p.add_argument("--font", help="a .ttf/.otf; Blender's built-in font otherwise")
+    p.add_argument("--text-frac", type=float, default=0.75, help="letter height as a share of the face height")
+    p.add_argument("--width-frac", type=float, default=0.92, help="and at most this share of its width")
+    p.add_argument("--text-dx", type=float, default=0.0)
+    p.add_argument("--text-dz", type=float, default=0.0)
+    p.add_argument("--yaw", type=float, default=0.0)
+    p.add_argument("--height-m", type=float)
+    p.add_argument("--longest-m", type=float, help="scale by the longest side instead (props lying any way)")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.set_defaults(fn=cmd_mark)
+
+    p = sub.add_parser("lineup", help="a few generated figures on a table, teams on fixed sides: colour, clay, depth, mask")
+    p.add_argument("--layout", required=True, help="JSON: size, lens, cam, aim, table, backdrop_m, figures (cli.md)")
+    p.add_argument("--out", required=True)
+    p.add_argument("--frames", default="", help="also loop the passes into control videos of these lengths, e.g. 107,362")
+    p.add_argument("--fps", type=int, default=24)
+    p.add_argument("--card", default="lineup", help="control_<card>_<pass>_<n>f.mp4")
+    p.add_argument("--samples", type=int, default=64)
+    p.add_argument("--preview", action="store_true", help="clay and depth only, half size")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.set_defaults(fn=cmd_lineup)
 
     p = sub.add_parser("bpy", help="run a bpy script headless with condensed output")
     p.add_argument("script")

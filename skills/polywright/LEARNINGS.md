@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-006 · 2026-10-16 · A small cast of real figures holds in video only when the meshes carry the markings and a lineup carries the sides
+- Trigger: a 15 s two-on-two toy fight rendered from photo crops swapped the teams' sides, drew one figure twice and showed a fifth figure for a moment; the figures' painted letter and numbers read small. Meshing each toy (TRELLIS.2) fixed the shapes, but the markings baked as smears and the colours drifted.
+- Hypothesis: a video model keeps who stands where and how many only when a picture or control says so; reference crops of figures lying on a table say neither. A generated mesh is only as good a reference as its texture.
+- Rule: per figure, mesh the front view, then `pw.py mark` (colour to the photo's medians, erase the smear on the head front, a text mesh for the marking, real size), `pw.py turnaround` for the reference pictures, and one `pw.py lineup` with each team on a fixed side for the opening frame and a depth control. Record each output with `manifest --add-output` written from inside the asset folder (it now resolves there) and `--review`. Pass `--host` to `pw.py gen` when the server is not on 8188.
+- Evidence: the 2026-10-16 run: four figures and five accessories, every `mark` and `turnaround` reproduced by the commands (same 5,557 head triangles and 9,396 erased texels on the first figure); lineup `left_to_right` in the planned order; tests `test_turnaround_views_and_sheet`, `test_mark_puts_the_marking_on_the_head_front`, `test_lineup_keeps_teams_on_their_sides`, `test_manifest_output_relative_to_the_asset_and_reviews`. The video re-render with the lineup is still to come.
+- Scope: skill (pw.py turnaround, mark, lineup, manifest; references/figures-for-video.md)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-16
+
 ### L-001 · 2026-10-11 · Topology checks on glTF or STL must weld coincident positions first
 - Trigger: A Blender-exported GLB of two closed boxes reported 12 parts and not watertight (2026-10-11, test_convert_scale_uv_and_check)
 - Hypothesis: glTF and STL store vertices per face when normals are split, so edge counting on raw vertices sees every face as its own island

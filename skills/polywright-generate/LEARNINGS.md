@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-003 · 2026-10-16 · TRELLIS.2 shapes small figures well but smears their painted markings and shifts their colour
+- Trigger: four jointed 13 cm toy figures meshed from clean front views: joints, claws, horns and props came out sharp and upright, but a painted white letter became a blob with a hole, painted red numbers faint smears, an embossed number two dots; a teal body came back slate blue, a teal shoulder plate dark blue.
+- Hypothesis: the template crops the figure to 1024 px, so a head is a few dozen pixels wide and a marking a few; the texture stage blurs and re-saturates small details. Thin, flat parts (a shoulder plate) also grow strap-like bits from a three-quarter view.
+- Rule: mesh from the front view; then erase the smear on the head's front UV islands and stand a text mesh on the face (`pw.py mark --erase --text`), and move the colour to the photo's measured medians (`--recolour`, limited by `--from-hue`, `--min-sat`, `--min-val` on dark figures). Warm TRELLIS.2 runs took 73 to 190 s (one flat plate 629 s), far under the 377 s cold run: budget the first run, not every run.
+- Evidence: 2026-10-16 run on a 16 GB card, ComfyUI 0.38.2; GPU times from ComfyUI history; references/figures-for-video.md.
+- Scope: skill (Step 2.5)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-16
+
 ### L-002 · 2026-10-11 · Run templates as saved; Pixal3D output leans with the camera
 - Trigger: ComfyUI's TRELLIS.2/Pixal3D template is in the editor's format and there is no server endpoint to convert it; the browser route could not reach the local server; the first result leaned sideways
 - Hypothesis: the editor format maps widget values to inputs in definition order (plus a seed's control value and a dynamic combo's sub-values), so the host's /object_info is enough to convert it; Pixal3D reconstructs pixel-aligned in camera space

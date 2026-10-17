@@ -233,6 +233,31 @@ class Commands(unittest.TestCase):
         code, out = run("manifest", d, "--validate")
         self.assertTrue(any("changed" in p for p in out["problems"]))
 
+    def test_manifest_output_relative_to_the_asset_and_reviews(self):
+        d = os.path.join(self.tmp, "fig")
+        run("new", d, "--name", "Figure", "--kind", "real", "--route", "generate", "--targets", "video-blockout")
+        m = pw.Mesh("box", (1, 0, 0))
+        m.v, m.f = pw.prism([(0, 0), (1, 0), (1, 1), (0, 1)], 0, 1)
+        pw.write_stl(os.path.join(d, "out", "fig.stl"), [m])
+        cwd = os.getcwd()
+        try:
+            os.chdir(self.tmp)  # out/fig.stl does not exist here, only inside the asset folder
+            code, out = run("manifest", d, "--add-output", "out/fig.stl", "--target", "video-blockout",
+                            "--review", "renders/turnaround/sheet.png", "--verdict", "good: markings readable")
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(code, 0, out)
+        with open(os.path.join(d, "manifest.json")) as f:
+            man = json.load(f)
+        self.assertEqual(man["outputs"][0]["path"], "out/fig.stl")
+        self.assertEqual(man["reviews"][-1]["verdict"], "good: markings readable")
+        self.assertEqual(man["reviews"][-1]["render"], "renders/turnaround/sheet.png")
+
+    def test_mark_rejects_a_bad_colour(self):
+        code, out = run("mark", os.path.join(self.tmp, "none.glb"), "--out", os.path.join(self.tmp, "x.glb"), "--colour", "1,0")
+        self.assertEqual(code, 2)
+        self.assertIn("3 comma-separated", out["error"])
+
     def test_bpy_options_after_script(self):
         import argparse
         a = argparse.Namespace(script="s.py", blend=None, timeout=1800, lines=40,
@@ -399,6 +424,54 @@ class WithBlender(unittest.TestCase):
         code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
         self.assertEqual(code, 2)
         self.assertIn("4n+1", out["error"])
+
+    def figure(self, name, colour=(0.2, 0.5, 0.5)):
+        """A box 'figure': a 0.3 x 0.2 x 1.0 body with a 0.2 head block on top, face flat toward -Y."""
+        body, head = pw.Mesh("body", colour), pw.Mesh("head", colour)
+        body.v, body.f = pw.prism([(-0.15, -0.1), (0.15, -0.1), (0.15, 0.1), (-0.15, 0.1)], 0, 0.8)
+        head.v, head.f = pw.prism([(-0.1, -0.1), (0.1, -0.1), (0.1, 0.1), (-0.1, 0.1)], 0.8, 1.0)
+        path = os.path.join(self.tmp, name + ".glb")
+        pw.write_glb(path, [body, head])
+        return path
+
+    def test_turnaround_views_and_sheet(self):
+        d = os.path.join(self.tmp, "turn")
+        code, out = run("turnaround", self.figure("t"), "--out", d, "--views", "front,3q,back", "--size", "96x144",
+                        "--samples", "2", "--height-m", "0.13")
+        self.assertEqual(code, 0, out)
+        self.assertEqual([s["view"] for s in out["shots"]], ["front", "3q", "back"])
+        self.assertAlmostEqual(out["dims_m"][2], 0.13, places=3)
+        self.assertTrue(os.path.isfile(out["sheet"]["path"]))
+        code, out = run("turnaround", self.figure("t2"), "--out", d, "--views", "top")
+        self.assertEqual(code, 1)
+        self.assertIn("unknown view", out["error"])
+
+    def test_mark_puts_the_marking_on_the_head_front(self):
+        o = os.path.join(self.tmp, "marked.glb")
+        code, out = run("mark", self.figure("m"), "--out", o, "--text", "2", "--colour", "0.8,0.1,0.2",
+                        "--height-m", "0.13", "--recolour", "0.5,0.5,0.5")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(os.path.isfile(o))
+        self.assertIn("skipped", out["texture"])  # no base colour texture on a plain box
+        fw, fh = out["mark"]["face_m"]
+        self.assertAlmostEqual(fw, 0.13 * 0.2, delta=0.004)  # the head block's front, not the body's
+        self.assertLess(out["mark"]["letter_h_m"], fh)
+        code, out = run("inspect", o)
+        self.assertGreaterEqual(out["objects"], 2)  # the figure and the marking
+
+    def test_lineup_keeps_teams_on_their_sides(self):
+        lay = {"size": [192, 112], "lens": 35, "cam": [0, -0.6, 0.07], "aim": [0, 0, 0.065], "backdrop_m": 0.6,
+               "figures": [{"name": "b1", "file": self.figure("b1", (0, 0, 0)), "at": [0.12, 0], "face": "-60", "team": "b"},
+                           {"name": "a1", "file": self.figure("a1"), "at": [-0.12, 0], "face": "60", "team": "a"}]}
+        lp = os.path.join(self.tmp, "layout.json")
+        with open(lp, "w") as f:
+            json.dump(lay, f)
+        d = os.path.join(self.tmp, "lineup")
+        code, out = run("lineup", "--layout", lp, "--out", d, "--preview")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["left_to_right"], ["a1", "b1"])
+        self.assertTrue(os.path.isfile(os.path.join(d, "depth.png")))
+        self.assertLess(out["near_m"], out["far_m"])
 
     def test_bpy_runner_reports_tracebacks(self):
         s = os.path.join(self.tmp, "bad.py")
