@@ -100,6 +100,10 @@ Video models break on crowds; Blender does not. Let Blender place the army and t
 Depth convention, views, screen direction, your own soldier, two-fighter previs and what is untested:
 [references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
 
+A small cast of real figures or toys (sides swapped, an extra figure, markings lost): mesh each from photos, fix
+colour and painted markings with `pw.py mark`, give the video model `pw.py turnaround` pictures as references and a
+`pw.py lineup` (teams on fixed sides, depth and mask) as its opening: [references/figures-for-video.md](references/figures-for-video.md).
+
 ## Step 5: finish and hand over
 
 Finishing per target (UVs, LODs, normal-map convention, axis and unit conversion, compression) is

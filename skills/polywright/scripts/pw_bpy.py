@@ -1140,8 +1140,511 @@ def act_crowd(p):
             "aim": [round(v, 2) for v in aim], "passes": passes, "render_seconds": round(time.time() - t0, 1)}
 
 
+# ---------------------------------------------------------------- video references from a generated mesh
+
+TURN_AZ = {"front": 0, "3q": 45, "side": 90, "3q_back": 135, "back": 180, "3q_left": -45, "left": -90}
+
+
+def srgb_to_linear(c):
+    return ((c + 0.055) / 1.055) ** 2.4 if c > 0.04045 else c / 12.92
+
+
+def stand_up(objs, yaw=0.0, height_m=None, longest_m=None):
+    """Parent everything to one root, turn it by yaw about +Z, scale to a height (or a longest side), stand it on
+    z = 0 centred on the origin. Returns the root and the new bounds."""
+    sc = bpy.context.scene
+    root = bpy.data.objects.new("pw_root", None)
+    sc.collection.objects.link(root)
+    for o in list(sc.objects):
+        if o.parent is None and o is not root and o.type != "CAMERA" and o.type != "LIGHT":
+            o.parent = root
+    root.rotation_euler = (0, 0, math.radians(yaw))
+    bpy.context.view_layer.update()
+    lo, hi = bounds(objs)
+    ext = [hi[i] - lo[i] for i in range(3)]
+    s = (longest_m / max(max(ext), 1e-9)) if longest_m else (height_m / max(ext[2], 1e-9)) if height_m else 1.0
+    root.scale = (s, s, s)
+    bpy.context.view_layer.update()
+    lo, hi = bounds(objs)
+    root.location = Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))
+    bpy.context.view_layer.update()
+    lo, hi = bounds(objs)
+    return root, Vector(lo), Vector(hi), s
+
+
+def grey_studio(grey=0.5, light=1.0):
+    """Flat light: a white world lights the model, a mid-grey world is what the camera sees behind it."""
+    sc = bpy.context.scene
+    w = bpy.data.worlds.new("pw_grey")
+    sc.world = w
+    w.use_nodes = True
+    nt = w.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    lp, lit, bg = nt.nodes.new("ShaderNodeLightPath"), nt.nodes.new("ShaderNodeBackground"), nt.nodes.new("ShaderNodeBackground")
+    lit.inputs["Color"].default_value = (1, 1, 1, 1)
+    lit.inputs["Strength"].default_value = light
+    g = srgb_to_linear(grey)
+    bg.inputs["Color"].default_value = (g, g, g, 1)
+    mix, out = nt.nodes.new("ShaderNodeMixShader"), nt.nodes.new("ShaderNodeOutputWorld")
+    nt.links.new(lp.outputs["Is Camera Ray"], mix.inputs["Fac"])
+    nt.links.new(lit.outputs[0], mix.inputs[1])
+    nt.links.new(bg.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs["Surface"])
+
+
+def act_turnaround(p):
+    """Eye-level perspective views of a textured model on flat mid-grey, for a video model's reference pictures
+    (MiniMax H3 --ref, Wan or Kling references): long lens, shadowless light, Cycles on the CPU."""
+    objs = load(p["file"])
+    if not objs:
+        raise ValueError("no mesh objects to render")
+    _, lo, hi, s = stand_up(objs, p.get("yaw", 0.0), p.get("height_m"))
+    ext = hi - lo
+    grey_studio(p.get("grey", 0.5))
+    sc = bpy.context.scene
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "GPU" if p.get("gpu") else "CPU"
+    sc.cycles.samples = int(p.get("samples", 48))
+    sc.cycles.use_denoising = True
+    sc.view_settings.view_transform = "Standard"
+    W, H = (int(v) for v in p.get("size", [768, 1152]))
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = W, H, 100
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGB"
+    lens = float(p.get("lens", 85))
+    cam_data = bpy.data.cameras.new("pw_cam")
+    cam_data.lens, cam_data.sensor_fit, cam_data.sensor_width = lens, "AUTO", 36
+    cam = bpy.data.objects.new("pw_cam", cam_data)
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    long_side = 18.0 / lens  # tan of half the field of view across the longer image side
+    tan_v = long_side * (min(W, H) / max(W, H) if W > H else 1.0)
+    tan_h = long_side * (min(W, H) / max(W, H) if H > W else 1.0)
+    foot = math.hypot(ext.x, ext.y)
+    dist = max(ext.z / 2 / tan_v, foot / 2 / tan_h) * float(p.get("margin", 1.12)) + foot / 2
+    cam_data.clip_start, cam_data.clip_end = dist / 100, dist * 10
+    centre = Vector((0, 0, ext.z / 2))
+    el = math.radians(float(p.get("elev", 4.0)))
+    os.makedirs(p["out"], exist_ok=True)
+    shots = []
+    for v in p.get("views", ["front", "3q", "side", "back"]):
+        if v not in TURN_AZ:
+            raise ValueError("unknown view %s (known: %s)" % (v, ", ".join(TURN_AZ)))
+        az = math.radians(TURN_AZ[v])
+        d = Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el)))
+        cam.location = centre + d * dist
+        cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+        path = os.path.join(p["out"], "view_%s.png" % v)
+        sc.render.filepath = path
+        bpy.ops.render.render(write_still=True)
+        shots.append({"view": v, "path": path, "azimuth_deg": TURN_AZ[v]})
+    res = {"shots": shots, "dims_m": [round(x, 5) for x in ext], "scale": s, "lens": lens, "size": [W, H]}
+    if p.get("sheet", True) and len(shots) > 1 and np is not None:
+        res["sheet"] = stitch([x["path"] for x in shots], os.path.join(p["out"], "sheet.png"), len(shots))
+    return res
+
+
+def rgb_to_hsv_np(rgb):
+    mx, mn = rgb.max(-1), rgb.min(-1)
+    d = mx - mn
+    s = np.where(mx > 0, d / np.maximum(mx, 1e-9), 0)
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    dd = np.maximum(d, 1e-9)
+    h = np.where(mx == r, ((g - b) / dd) % 6, np.where(mx == g, (b - r) / dd + 2, (r - g) / dd + 4)) / 6.0
+    h = np.where(d > 0, h, 0)
+    return np.stack([h % 1.0, s, mx], -1)
+
+
+def hsv_to_rgb_np(hsv):
+    h, s, v = hsv[..., 0] * 6.0, hsv[..., 1], hsv[..., 2]
+    i = np.floor(h).astype(np.int32) % 6
+    f = h - np.floor(h)
+    pp, q, t = v * (1 - s), v * (1 - s * f), v * (1 - s * (1 - f))
+    choices = [(v, t, pp), (q, v, pp), (pp, v, t), (pp, q, v), (t, pp, v), (v, pp, q)]
+    out = np.zeros(hsv.shape, dtype=np.float32)
+    for k, (r, g, b) in enumerate(choices):
+        m = i == k
+        out[..., 0][m], out[..., 1][m], out[..., 2][m] = r[m], g[m], b[m]
+    return out
+
+
+def base_colour_nodes(objs):
+    """The image texture node feeding each material's Principled Base Color (through mix nodes)."""
+    found = []
+    for o in objs:
+        for slot in o.material_slots:
+            m = slot.material
+            if not m or not m.use_nodes:
+                continue
+            bsdf = next((n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+            node = bsdf.inputs["Base Color"].links[0].from_node if bsdf and bsdf.inputs["Base Color"].links else None
+            while node is not None and node.type != "TEX_IMAGE":
+                ins = [l.from_node for i in node.inputs for l in i.links]
+                node = ins[0] if ins else None
+            if node is not None and node.image is not None and node not in found:
+                found.append(node)
+    return found
+
+
+def head_front_mask(objs, img_w, img_h, head_frac, front_dot):
+    """Texels inside the UV triangles of front-facing (-Y) faces in the top head_frac of the model."""
+    lo, hi = bounds(objs)
+    top = hi[2] - head_frac * (hi[2] - lo[2])
+    mask = np.zeros((img_h, img_w), dtype=bool)
+    tris = 0
+    for o in objs:
+        me = o.data
+        uvl = me.uv_layers.active
+        if uvl is None:
+            continue
+        me.calc_loop_triangles()
+        mw = o.matrix_world
+        rot = mw.to_3x3()
+        for lt in me.loop_triangles:
+            c = mw @ Vector(lt.center)
+            n = (rot @ Vector(lt.normal)).normalized()
+            if c.z < top or -n.y < front_dot:
+                continue
+            tris += 1
+            uv = np.array([uvl.data[li].uv[:] for li in lt.loops]) * [img_w, img_h]
+            x0, y0 = np.floor(uv.min(0)).astype(int)
+            x1, y1 = np.ceil(uv.max(0)).astype(int)
+            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, img_w - 1), min(y1, img_h - 1)
+            if x1 < x0 or y1 < y0:
+                continue
+            ys, xs = np.mgrid[y0:y1 + 1, x0:x1 + 1]
+            (ax, ay), (bx, by), (cx, cy) = uv
+            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+            if abs(den) < 1e-12:
+                continue
+            px, py = xs + 0.5, ys + 0.5
+            w0 = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / den
+            w1 = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / den
+            inside = (w0 >= -0.02) & (w1 >= -0.02) & (w0 + w1 <= 1.02)
+            mask[y0:y1 + 1, x0:x1 + 1] |= inside
+    return mask, tris
+
+
+def dilate(m, r):
+    out = m.copy()
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            out |= np.roll(np.roll(m, dy, 0), dx, 1)
+    return out
+
+
+def fix_base_colour(objs, p, out_png):
+    """Recolour the plastic toward measured photo values and erase a smeared painted marking on the head front,
+    on the base colour image; saves it as out_png and swaps it into the materials."""
+    nodes = base_colour_nodes(objs)
+    if not nodes:
+        return {"skipped": "no base colour texture"}
+    img = nodes[0].image
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(h, w, 4)
+    rgb = px[..., :3].copy()
+    res = {"size": [w, h]}
+    er = p.get("erase")
+    if er:
+        region, tris = head_front_mask(objs, w, h, float(p.get("head_frac", 0.13)), float(p.get("front_dot", 0.5)))
+        hsv = rgb_to_hsv_np(rgb)
+        if er == "white":
+            mark = (rgb.min(-1) > 0.55) & (hsv[..., 1] < 0.3)
+        elif er == "red":
+            mark = ((hsv[..., 0] < 0.06) | (hsv[..., 0] > 0.92)) & (hsv[..., 1] > 0.35) & (hsv[..., 2] > 0.2)
+        else:
+            raise ValueError("--erase takes white or red")
+        hit = dilate(mark & region, 3) & region
+        rest = region & ~hit
+        fill = np.median(rgb[rest], 0) if rest.any() else np.array([0.1, 0.1, 0.1], dtype=np.float32)
+        rgb[hit] = fill
+        res["erase"] = {"head_triangles": tris, "region_px": int(region.sum()), "erased_px": int(hit.sum()),
+                        "fill_rgb": [round(float(x) * 255) for x in fill]}
+    rc = p.get("recolour")
+    if rc:
+        hsv = rgb_to_hsv_np(rgb)
+        lo_h, hi_h = rc.get("from_hue", [0.0, 1.0])
+        m = (hsv[..., 1] > rc.get("min_sat", 0.12)) & (hsv[..., 2] > rc.get("min_val", 0.0)) & \
+            (hsv[..., 0] >= lo_h) & (hsv[..., 0] <= hi_h)
+        if m.any():
+            ms, mv = float(np.median(hsv[..., 1][m])), float(np.median(hsv[..., 2][m]))
+            hsv[..., 0][m] = rc["hue"]
+            if rc.get("sat") is not None:
+                hsv[..., 1][m] = np.clip(hsv[..., 1][m] * rc["sat"] / max(ms, 1e-6), 0, 1)
+            if rc.get("val") is not None:
+                hsv[..., 2][m] = np.clip(hsv[..., 2][m] * rc["val"] / max(mv, 1e-6), 0, 1)
+            rgb = hsv_to_rgb_np(hsv)
+            res["recolour"] = {"texels": int(m.sum()), "from_median_sat_val": [round(ms, 3), round(mv, 3)]}
+        else:
+            res["recolour"] = {"texels": 0, "note": "no texel matched --from-hue/--min-sat/--min-val"}
+    px[..., :3] = rgb
+    new = bpy.data.images.new("pw_basecolour", w, h, alpha=True)
+    new.pixels.foreach_set(px.ravel())
+    new.filepath_raw = out_png
+    new.file_format = "PNG"
+    new.save()
+    saved = bpy.data.images.load(out_png)
+    for n in nodes:
+        n.image = saved
+    res["texture"] = out_png
+    return res
+
+
+def act_mark(p):
+    """Finish a generated figure for video: fix its base colour, put a clean painted marking (a letter or number)
+    on the head's front face as a thin text mesh, scale it to real size, export."""
+    objs = load(p["file"])
+    if not objs:
+        raise ValueError("no mesh objects")
+    res = {}
+    out = p["out"]
+    os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
+    if p.get("recolour") or p.get("erase"):
+        res["texture"] = fix_base_colour(objs, p, os.path.splitext(out)[0] + "_basecolor.png")
+    _, lo, hi, s = stand_up(objs, p.get("yaw", 0.0), p.get("height_m"), p.get("longest_m"))
+    res["dims_m"] = [round(v, 5) for v in hi - lo]
+    res["scale"] = s
+    text = p.get("text")
+    if text:
+        sc = bpy.context.scene
+        deps = bpy.context.evaluated_depsgraph_get()
+        H = hi.z - lo.z
+        top = hi.z - float(p.get("head_frac", 0.13)) * H
+        hits, N = [], 41
+        for i in range(N):
+            for j in range(N):
+                o = Vector((lo.x + (hi.x - lo.x) * i / (N - 1), lo.y - 1, top + (hi.z - top) * j / (N - 1)))
+                ok, loc, nrm, _, _, _ = sc.ray_cast(deps, o, Vector((0, 1, 0)))
+                if ok and nrm.y < -0.7:
+                    hits.append(loc.copy())
+        if len(hits) < 10:
+            raise ValueError("head front not found (%d ray hits): check --yaw (the face must look at -Y) and --head-frac" % len(hits))
+        yf = sorted(hh.y for hh in hits)[len(hits) // 2]
+        face = [hh for hh in hits if abs(hh.y - yf) < 0.04 * H]  # the flat front, not the jaw or neck
+        k = max(1, len(face) // 40)
+        xs, zs = sorted(hh.x for hh in face), sorted(hh.z for hh in face)
+        x0, x1, z0, z1 = xs[k], xs[-k - 1], zs[k], zs[-k - 1]
+        yfront = sorted(hh.y for hh in face)[len(face) // 50]  # the most forward part, so no stroke sinks in
+        fw, fh = x1 - x0, z1 - z0
+        curve = bpy.data.curves.new("pw_mark", "FONT")
+        curve.body = text
+        if p.get("font"):
+            try:
+                curve.font = bpy.data.fonts.load(p["font"])
+            except Exception as e:
+                res["font_error"] = str(e)[:120]
+        curve.align_x, curve.align_y = "CENTER", "CENTER"
+        curve.extrude = 0.02
+        txt = bpy.data.objects.new("pw_mark", curve)
+        sc.collection.objects.link(txt)
+        select_only([txt], txt)
+        bpy.ops.object.convert(target="MESH")
+        txt = bpy.context.active_object
+        vs = [v.co.copy() for v in txt.data.vertices]
+        tx0, tx1 = min(v.x for v in vs), max(v.x for v in vs)
+        ty0, ty1 = min(v.y for v in vs), max(v.y for v in vs)
+        for v in txt.data.vertices:
+            v.co.x -= (tx0 + tx1) / 2
+            v.co.y -= (ty0 + ty1) / 2
+        tw, th = tx1 - tx0, ty1 - ty0
+        sz = min(float(p.get("text_frac", 0.75)) * fh / th, float(p.get("width_frac", 0.92)) * fw / tw)
+        txt.scale = (sz, sz, sz * 0.5)
+        txt.rotation_euler = (math.radians(90), 0, 0)
+        gap = 0.003 * H
+        txt.location = Vector(((x0 + x1) / 2 + float(p.get("text_dx", 0)) * fw, yfront - gap - 0.01 * sz,
+                               (z0 + z1) / 2 + float(p.get("text_dz", 0)) * fh))
+        mat = bpy.data.materials.new("pw_mark_paint")
+        mat.use_nodes = True
+        col = [srgb_to_linear(float(c)) for c in p.get("colour", [0.95, 0.95, 0.95])]
+        bs = mat.node_tree.nodes["Principled BSDF"]
+        bs.inputs["Base Color"].default_value = col + [1]
+        bs.inputs["Roughness"].default_value = 0.6
+        txt.data.materials.append(mat)
+        res["mark"] = {"text": text, "face_m": [round(fw, 5), round(fh, 5)], "letter_h_m": round(th * sz, 5),
+                       "ray_hits": len(face)}
+    res["export"] = export(out, {})
+    return res
+
+
+def act_lineup(p):
+    """A few generated figures stood on a table with teams on fixed sides, and its control passes for a video
+    model: colour (textured, Cycles CPU), clay (Workbench), inverse depth (near white, one range), team mask."""
+    L = p["layout"]
+    out = p["out"]
+    os.makedirs(out, exist_ok=True)
+    reset()
+    sc = bpy.context.scene
+    W, H = L.get("size", [864, 480])
+    if p.get("preview"):
+        W, H = W // 2, H // 2
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = W, H, 100
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGB"
+    sc.view_settings.view_transform = "Standard"
+    figs = []
+    for f in L["figures"]:
+        before = set(sc.objects)
+        ext = os.path.splitext(f["file"])[1].lower()
+        if ext not in IMPORTERS:
+            raise ValueError("cannot import %s" % f["file"])
+        IMPORTERS[ext](f["file"])
+        new = [o for o in sc.objects if o not in before]
+        root = bpy.data.objects.new("fig_" + f["name"], None)
+        sc.collection.objects.link(root)
+        for o in new:
+            if o.parent is None:
+                o.parent = root
+        meshes = [o for o in new if o.type == "MESH"]
+        face = str(f.get("face", "+x"))
+        heading = {"+x": 90.0, "-x": -90.0, "-y": 0.0, "+y": 180.0}.get(face)
+        heading = float(face) if heading is None else heading
+        root.rotation_euler = (0, 0, math.radians(float(f.get("yaw", 0.0)) + heading))
+        bpy.context.view_layer.update()
+        lo, hi = bounds(meshes)
+        s = float(f.get("height_m", 0.13)) / max(hi[2] - lo[2], 1e-9)
+        root.scale = (s, s, s)
+        bpy.context.view_layer.update()
+        lo, hi = bounds(meshes)
+        x, y = f["at"]
+        root.location = Vector((x - (lo[0] + hi[0]) / 2, y - (lo[1] + hi[1]) / 2, -lo[2]))
+        bpy.context.view_layer.update()
+        figs.append({"cfg": f, "root": root, "meshes": meshes})
+    T = L.get("table", {})
+    ts = float(T.get("size_m", 1.6))
+
+    def plane(name, loc, rot, colour):
+        bpy.ops.mesh.primitive_plane_add(size=ts, location=loc, rotation=rot)
+        ob = bpy.context.active_object
+        ob.name = name
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = [srgb_to_linear(c) for c in colour] + [1]
+        ob.data.materials.append(m)
+        return ob
+
+    table = plane("table", (0, 0, 0), (0, 0, 0), T.get("colour", [0.62, 0.45, 0.30]))
+    back = None
+    if L.get("backdrop_m"):
+        back = plane("backdrop", (0, L["backdrop_m"], ts / 2), (math.pi / 2, 0, 0), L.get("backdrop_colour", [0.76, 0.74, 0.70]))
+    cam_data = bpy.data.cameras.new("cam")
+    cam_data.lens, cam_data.sensor_fit, cam_data.sensor_width = float(L.get("lens", 35)), "HORIZONTAL", 36
+    cam = bpy.data.objects.new("cam", cam_data)
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    cam.location = Vector(L["cam"])
+    cam.rotation_euler = (Vector(L["aim"]) - cam.location).to_track_quat("-Z", "Y").to_euler()
+    cam_data.clip_start, cam_data.clip_end = 0.01, 50
+    bpy.context.view_layer.update()
+    R = cam.matrix_world.to_3x3()
+    fwd = R @ Vector((0, 0, -1))
+    bottom = R @ Vector((0, -(H / 2) / (W * cam_data.lens / 36.0), -1.0))
+    near = 0.05
+    if bottom.z < 0:
+        near = max(0.02, (bottom * (-cam.location.z / bottom.z)).dot(fwd) * 0.9)
+    far = max((fg["root"].location - cam.location).dot(fwd) for fg in figs) * 1.6
+    if back is not None:
+        far = max(far, (Vector((0, L["backdrop_m"], cam.location.z)) - cam.location).dot(fwd) * 1.05)
+    from bpy_extras.object_utils import world_to_camera_view
+    boxes = {}
+    for fg in figs:
+        lo, hi = bounds(fg["meshes"])
+        pts = [Vector((x, y, z)) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])]
+        uv = [world_to_camera_view(sc, cam, q) for q in pts]
+        boxes[fg["cfg"]["name"]] = [round(min(q.x for q in uv) * W), round((1 - max(q.y for q in uv)) * H),
+                                    round(max(q.x for q in uv) * W), round((1 - min(q.y for q in uv)) * H)]
+
+    def emission(name, colour=(1, 1, 1), depth=False):
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        nt = m.node_tree
+        for n in list(nt.nodes):
+            nt.nodes.remove(n)
+        em, on = nt.nodes.new("ShaderNodeEmission"), nt.nodes.new("ShaderNodeOutputMaterial")
+        em.inputs["Color"].default_value = list(colour) + [1]
+        if depth:
+            cd, inv, mr = nt.nodes.new("ShaderNodeCameraData"), nt.nodes.new("ShaderNodeMath"), nt.nodes.new("ShaderNodeMapRange")
+            inv.operation = "DIVIDE"
+            inv.inputs[0].default_value = 1.0
+            nt.links.new(cd.outputs["View Z Depth"], inv.inputs[1])
+            mr.clamp = True
+            mr.inputs["From Min"].default_value, mr.inputs["From Max"].default_value = 1.0 / far, 1.0 / near
+            nt.links.new(inv.outputs[0], mr.inputs["Value"])
+            nt.links.new(mr.outputs["Result"], em.inputs["Strength"])
+        nt.links.new(em.outputs[0], on.inputs["Surface"])
+        return m
+
+    def world(colour, strength):
+        w = bpy.data.worlds.new("w")
+        w.use_nodes = True
+        bgn = w.node_tree.nodes["Background"]
+        bgn.inputs["Color"].default_value, bgn.inputs["Strength"].default_value = list(colour) + [1], strength
+        sc.world = w
+
+    everything = [o for fg in figs for o in fg["meshes"]] + [table] + ([back] if back else [])
+    team = {o.name: fg["cfg"].get("team", "a") for fg in figs for o in fg["meshes"]}
+
+    def override(mat_for):
+        for o in everything:
+            m = mat_for(o)
+            if not o.material_slots:
+                o.data.materials.append(m)
+            for slot in o.material_slots:
+                slot.link, slot.material = "OBJECT", m
+
+    def restore():
+        for o in everything:
+            for slot in o.material_slots:
+                slot.link = "DATA"
+
+    def render(name):
+        path = os.path.join(out, name + ".png")
+        sc.render.filepath = path
+        bpy.ops.render.render(write_still=True)
+        return path
+
+    passes = {}
+    sc.render.engine = "BLENDER_WORKBENCH"
+    sh = sc.display.shading
+    sh.light, sh.color_type, sh.single_color = "STUDIO", "SINGLE", (0.6, 0.6, 0.6)
+    world((0.05, 0.05, 0.05), 1)
+    passes["clay"] = render("clay")
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "CPU"
+    sc.cycles.samples, sc.cycles.use_denoising = 1, False
+    sc.render.filter_size = 0.01  # hard edges: one sample of flat emission is exact
+    world((0, 0, 0), 0)
+    dmat = emission("pw_depth", depth=True)
+    override(lambda o: dmat)
+    passes["depth"] = render("depth")
+    if not p.get("preview"):
+        mats = {"a": emission("pw_team_a", (1, 0, 0)), "b": emission("pw_team_b", (0, 0, 1)), None: emission("pw_none", (0, 0, 0))}
+        override(lambda o: mats[team.get(o.name)])
+        passes["mask"] = render("mask")
+    restore()
+    sc.render.filter_size = 1.5
+    if not p.get("preview"):
+        sc.cycles.samples, sc.cycles.use_denoising = int(p.get("samples", 64)), True
+        world((0.9, 0.92, 1.0), 0.35)
+        key = bpy.data.objects.new("key", bpy.data.lights.new("key", "AREA"))
+        key.data.energy, key.data.size, key.data.color = 6.0 * (cam.location.length / 0.5) ** 2, 0.8, (1.0, 0.93, 0.82)
+        key.location = cam.location + Vector((-0.4, -0.2, 0.7))
+        key.rotation_euler = (Vector((0, 0, 0.06)) - key.location).to_track_quat("-Z", "Y").to_euler()
+        sc.collection.objects.link(key)
+        passes["colour"] = render("colour")
+    res = {"size": [W, H], "lens": cam_data.lens, "cam": [round(v, 4) for v in cam.location], "aim": L["aim"],
+           "near_m": round(near, 4), "far_m": round(far, 4), "depth": "inverse 1/z from 1/far (black) to 1/near (white)",
+           "boxes_px": boxes, "passes": passes}
+    with open(os.path.join(out, "lineup.json"), "w", encoding="utf-8") as fh:
+        json.dump(res, fh, indent=1)
+    return res
+
+
 ACTIONS = {"inspect": act_inspect, "render": act_render, "match": act_match, "convert": act_convert,
-           "printable": act_printable, "union": act_union, "crowd": act_crowd}
+           "printable": act_printable, "union": act_union, "crowd": act_crowd, "turnaround": act_turnaround,
+           "mark": act_mark, "lineup": act_lineup}
 
 
 def main():

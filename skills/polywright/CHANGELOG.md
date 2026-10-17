@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261016-2 · 2026-10-16 · pw.py turnaround, mark, lineup; manifest --review; figures for video
+- because: L-006, user request (fold the run's processes and scripts into polywright)
+- files: SKILL.md (Crowd and battle blockouts, a closing paragraph), references/figures-for-video.md (new), references/cli.md (Commands), scripts/pw.py (cmd_turnaround, cmd_mark, cmd_lineup, manifest --review and in-folder paths, gen host hint), scripts/pw_bpy.py (act_turnaround, act_mark, act_lineup), tests/test_pw.py (four tests)
+- Three commands from a run that turned four toy figures into video references: grey turnarounds, marking and colour fixes on generated textures, and a tabletop lineup with depth and team mask; the manifest records reviews and resolves outputs inside the asset folder.
+
 ### C-20261016-1 · 2026-10-16 · Pose passes leave out hidden face points; two-fighter previs recipe
 because: L-005; user request ("update polywright with whatever would be helpful")
 files: scripts/pw_bpy.py (`hidden_face_points`, act_crowd), scripts/pw.py (`draw_pose_frames`), references/crowd-blockouts.md ("Two fighters (previs)"), tests/test_pw.py

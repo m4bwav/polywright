@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-003 · 2026-10-16 · An edit model follows a colour word over the picture
+- Trigger: clean views of a toy edited from its photo with "olive-green" in the prompt came back khaki olive; the photo's plastic measured teal (median RGB 61,118,123, hue 185 degrees). The same suite drew a human face under a faceless toy head in every face close-up, painted the front marking on the back of the head in most back views, and turned an embossed number red in one side view.
+- Hypothesis: the text conditions colour and anatomy more strongly than the reference latent, and "face" or "portrait" asks for a human face.
+- Rule: measure the photo's colour (median hue, saturation, value of the subject's pixels) and say that or no colour at all; colour-match the chosen view to the photo before meshing; skip face views for faceless figures; take markings only from the front view.
+- Evidence: 2026-10-16 reference suites for four figures and five accessories (FLUX.2 Klein 4B edits); references/figures-for-video.md, "Failure modes".
+- Scope: skill (Step 2)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-16
+
 ### L-001 · 2026-10-11 · A no-shadow prompt still produced a cast shadow
 - Trigger: Z-Image Turbo, 'no cast shadow' in the prompt, fountain reference 2026-10-11
 - Hypothesis: Product-photo wording pulls in a ground shadow
