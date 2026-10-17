@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-1 · 2026-10-17 · check measures wall thickness; printable fills hollow shells
+- because: R-20261017-1, L-004, HANDOFF owed item 5 (min_feature was "unchecked")
+- files: SKILL.md Step 2 and Step 4; ../polywright/scripts/pw_bpy.py wall_thickness, fill_cavities, act_printable; ../polywright/scripts/pw.py check (--thickness-samples, --no-thickness), printable (--seal-mm, --hollow); ../polywright/references/cli.md
+- `check` with Blender measures thickness for targets with `min_feature` and warns over 0.5% thin; `printable` fills a hollow shell's inside, which the first measurement found in a generated figure.
+
 ### C-20261011-4 · 2026-10-11 · printable re-grounds before the base clamp; faster, stricter planar dissolve
 - because: L-003; the wiki verification run of the published 0.1.1 (ai-docs/notes/2026-10-11-wiki-verify.out.txt) made a flat park scene printable and got 59,198 non-manifold edges; the dissolve on 368k faces ran over ten minutes
 - files: ../polywright/scripts/pw_bpy.py act_printable, tests/test_pw.py test_printable_flat_open_surface

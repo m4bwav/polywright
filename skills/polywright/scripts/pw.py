@@ -8,12 +8,12 @@ commands that need it say so in the JSON when Blender is missing instead of cras
   python pw.py inspect FILE [--fast]                   tris, objects, size, materials, images, UVs, watertight, parts
   python pw.py render FILE --out DIR [--views ..] [--color clay|material|texture] [--size 640]
                                                        orthographic views + contact sheet for a vision model to judge
-  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--join] [--max-tris N] [--draco]
+  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--level | --tilt-deg D] [--join] [--max-tris N] [--draco]
   python pw.py lods IN --out DIR [--ratios 1,0.5,0.25,0.1] [--format glb]
-  python pw.py printable IN OUT.stl --size-mm 100 [--wall-mm 1] [--voxel-mm V] [--base-cut-mm 0.6] [--drop a,b]
+  python pw.py printable IN OUT.stl --size-mm 100 [--wall-mm 1] [--voxel-mm V] [--base-cut-mm 0.6] [--drop a,b] [--seal-mm 1] [--hollow]
   python pw.py union IN OUT.stl                        boolean-union closed parts into one solid
   python pw.py 3mf A.stl [B.stl ..] --out X.3mf        one 3MF, one object per input (AMS colours)
-  python pw.py check FILE --target T [--real-size-m X] targets: python pw.py check --list
+  python pw.py check FILE --target T [--real-size-m X] [--thickness-samples N] targets: python pw.py check --list
   python pw.py new DIR --name N [--kind real|imagined|hybrid] [--targets game-unity,print-fdm]
   python pw.py manifest DIR [--add-output PATH --target T] [--add-source URL --licence L --author A] [--validate]
   python pw.py bpy SCRIPT.py [--blend FILE] [--timeout S] [-- script args]   run your bpy script headless
@@ -325,12 +325,15 @@ def trimesh_inspect(path):
     return res
 
 
-def inspect_file(path, fast=False):
+def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000):
     if not os.path.isfile(path):
         return {"ok": False, "error": "file not found: %s" % path}
     ext = os.path.splitext(path)[1].lower()
     if backend() and ext != ".3mf":
-        res = bpy_action("inspect", {"file": os.path.abspath(path), "deep": not fast})
+        params = {"file": os.path.abspath(path), "deep": not fast}
+        if thickness_min:
+            params.update(thickness_min=thickness_min, thickness_samples=thickness_samples)
+        res = bpy_action("inspect", params)
         res.setdefault("backend", "blender")
     else:
         try:
@@ -496,7 +499,8 @@ def paste_and_mask(still, render, hide, grow, mask_add):
 def cmd_convert(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "scale": a.scale, "size_m": a.size_m,
               "ground": a.ground, "center": a.center, "join": a.join, "max_tris": a.max_tris, "ratio": a.ratio,
-              "apply": a.apply, "uv": a.uv, "draco": a.draco, "export_scale": a.export_scale, "fbx_bake_axes": a.fbx_bake_axes}
+              "apply": a.apply, "uv": a.uv, "draco": a.draco, "export_scale": a.export_scale, "fbx_bake_axes": a.fbx_bake_axes,
+              "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg}
     res = bpy_action("convert", params)
     return emit(res, 0 if res.get("ok") else 1)
 
@@ -517,7 +521,7 @@ def cmd_printable(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "size_mm": a.size_mm, "size_axis": a.size_axis,
               "wall_mm": a.wall_mm, "voxel_mm": a.voxel_mm, "base_cut_mm": a.base_cut_mm, "max_tris": a.max_tris,
               "drop": [d for d in (a.drop or "").split(",") if d], "up": a.up, "remesh": not a.no_remesh,
-              "planar": not a.no_planar,
+              "planar": not a.no_planar, "hollow": a.hollow, "seal_mm": a.seal_mm,
               "blend": os.path.abspath(a.blend) if a.blend else None}
     res = bpy_action("printable", params, timeout=a.timeout)
     if res.get("ok"):
@@ -571,10 +575,11 @@ def cmd_check(a):
     if a.target not in targets["targets"]:
         return emit({"ok": False, "error": "unknown target %s" % a.target, "known": list(targets["targets"])}, 2)
     t = targets["targets"][a.target]
-    info = inspect_file(a.file)
+    rules = t.get("rules", {})
+    info = inspect_file(a.file, thickness_min=rules.get("min_feature") if not a.no_thickness else None,
+                        thickness_samples=a.thickness_samples)
     if not info.get("ok"):
         return emit(info, 1)
-    rules = t.get("rules", {})
     unit = t.get("units", "m")
     dims = info.get("dims") or info.get("dims_mesh_space") or [0, 0, 0]
     results = []
@@ -606,7 +611,15 @@ def cmd_check(a):
         ok = all(x <= y + 1e-9 for x, y in zip(sorted(dims, reverse=True), md))
         rule("max_dims", ok, "size %s %s (largest allowed %s %s; rotation is allowed)" % ([round(d, 3) for d in dims], unit, md, unit))
     if "min_feature" in rules:
-        rule("min_feature", "unchecked", "not measured here: render it and look for parts thinner than %s %s, or run a wall-thickness check" % (rules["min_feature"], unit), "info")
+        th = info.get("thickness") or {}
+        if th.get("thin_fraction") is None:
+            rule("min_feature", "unchecked", "not measured (needs Blender): render it and look for parts thinner than %s %s" % (rules["min_feature"], unit), "info")
+        else:
+            spots = "; ".join("%s %s at %s" % (s["thickness"], unit, s["at"]) for s in th.get("thin_spots", [])[:3])
+            rule("min_feature", True if th["thin_fraction"] < 0.005 else "warn",
+                 "%.1f%% of the surface is thinner than %s %s (thinnest %s, 5th percentile %s; %d sample points)%s" % (
+                     100 * th["thin_fraction"], rules["min_feature"], unit, th.get("thinnest"), th.get("p05"), th["samples"],
+                     ": " + spots if spots else ""), "warn")
     if "max_file_mb" in rules:
         mb = info.get("file_bytes", 0) / 1048576.0
         rule("max_file_mb", mb <= rules["max_file_mb"], "%.2f MB (limit %s MB)" % (mb, rules["max_file_mb"]), "warn")
@@ -617,7 +630,7 @@ def cmd_check(a):
         rule("real_scale", 0.9 <= ratio <= 1.1, "longest side %.4g %s vs expected %.4g %s (x%.3g)" % (longest, unit, want, unit, ratio))
     status = "fail" if any(r["status"] == "fail" for r in results) else "warn" if any(r["status"] == "warn" for r in results) else "pass"
     return emit({"ok": status != "fail", "target": a.target, "status": status, "results": results, "advice": t.get("advice", []),
-                 "inspect": {k: info.get(k) for k in ("tris", "objects", "dims", "watertight", "parts", "materials", "max_image_px", "backend", "blender")}},
+                 "inspect": {k: info.get(k) for k in ("tris", "objects", "dims", "watertight", "parts", "materials", "max_image_px", "backend", "blender", "thickness")}},
                 0 if status != "fail" else 1)
 
 
@@ -1513,6 +1526,150 @@ def parse_height(t):
         return 8.0, "default"
     return 5.0, "default"
 
+LEVEL_M = 3.2           # metres per storey, polywright's own default (the OSM wiki suggests none)
+ROOF_PITCH_DEG = 30.0   # roof slope when a roof shape has no roof:height, roof:levels or roof:angle (own default)
+ROOF_AS = {"gabled": "gabled", "saltbox": "gabled", "gambrel": "gabled", "mansard": "hipped", "half-hipped": "hipped",
+           "hipped": "hipped", "pyramidal": "pyramidal", "skillion": "skillion", "dome": "pyramidal", "onion": "pyramidal",
+           "round": "gabled"}
+
+
+def _num(t, k):
+    try:
+        return float(re.sub(r"[^0-9.]", "", str(t.get(k, "")).split(";")[0]) or "x")
+    except ValueError:
+        return None
+
+
+def min_rect(ring):
+    """Minimum-area rectangle around a ring: (centre, long axis unit, short axis unit, long side, short side)."""
+    best = None
+    n = len(ring)
+    for i in range(n):
+        (x0, y0), (x1, y1) = ring[i], ring[(i + 1) % n]
+        L = math.hypot(x1 - x0, y1 - y0)
+        if L < 1e-9:
+            continue
+        ux, uy = (x1 - x0) / L, (y1 - y0) / L
+        us = [x * ux + y * uy for x, y in ring]
+        vs = [-x * uy + y * ux for x, y in ring]
+        area = (max(us) - min(us)) * (max(vs) - min(vs))
+        if best is None or area < best[0]:
+            best = (area, ux, uy, min(us), max(us), min(vs), max(vs))
+    _, ux, uy, u0, u1, v0, v1 = best
+    cu, cv = (u0 + u1) / 2, (v0 + v1) / 2
+    centre = (cu * ux - cv * uy, cu * uy + cv * ux)
+    a, b = (ux, uy), (-uy, ux)
+    if (u1 - u0) >= (v1 - v0):
+        return centre, a, b, u1 - u0, v1 - v0
+    return centre, b, (-a[0], -a[1]), v1 - v0, u1 - u0
+
+
+def is_convex(ring):
+    sign = 0
+    n = len(ring)
+    for i in range(n):
+        (x0, y0), (x1, y1), (x2, y2) = ring[i], ring[(i + 1) % n], ring[(i + 2) % n]
+        c = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1)
+        if abs(c) > 1e-12:
+            if sign and (c > 0) != (sign > 0):
+                return False
+            sign = c
+    return True
+
+
+def roof_solid(shape, ring, z0, rh, along=True, direction=None):
+    """Closed, outward roof solid sitting at z0, rh high, on the ring's minimum-area rectangle (on the ring itself
+    for a pyramid over a convex footprint). Ridges run along the long side unless along is False; a skillion's
+    low edge faces the compass `direction` (degrees), else the long side's left."""
+    if shape == "pyramidal" and is_convex(ring):
+        n = len(ring)
+        cx = sum(x for x, _ in ring) / n
+        cy = sum(y for _, y in ring) / n
+        verts = [(x, y, z0) for x, y in ring] + [(cx, cy, z0 + rh)]
+        tris = [(c, b, a) for a, b, c in earclip(ring)]
+        tris += [(i, (i + 1) % n, n) for i in range(n)]
+        return verts, tris
+    (cx, cy), u, v, L, W = min_rect(ring)
+    if not along and shape in ("gabled", "hipped"):
+        u, v, L, W = v, (-u[0], -u[1]), W, L
+
+    def at(a, b, z):
+        return (cx + u[0] * a + v[0] * b, cy + u[1] * a + v[1] * b, z)
+
+    hl, hw = L / 2, W / 2
+    base = [at(-hl, -hw, z0), at(hl, -hw, z0), at(hl, hw, z0), at(-hl, hw, z0)]  # CCW seen from above
+    top = z0 + rh
+    if shape == "gabled":
+        verts = base + [at(-hl, 0, top), at(hl, 0, top)]
+        tris = [(0, 2, 1), (0, 3, 2), (0, 1, 5), (0, 5, 4), (2, 3, 4), (2, 4, 5), (1, 2, 5), (3, 0, 4)]
+    elif shape == "hipped" and L > W:
+        r = hl - hw
+        verts = base + [at(-r, 0, top), at(r, 0, top)]
+        tris = [(0, 2, 1), (0, 3, 2), (0, 1, 5), (0, 5, 4), (2, 3, 4), (2, 4, 5), (1, 2, 5), (3, 0, 4)]
+    elif shape == "skillion":
+        side = 0  # index of the low edge: 0 = -v side, 1 = +u, 2 = +v, 3 = -u
+        if direction is not None:
+            d = (math.sin(math.radians(direction)), math.cos(math.radians(direction)))
+            dots = [-(d[0] * v[0] + d[1] * v[1]), d[0] * u[0] + d[1] * u[1], d[0] * v[0] + d[1] * v[1], -(d[0] * u[0] + d[1] * u[1])]
+            side = dots.index(max(dots))
+        hi_a, hi_b = (side + 2) % 4, (side + 3) % 4  # the edge opposite the low one rises
+        verts = base + [(base[hi_a][0], base[hi_a][1], top), (base[hi_b][0], base[hi_b][1], top)]
+        lo_a, lo_b = side, (side + 1) % 4
+        tris = [(0, 2, 1), (0, 3, 2), (lo_a, lo_b, 4), (lo_a, 4, 5), (lo_b, hi_a, 4), (hi_b, lo_a, 5), (hi_a, hi_b, 5), (hi_a, 5, 4)]
+    else:  # pyramidal on the rectangle, and hipped on a square
+        verts = base + [at(0, 0, top)]
+        tris = [(0, 2, 1), (0, 3, 2), (0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)]
+    return verts, tris
+
+
+def building_mesh(ring, ground, t, bottom=None):
+    """One building or building:part (OSM Simple 3D Buildings): walls from min_height up to the eaves and a
+    roof solid on top. `height` includes the roof; storeys count LEVEL_M. Returns (verts, tris, info), ENU metres;
+    `bottom` overrides the walls' foot (prints stand everything on the ground)."""
+    total, why = parse_height(t)
+    has_height = why == "osm height"
+    shape = str(t.get("roof:shape", "flat")).lower()
+    kind = ROOF_AS.get(shape)
+    info = {"why": why, "roof": "flat"}
+    lo = _num(t, "min_height")
+    if lo is None and _num(t, "building:min_level") is not None:
+        lo = _num(t, "building:min_level") * LEVEL_M
+    lo = lo or 0.0
+    rh = 0.0
+    if kind:
+        (_, _), _, _, L, W = min_rect(ring)
+        span = W / 2 if kind != "skillion" else W
+        rh = _num(t, "roof:height")
+        if rh is None and _num(t, "roof:levels") is not None:
+            rh = _num(t, "roof:levels") * LEVEL_M
+        if rh is None:
+            ang = _num(t, "roof:angle")
+            rh = math.tan(math.radians(ang if ang is not None else ROOF_PITCH_DEG)) * span
+        fill = abs(poly_area(ring)) / max(L * W, 1e-9)
+        if kind == "pyramidal" and is_convex(ring):
+            pass
+        elif fill < 0.75:
+            info["roof"] = "flat (footprint not rectangular)"
+            kind, rh = None, 0.0
+    if has_height:  # height includes the roof
+        eaves = total - rh if total - rh > lo + 0.5 else max(lo + 0.5, total * 0.6)
+        rh = total - eaves if kind else 0.0
+    elif why == "levels":  # building:levels counts from the ground, min_level storeys included; the roof sits on top
+        eaves = max(total, lo + 0.5)
+    else:
+        eaves = lo + total
+    z0 = ground - 0.3 if bottom is None and lo <= 0 else (ground + lo if bottom is None else bottom)
+    verts, tris = prism(ring, z0, ground + eaves)
+    if kind and rh > 0.05:
+        along = str(t.get("roof:orientation", "along")).lower() != "across"
+        rv, rt = roof_solid(kind, ring, ground + eaves, rh, along, _num(t, "roof:direction"))
+        o = len(verts)
+        verts += rv
+        tris += [(a + o, b + o, c + o) for a, b, c in rt]
+        info["roof"] = kind if kind == shape else "%s as %s" % (shape, kind)
+    info["top"] = round(eaves + (rh if kind else 0.0), 2)
+    return verts, tris, info
+
 
 class Mesh:
     def __init__(self, name, color):
@@ -1802,23 +1959,27 @@ def cmd_place(a):
         meshes.append(m)
     # ---- buildings
     bld = Mesh("buildings", (0.80, 0.76, 0.70))
-    heights, bcount, hsrc = [], 0, {}
+    heights, bcount, hsrc, roofs = [], 0, {}, {}
     print_prisms = []
+    parts = [ring for t, ring, _ in areas if "building:part" in t and t.get("building:part") != "no" and len(ring) >= 3]
+    part_pts = [(sum(x for x, _ in r) / len(r), sum(y for _, y in r) / len(r)) for r in parts]
     for t, ring, oid in areas:
-        if "building" not in t or len(ring) < 3 or t.get("building") in ("no",):
+        is_part = "building:part" in t and t.get("building:part") != "no"
+        if not (is_part or "building" in t) or len(ring) < 3 or t.get("building") in ("no",):
             continue
         if abs(poly_area(ring)) < a.min_building_m2:
             continue
+        if not is_part and any(point_in_poly(x, y, ring) for x, y in part_pts):
+            continue  # Simple 3D Buildings: an outline with parts is drawn by its parts
         if poly_area(ring) < 0:
             ring = ring[::-1]
-        h, why = parse_height(t)
-        hsrc[why] = hsrc.get(why, 0) + 1
-        ground = [zf(x, y) for x, y in ring]
-        z0, z1 = min(ground) - 0.3, min(ground) + h
-        v, f = prism(ring, z0, z1)
+        g0 = min(zf(x, y) for x, y in ring)
+        v, f, info = building_mesh(ring, g0, t)
+        hsrc[info["why"]] = hsrc.get(info["why"], 0) + 1
+        roofs[info["roof"]] = roofs.get(info["roof"], 0) + 1
         bld.add(v, f)
-        print_prisms.append((ring, min(ground), h))
-        heights.append(h)
+        print_prisms.append((ring, g0, t))
+        heights.append(info["top"])
         bcount += 1
     meshes.append(bld)
     # ---- roads, paths, waterways
@@ -1886,7 +2047,7 @@ def cmd_place(a):
     res = {"ok": True, "out": out, "scene": scene_path, "bbox": [s, w, n, e], "center": [round(loc.lat0, 7), round(loc.lon0, 7)],
            "size_m": [round(width_m, 1), round(height_m, 1)], "grid": [nx, ny], "res_m": res_m, "dem": dem,
            "relief_m": round(relief, 2), "elevation_min_m": round(zmin, 2),
-           "counts": {"water_points_flattened": flattened, "buildings": bcount, "building_height_source": hsrc, "road_segments": len(road_lines), "trees": tcount,
+           "counts": {"water_points_flattened": flattened, "buildings": bcount, "building_height_source": hsrc, "roofs": roofs, "road_segments": len(road_lines), "trees": tcount,
                       "ground_cells": {(cls_names[k] if k >= 0 else "default"): len(v) // 2 for k, v in terrain.items()}},
            "frame": "glTF: metres, +Y up, -Z north, +X east, origin at the bbox centre, y=0 at the lowest ground",
            "credits": credits, "notes": notes}
@@ -1904,12 +2065,15 @@ def cmd_place(a):
         parts = [tile]
         b = Mesh("buildings", (0.8, 0.76, 0.7))
         dropped = 0
-        for ring, g0, h in print_prisms:
+        for ring, g0, t in print_prisms:
             rr = [(x * k, y * k) for x, y in ring]
             if min(max(p[0] for p in rr) - min(p[0] for p in rr), max(p[1] for p in rr) - min(p[1] for p in rr)) < a.min_feature_mm:
                 dropped += 1
                 continue
-            v, ff = prism(rr, max(0.2, pz(g0) - 1.0), pz(g0) + max(h * k * ex, a.min_feature_mm / 2))
+            # parts above the ground (min_height) stand on it in a print: nothing prints in mid-air
+            v, ff, _ = building_mesh(ring, g0, t, bottom=g0 - 1.0 / (k * ex))
+            lift = max(0.0, a.min_feature_mm / 2 - (max(z for _, _, z in v) - g0) * k * ex)
+            v = [(x * k, y * k, max(0.2, pz(g0) + (z - g0) * k * ex + (lift if z > g0 else 0.0))) for x, y, z in v]
             b.add(v, ff)
         parts.append(b)
         if a.print_roads:
@@ -2119,6 +2283,9 @@ def main(argv=None):
     p.add_argument("--size-m", type=float, help="scale so the longest side is this many metres")
     p.add_argument("--ground", action="store_true", help="lowest point to z=0")
     p.add_argument("--center", action="store_true", help="centre on x and y")
+    p.add_argument("--level", action="store_true", help="stand it on its base: the largest flat face of its hull near the bottom turned to face down (Pixal3D output leans by the camera's elevation)")
+    p.add_argument("--tilt-deg", type=float, help="instead of --level: rotate this many degrees about X (a known camera elevation)")
+    p.add_argument("--max-tilt-deg", type=float, default=45.0, help="--level only considers bases within this angle of down")
     p.add_argument("--join", action="store_true")
     p.add_argument("--apply", action="store_true", help="flatten hierarchy and apply transforms")
     p.add_argument("--max-tris", type=int)
@@ -2149,6 +2316,8 @@ def main(argv=None):
     p.add_argument("--up", choices=["z", "y"], default="z", help="y: source is Y-up and was not rotated on import")
     p.add_argument("--no-remesh", action="store_true")
     p.add_argument("--no-planar", action="store_true", help="keep the remesh's even triangles on flat faces")
+    p.add_argument("--seal-mm", type=float, default=1.0, help="a hollow shell's openings up to this wide are sealed before its inside is filled (grooves this narrow fill too)")
+    p.add_argument("--hollow", action="store_true", help="keep a hollow shell hollow (no cavity fill)")
     p.add_argument("--blend", help="also save the result as a .blend")
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_printable)
@@ -2172,6 +2341,8 @@ def main(argv=None):
     p.add_argument("file", nargs="?")
     p.add_argument("--target")
     p.add_argument("--real-size-m", type=float, help="the real object's longest side, to catch unit mistakes")
+    p.add_argument("--thickness-samples", type=int, default=20000, help="surface points for the wall-thickness pass (targets with min_feature)")
+    p.add_argument("--no-thickness", action="store_true", help="skip the wall-thickness pass")
     p.add_argument("--list", action="store_true")
     p.set_defaults(fn=cmd_check)
 

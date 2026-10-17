@@ -62,7 +62,7 @@ RAIL), anything research-only.
   | Model | Time | Result |
   |---|---|---|
   | TRELLIS.2 (template, `--set 316.value=true`) | 377 s | upright, one part, 699k triangles, 4096 px PBR, 610 non-manifold edges; the sharpest lion head of the three |
-  | Pixal3D (template default) | 329 s | 700k triangles, 4096 px PBR, 55 MB, 515 non-manifold edges; in the camera's frame, leaning by the camera's elevation: level it |
+  | Pixal3D (template default) | 329 s | 700k triangles, 4096 px PBR, 55 MB, 515 non-manifold edges; in the camera's frame, leaning by the camera's elevation: `pw.py convert --level` stood it up (17.7 degrees, 9 s) |
   | Hunyuan3D-2 (built in) | 99 s | shape only, 405k triangles, 3,048 non-manifold edges |
 - `pw.py gen` checks every node class in the workflow against each host's `/object_info` and uses the first host
   that has them all.

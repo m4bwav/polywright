@@ -22,6 +22,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
+### L-004 · 2026-10-17 · Image-to-3D figures come out of printable hollow
+- Trigger: the first wall-thickness check, on a TRELLIS.2 toy figure made printable at 60 mm, found 74% of the surface under 0.9 mm; rays through the legs crossed four walls 0.3 to 0.5 mm thick with air between
+- Hypothesis: the generator's mesh is a thin double-walled shell open through gaps of 0.5 to 1 mm, so the voxel remesh keeps both walls, and the cavity is joined to the outer surface, so keeping the largest part does not drop it (a fully closed cavity was already dropped)
+- Rule: after the remesh, voxelise, seal gaps up to 1 mm, flood the outside and fill what it cannot reach when that is over a tenth of the volume; check wall thickness after every printable on a generated model. Seals of 0.25 and 0.5 mm left 51% and 27% thin
+- Evidence: C-20261017-1; figure 1.76 to 3.43 cm3, thin 74% to 4.8%; test_printable_fills_a_hollow_shell
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-17
+
 ### L-003 · 2026-10-11 · Re-ground after thickening, before clamping a flat base
 - Trigger: a flat terrain sheet made printable came out with 59,198 non-manifold edges and 0 volume (wiki verification run)
 - Hypothesis: the model was grounded before the inward solidify, which pushed the sheet 1.2 mm below z=0; the clamp then flattened the whole slab into one plane

@@ -4,6 +4,16 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-2 · 2026-10-17 · convert --level and --tilt-deg
+- because: ../polywright-generate C-20261017-2
+- files: scripts/pw.py convert, scripts/pw_bpy.py level_rotation and act_convert; references/cli.md
+- Stands a leaning model on its convex hull's largest flat face near the bottom, or rotates by a given angle.
+
+### C-20261017-1 · 2026-10-17 · cli.md: wall thickness in check, hollow-shell fill in printable
+- because: ../polywright-print C-20261017-1 (R-20261017-1, L-004 there)
+- files: references/cli.md (command table, output notes); scripts/pw.py, scripts/pw_bpy.py
+- The command reference lists `check --thickness-samples/--no-thickness` and `printable --seal-mm/--hollow`.
+
 ### C-20261016-2 · 2026-10-16 · pw.py turnaround, mark, lineup; manifest --review; figures for video
 - because: L-006, user request (fold the run's processes and scripts into polywright)
 - files: SKILL.md (Crowd and battle blockouts, a closing paragraph), references/figures-for-video.md (new), references/cli.md (Commands), scripts/pw.py (cmd_turnaround, cmd_mark, cmd_lineup, manifest --review and in-folder paths, gen host hint), scripts/pw_bpy.py (act_turnaround, act_mark, act_lineup), tests/test_pw.py (four tests)

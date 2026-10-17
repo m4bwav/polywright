@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-1 · 2026-10-17 · Description excludes flat graphic patterns
+- because: T-20261017-1 (decoy-2 'seamless pattern for wrapping paper' fired the skill 1 of 3)
+- files: SKILL.md frontmatter description
+- Adds "Not for flat graphic patterns (wrapping paper, fabric, wallpaper prints)".
+
 ### C-20261016-1 · 2026-10-16 · Colour from the photo's pixels; back views copy front markings
 - because: L-003
 - files: SKILL.md Step 2

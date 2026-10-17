@@ -286,6 +286,42 @@ class Commands(unittest.TestCase):
         self.assertNotEqual(im.getpixel((50, 40)), (0, 0, 0))  # the neck is drawn
         self.assertEqual(im.getpixel((50, 25)), (0, 0, 0))  # nothing where a nose limb would run
 
+    def test_roof_solids_are_closed_and_outward(self):
+        ring = [(0, 0), (12, 0), (12, 6), (0, 6)]
+        for shape in ("gabled", "hipped", "pyramidal", "skillion"):
+            for direction in (None, 0, 90, 180, 270):
+                v, f = pw.roof_solid(shape, ring, 5, 3, True, direction)
+                ok, why = closed_and_outward(v, f)
+                self.assertTrue(ok, "%s %s: %s" % (shape, direction, why))
+                self.assertAlmostEqual(max(z for _, _, z in v), 8)
+        v, f = pw.roof_solid("pyramidal", [(0, 0), (4, 0), (6, 3), (2, 5), (-1, 3)], 0, 2)  # convex: on the ring
+        self.assertTrue(closed_and_outward(v, f)[0])
+        self.assertEqual(len(v), 6)
+        v, f = pw.roof_solid("hipped", [(0, 0), (5, 0), (5, 5), (0, 5)], 0, 2)  # square: a pyramid
+        self.assertTrue(closed_and_outward(v, f)[0])
+        # skillion: the low edge faces roof:direction (90 = east, +x)
+        v, f = pw.roof_solid("skillion", ring, 0, 3, True, 90)
+        self.assertEqual({round(x) for x, _, z in v if z > 0}, {0})
+
+    def test_building_heights_follow_simple_3d_buildings(self):
+        ring = [(0, 0), (10, 0), (10, 8), (0, 8)]
+        top = lambda v: round(max(z for _, _, z in v), 3)
+        v, f, info = pw.building_mesh(ring, 0, {"building": "yes", "height": "12", "roof:shape": "gabled", "roof:height": "4"})
+        self.assertEqual((top(v), info["roof"]), (12, "gabled"))  # height includes the roof
+        walls = [z for x, y, z in v if (x, y) == (0, 0)]
+        self.assertIn(8, [round(z, 3) for z in walls])  # eaves at 12 - 4
+        v, f, info = pw.building_mesh(ring, 0, {"building": "yes", "building:levels": "2", "roof:shape": "hipped", "roof:levels": "1"})
+        self.assertEqual(top(v), round(2 * pw.LEVEL_M + 1 + pw.LEVEL_M, 3))  # roof levels sit on top
+        v, f, info = pw.building_mesh(ring, 0, {"building:part": "yes", "height": "20", "min_height": "15"})
+        self.assertEqual(round(min(z for _, _, z in v), 3), 15)  # a part above the ground
+        v, f, info = pw.building_mesh(ring, 0, {"building:part": "yes", "height": "20", "min_height": "15"}, bottom=-1)
+        self.assertEqual(round(min(z for _, _, z in v), 3), -1)  # prints stand it on the ground
+        L = [(0, 0), (10, 0), (10, 3), (3, 3), (3, 10), (0, 10)]
+        v, f, info = pw.building_mesh(L, 0, {"building": "yes", "roof:shape": "gabled"})
+        self.assertTrue(info["roof"].startswith("flat"), info)  # an L footprint is far from its rectangle
+        v, f, info = pw.building_mesh(ring, 0, {"building": "yes", "roof:shape": "dome"})
+        self.assertEqual(info["roof"], "dome as pyramidal")
+
     def test_place_offline_from_fixture(self):
         out = os.path.join(self.tmp, "place")
         os.makedirs(os.path.join(out, "data"))
@@ -368,12 +404,75 @@ class WithBlender(unittest.TestCase):
         code, info = run("inspect", dst)
         self.assertTrue(info["watertight"], info)  # re-exported glTF splits vertices; topology welds them
 
+    def test_convert_level_stands_a_leaning_model_up(self):
+        # a 1 x 1 x 2 block leaning 20 degrees about X (an image-to-3D model in a raised camera's frame)
+        box = pw.Mesh("leaning", (0.5, 0.5, 0.5))
+        v, box.f = pw.prism([(0, 0), (1, 0), (1, 1), (0, 1)], 0, 2)
+        c, s = math.cos(math.radians(20)), math.sin(math.radians(20))
+        box.v = [(x, y * c - z * s, y * s + z * c) for x, y, z in v]
+        src = os.path.join(self.tmp, "leaning.glb")
+        pw.write_glb(src, [box])
+        code, out = run("convert", src, os.path.join(self.tmp, "level.glb"), "--level", "--ground")
+        self.assertEqual(code, 0, out)
+        self.assertAlmostEqual(out["level"]["tilt_deg"], 20, delta=0.1)
+        self.assertEqual(sorted(round(d, 3) for d in out["dims"]), [1, 1, 2])
+        code, out = run("convert", src, os.path.join(self.tmp, "given.glb"), "--tilt-deg", "-20")
+        self.assertEqual(sorted(round(d, 3) for d in out["dims"]), [1, 1, 2], out)
+
     def test_printable(self):
         dst = os.path.join(self.tmp, "p.stl")
         code, out = run("printable", self.glb, dst, "--size-mm", "40")
         self.assertEqual(code, 0, out)
         self.assertTrue(out["watertight"])
         self.assertAlmostEqual(max(out["dims_mm"]), 40, delta=0.8)
+
+    def test_check_measures_wall_thickness(self):
+        # a 20 mm block passes the 0.9 mm FDM wall rule; a 0.5 mm fin standing on it is found and located
+        block, fin = pw.Mesh("block", (0.5, 0.5, 0.5)), pw.Mesh("fin", (0.5, 0.5, 0.5))
+        block.v, block.f = pw.prism([(0, 0), (20, 0), (20, 20), (0, 20)], 0, 20)
+        fin.v, fin.f = pw.prism([(30, 0), (50, 0), (50, 0.5), (30, 0.5)], 0, 20)
+        solid, both = os.path.join(self.tmp, "block.stl"), os.path.join(self.tmp, "fin.stl")
+        pw.write_stl(solid, [block])
+        pw.write_stl(both, [block, fin])
+        code, chk = run("check", solid, "--target", "print-fdm", "--thickness-samples", "3000")
+        rule = next(r for r in chk["results"] if r["rule"] == "min_feature")
+        self.assertEqual(rule["status"], "pass", chk)
+        self.assertEqual(chk["inspect"]["thickness"]["thin_fraction"], 0)
+        code, chk = run("check", both, "--target", "print-fdm", "--thickness-samples", "3000")
+        th = chk["inspect"]["thickness"]
+        rule = next(r for r in chk["results"] if r["rule"] == "min_feature")
+        self.assertEqual(rule["status"], "warn", chk)
+        self.assertAlmostEqual(th["thinnest"], 0.5, delta=0.01)
+        # the fin's two big faces are 800 of the 3,240 mm2 of fin and block: about 25% of the surface
+        self.assertGreater(th["thin_fraction"], 0.2)
+        self.assertLess(th["thin_fraction"], 0.36)
+        self.assertGreaterEqual(th["thin_spots"][0]["at"][0], 29.9)
+        code, chk = run("check", both, "--target", "print-fdm", "--no-thickness")
+        rule = next(r for r in chk["results"] if r["rule"] == "min_feature")
+        self.assertEqual(rule["status"], "unchecked")
+
+    def test_printable_fills_a_hollow_shell(self):
+        # a box of 0.3 mm walls with air inside, open to the outside through a 0.6 mm slot in the lid (how
+        # image-to-3D shells arrive: a fully closed cavity was already dropped as a separate part) comes out
+        # solid; --hollow keeps the air
+        w, slabs = 0.3, []
+        for ring, z0, z1 in [([(0, 0), (20, 0), (20, 20), (0, 20)], 0, w),
+                             ([(0, 0), (9.7, 0), (9.7, 20), (0, 20)], 20 - w, 20),
+                             ([(10.3, 0), (20, 0), (20, 20), (10.3, 20)], 20 - w, 20),
+                             ([(0, 0), (w, 0), (w, 20), (0, 20)], 0, 20), ([(20 - w, 0), (20, 0), (20, 20), (20 - w, 20)], 0, 20),
+                             ([(0, 0), (20, 0), (20, w), (0, w)], 0, 20), ([(0, 20 - w), (20, 20 - w), (20, 20), (0, 20)], 0, 20)]:
+            m = pw.Mesh("slab%d" % len(slabs), (0.5, 0.5, 0.5))
+            m.v, m.f = pw.prism(ring, z0, z1)
+            slabs.append(m)
+        src = os.path.join(self.tmp, "shell.stl")
+        pw.write_stl(src, slabs)
+        args = ["--size-mm", "20", "--base-cut-mm", "0", "--no-planar", "--voxel-mm", "0.1"]
+        code, out = run("printable", src, os.path.join(self.tmp, "solid.stl"), *args)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(any(s.startswith("hollow shell: filled") for s in out["steps"]), out["steps"])
+        self.assertGreater(out["volume_cm3"], 7.5)  # 20 mm cube: 8 cm3
+        code, out = run("printable", src, os.path.join(self.tmp, "kept.stl"), *(args + ["--hollow"]))
+        self.assertLess(out["volume_cm3"], 2.0)
 
     def test_printable_flat_open_surface(self):
         # an open flat sheet sits at z=0; the inward wall pushes it below zero, and the base clamp must not crush it

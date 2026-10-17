@@ -117,17 +117,16 @@ These come from real runs, not from a model's say-so:
   caught and fixed four bugs: roads outside the box, an inside-out terrain block that made the Manifold union
   drop every building silently, missing enclosing areas, and water painted over islands.
 
-- Agent evals, headless in fresh sessions: 23 of 28 trigger and decoy cases pass with every decoy passing (the
-  misses are a bpy traceback and a batch export the model handled without the skill, a drawing that was not
-  attached, and two requests the hub or a sibling took instead); the print and capture action cases ran `pw.py`
-  for real. Details in each skill's TESTS.md.
+- Agent evals, headless in fresh sessions with `tests/run_evals.py`: every trigger and decoy case three times,
+  80 of 87 on the first pass, and the four weak cases 24 of 24 after their fixes (2026-10-17); the print and
+  capture action cases ran `pw.py` for real. Details in each skill's TESTS.md.
 
 - TRELLIS.2 and Pixal3D through ComfyUI's own template, run as is by `pw.py gen --workflow` on the 16 GB card:
   TRELLIS.2 377 s of GPU time for an upright 699k-triangle model with 4096 px PBR textures; Pixal3D 329 s, in the
-  camera's frame.
+  camera's frame, stood up by `pw.py convert --level`.
 
-Not verified yet: Blender discovery on macOS and Linux installs (the CI Blender job uses the bpy wheel), any hosted
-generator, and three runs per eval case. The [wiki](https://github.com/m4bwav/polywright/wiki) has every command
+Not verified yet: Blender from Linux snaps and distro packages, any hosted generator, and three runs of the
+action and outcome eval cases. The [wiki](https://github.com/m4bwav/polywright/wiki) has every command
 with real output.
 
 ## Testing

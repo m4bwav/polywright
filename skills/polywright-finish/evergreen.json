@@ -42,14 +42,14 @@
   },
   "consolidate_every": 25,
   "tests": {
-    "last_run": "2026-10-11T23:59",
-    "harness": "headless claude -p, one run per case",
+    "last_run": "2026-10-17T19:00",
+    "harness": "tests/run_evals.py (headless claude -p, three runs per trigger case)",
     "env": "dev-machine",
     "cases": 6,
-    "passed": 3,
-    "failed": 1,
+    "passed": 4,
+    "failed": 0,
     "failing": [],
-    "last_failure": "2026-10-11",
+    "last_failure": "2026-10-17",
     "research_after_days": null
   }
 }

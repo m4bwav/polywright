@@ -8,6 +8,12 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 11/12
+- trigger-1 · trigger · sibling took it: 1 of 3 runs loaded the hub (which routes here) for 'make this 400k model work in Roblox'
+- rerun unchanged: trigger-1 3/3
+- Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
+- led to: none (the hub routing to finish is acceptable; watch it)
+
 ### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from mark-local 0.1.1 · Windows 11 dev machine · 3/4
 - trigger-1 · trigger · the hub fired instead and owns the hand-off to finish; acceptable family routing
 - First pass the same day (descriptions of 0.1.0) passed 17/28 over all seven skills; the descriptions were made explicit about when to fire (C-20261011-2). A harness bug (subprocess could not start claude.cmd) made an earlier run report 0 invocations; not counted.

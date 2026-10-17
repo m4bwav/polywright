@@ -24,6 +24,14 @@ voids under water. Degrees treated as metres stretch everything: `pw.py` project
 - Overpass can answer HTTP 200 with an HTML error page: the first byte must be `{` (the fetcher checks).
 - `>; out skel` returns whole ways that run far outside the box: clip lines and polygons to the box
   (`clip_line`, `clip_ring`) or roads stick out of the scene by hundreds of metres.
+- Buildings follow OSM's Simple 3D Buildings: `height` includes the roof; `min_height` (or `building:min_level`)
+  lifts a part off the ground (prints stand it on the ground); an outline with `building:part` areas inside is
+  drawn by its parts. `roof:shape` gabled, hipped, pyramidal and skillion are built (saltbox, gambrel and round
+  as gabled; mansard and half-hipped as hipped; dome and onion as pyramidal) on the footprint's minimum
+  rectangle, with `roof:height`, else `roof:levels` x 3.2 m, else `roof:angle`, else a 30 degree pitch
+  (polywright's defaults: the wiki gives none). A footprint under 75% of its rectangle (an L or a courtyard)
+  keeps a flat roof; `counts.roofs` says how many. Tested 2026-10-17 on a European old town (229 buildings, 82
+  roofs built, 11 left flat).
 - In a US city OSM often carries lidar-derived `height` on most buildings (203 of 249 in the test); the rest get
   a default by type. `place.json` says how many were guessed.
 - A terrain block whose rim runs clockwise needs its walls and bottom wound the other way; a Manifold union of

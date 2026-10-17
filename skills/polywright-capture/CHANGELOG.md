@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-1 · 2026-10-17 · place builds min_height, building parts and roof shapes
+- because: R-20261017-1, HANDOFF owed item 4
+- files: SKILL.md (What place gives you); references/places.md (notes from runs); ../polywright/scripts/pw.py building_mesh, roof_solid, min_rect, place
+- Buildings follow Simple 3D Buildings: parts replace outlines, min_height lifts parts (prints stand them on the ground), four roof shapes on near-rectangular footprints, `counts.roofs`.
+
 ### C-20261011-2 · 2026-10-11 · Description says when to fire
 - because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
 - files: SKILL.md frontmatter description, evals/evals.json action-1
