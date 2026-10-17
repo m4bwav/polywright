@@ -889,6 +889,16 @@ def crowd_pose(fig, t):
     return parts, [base @ j for j in joints]
 
 
+def hidden_face_points(j, cam_loc):
+    """COCO-18 indices a pose detector would not find from this camera: the nose and each eye once turned away from
+    the lens (a profile keeps the nose and the near eye), an ear behind the head. Pose controls read drawn face
+    points as a face to the camera, so a back drawn with them becomes a face."""
+    head = (j[16] + j[17]) / 2
+    to_cam = (cam_loc - head).normalized()
+    away = lambda i: (j[i] - head).normalized().dot(to_cam)  # noqa: E731
+    return [i for i in (0, 14, 15) if away(i) < -0.2] + [i for i in (16, 17) if away(i) < -0.35]
+
+
 def crowd_gap(p):
     """Metres between the front ranks at frame 1. Default: what both sides close in two thirds of the shot,
     so a clash or charge meets on screen; 30 m when both sides only march or hold."""
@@ -1048,6 +1058,7 @@ def act_crowd(p):
     side_rgb = {"a": (1.0, 0.0, 0.0, 1), "b": (0.0, 0.0, 1.0, 1)}
     clay_rgb = {"a": (0.55, 0.42, 0.36, 1), "b": (0.36, 0.42, 0.52, 1)}
     passes = list(p.get("passes", ["depth", "mask", "clay", "pose"]))
+    os.makedirs(out, exist_ok=True)  # pose alone writes only joints.json here
     for d in passes:
         if d != "pose":
             os.makedirs(os.path.join(out, d), exist_ok=True)
@@ -1072,6 +1083,8 @@ def act_crowd(p):
                 tall = abs(px[0][1] - (px[10][1] + px[13][1]) / 2)
                 if tall < pose_min or not any(0 <= x < W and 0 <= y < H for x, y in px):
                     continue
+                for i in hidden_face_points(f["_j"], cam.matrix_world.translation):
+                    px[i] = (-1, -1)  # a detector would not see them; drawn, they turn a back into a face
                 people.append([round(sum(q.z for q in pj) / 18, 2), [[round(x, 1), round(y, 1)] for x, y in px]])
             people.sort(key=lambda q: -q[0])  # far first, so near skeletons draw on top
             joints_out.append({"frame": k + 1, "people": people})

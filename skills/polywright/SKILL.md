@@ -97,7 +97,7 @@ Video models break on crowds; Blender does not. Let Blender place the army and t
 3. Repaint clay frame 1 into an approved start still; drive Wan VACE or Wan 2.2 Fun Control with the depth video
    and that still. Prompt costume, colour per side, light and haze, not the head count.
 
-Depth convention, views, screen direction, your own soldier and what is untested:
+Depth convention, views, screen direction, your own soldier, two-fighter previs and what is untested:
 [references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
 
 ## Step 5: finish and hand over

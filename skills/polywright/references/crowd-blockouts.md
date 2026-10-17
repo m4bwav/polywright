@@ -73,6 +73,27 @@ role in the prompt rather than by its blockout colour.
   the depth pass then carries the set too.
 - Cavalry, siege engines, arrows: not built in; add them as objects in the saved `.blend`.
 
+## Two fighters (previs, tested in Blender 2026-10-16)
+
+A duel needs the bodies, their facing and the blades in the control; a still Canny of the empty set holds only
+the room, and video takes then drift to both fighters facing the lens. The route that worked in Blender (no `pw.py`
+command yet; a proposed `pw.py duel` waits on the first video test):
+
+1. Rebuild the set from its own blockout script, and use the shot's own camera.
+2. Two of the crowd mannequins at the fighters' marks, posed by two-bone IK to hand and foot targets (knee pole
+   along the chest, elbow pole down and out). Poses are named JSON keyed in seconds, smoothstep between keys,
+   each a base pose plus overrides.
+3. A blade is a rigid box on the wrist pointing along a direction in the figure's frame. For depth, render a
+   second pass with blades 2.8 times as thick: at a 4 m two-shot the real 1.6 cm blade is a broken line, the thick one a
+   solid bar. A thrown cloak or a knocked-away blade is a matrix lerp and slerp from its held pose to a mark on
+   the floor.
+4. Passes per frame: inverse depth (Cycles, CPU), thick-blade depth, clay in Workbench (Canny it), COCO joints
+   with hidden face points left out (see L-005). 107 frames at 864x480 took about 36 s.
+
+Check every key pose on a sheet before rendering video. A box mannequin reads well standing, kneeling and
+kicking, and badly on the floor (a man on his back is a crumpled block); use a rigged figure for falls and rolls.
+Check also that each end state is inside the shot's own frame (L-005).
+
 ## Open
 
 - Control strength (H3, 2026-10-13): 0.8 released at 60% of the steps gave the exact formation with uniform,

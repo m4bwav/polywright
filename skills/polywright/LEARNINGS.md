@@ -22,6 +22,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
+### L-005 · 2026-10-16 · A pose pass must leave out face points turned from the lens, and a previs checks that each end state is in frame
+- Trigger: a two-fighter previs (crowd mannequins posed by IK in a set blockout) for a rapier duel whose video takes kept turning a fighter seen from behind to face the lens. Its pose pass drew his nose and eyes though his back was to the camera, as `pw.py crowd` did for every figure. The previs of a kick card also put the felled fighter below the frame: the card's own camera (1.2 m high, level, 35 mm, 4 m off) sees the floor only beyond about 4.2 m.
+- Hypothesis: pose controls are trained on detector output, and a detector finds no nose or eyes on a back; drawn face points tell the model the figure faces the camera. A shot plan places people as points, so it cannot see that a lying body leaves the frame.
+- Rule: hide the nose and each eye once turned away from the lens (dot of head-to-point and head-to-camera under -0.2; a profile keeps the nose and near eye) and an ear behind the head (under -0.35): `hidden_face_points` in pw_bpy.py, joints written as (-1, -1), which `draw_pose_frames` leaves out with their limbs. Before rendering video from a previs, read the sheet at every end state and tilt or move the camera where it falls outside the frame.
+- Evidence: the duel previs sheets 2026-10-16 (cinewright research note 2026-10-16-fight-3d-route); a side-view crowd keeps all 48 noses, a crowd marching away keeps none (tests `test_crowd_from_behind_hides_faces`, `test_pose_leaves_out_hidden_joints`).
+- Scope: skill (pw.py crowd pose pass; any two-fighter previs)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-16
+
 ### L-004 · 2026-10-13 · A crowd blockout's defaults decide whether anything is in frame
 - Trigger: the first `pw.py crowd` previews showed empty frames (armies starting outside a 14 m camera's view), a white smear of clamped near ground in the depth pass, and a clash whose sides never met in 81 frames.
 - Hypothesis: the camera distance, the depth range and the starting gap all depend on the formation and the shot length, so fixed numbers fail for most inputs.

@@ -243,6 +243,24 @@ class Commands(unittest.TestCase):
         pw.split_bpy_args(a)  # after `--` everything belongs to the script
         self.assertEqual((a.blend, a.args), ("y.blend", ["--blend", "z"]))
 
+    def test_pose_leaves_out_hidden_joints(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        pts = [[50, 20], [50, 40], [35, 42], [30, 60], [28, 80], [65, 42], [70, 60], [72, 80], [42, 90], [42, 120],
+               [42, 150], [58, 90], [58, 120], [58, 150], [-1, -1], [-1, -1], [44, 22], [56, 22]]
+        pts[0] = [-1, -1]  # a figure seen from behind: no nose, no eyes
+        jp = os.path.join(self.tmp, "joints.json")
+        with open(jp, "w") as f:
+            json.dump({"size": [100, 160], "frames": [{"frame": 1, "people": [[5.0, pts]]}]}, f)
+        out = pw.draw_pose_frames(jp, os.path.join(self.tmp, "pose"))
+        self.assertEqual(out, {"frames": 1, "skeletons": 1})
+        im = Image.open(os.path.join(self.tmp, "pose", "0001.png"))
+        self.assertEqual(im.getpixel((0, 0)), (0, 0, 0))  # no limb drawn to a hidden joint at (-1, -1)
+        self.assertNotEqual(im.getpixel((50, 40)), (0, 0, 0))  # the neck is drawn
+        self.assertEqual(im.getpixel((50, 25)), (0, 0, 0))  # nothing where a nose limb would run
+
     def test_place_offline_from_fixture(self):
         out = os.path.join(self.tmp, "place")
         os.makedirs(os.path.join(out, "data"))
@@ -365,6 +383,17 @@ class WithBlender(unittest.TestCase):
             self.assertGreater(out["pose"]["skeletons"], 0)
         with open(os.path.join(d, "camera.json")) as f:
             self.assertEqual(len(json.load(f)["matrix_world_rows"]), 17)
+
+    def test_crowd_from_behind_hides_faces(self):
+        d = os.path.join(self.tmp, "behind")
+        code, out = run("crowd", "--out", d, "--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4",
+                        "--action", "march", "--sides", "1", "--view", "behind", "--preview", "--pose-min-px", "10",
+                        "--passes", "pose")
+        self.assertEqual(code, 0, out)
+        with open(os.path.join(d, "joints.json")) as f:
+            people = [p for fr in json.load(f)["frames"] for _, p in fr["people"]]
+        self.assertTrue(people)
+        self.assertTrue(all(p[0] == [-1, -1] for p in people), "a nose drawn on a figure marching away")
 
     def test_crowd_rejects_sizes_wan_cannot_take(self):
         code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
