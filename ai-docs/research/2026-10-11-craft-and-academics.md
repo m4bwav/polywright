@@ -289,7 +289,7 @@ Multi-colour on AMS
 - **Blockouts as structure:** primitives or rough models, rendered from the shot camera, give the video model the layout, scale and composition. Render depth, normal, canny (edges), and pose passes. Wan 2.1 VACE workflows in ComfyUI take depth, canny or pose control video [secondary, RunComfy workflow pages, 2026]. Frame counts follow Wan's 4n+1 rule [secondary].
 - **Passes from Blender:** Z depth normalised to 0 to 1 (near white), normal pass in camera space, Freestyle or a canny filter on a flat render for edges, Object or Material index for masks. Export as image sequences at the video model's resolution and frame rate.
 - **Camera paths:** animate the camera in Blender against the blockout, export the same path for every pass. Keep moves simple (dolly, pan, orbit). Very fast moves and cuts break control conditioning.
-- **Consistent characters:** a 3D character turnaround (rendered views of one model) gives image models consistent reference for every angle. Render the model in the shot pose as a pose or depth guide. the owner's crashsite and mentos film notes (vault) list set drift and wrong wheel side as recurring faults, and a 3D blockout fixes set geography.
+- **Consistent characters:** a 3D character turnaround (rendered views of one model) gives image models consistent reference for every angle. Render the model in the shot pose as a pose or depth guide. the owner's film notes list set drift and wrong wheel side as recurring faults, and a 3D blockout fixes set geography.
 - **Do not over-detail:** control nets follow edges; noisy geometry adds noisy edges. Clean silhouettes and big shapes work best.
 
 ### 5d. Business

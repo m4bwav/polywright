@@ -62,7 +62,7 @@ Sources (all seen 2026-10-11):
 RealityScan, Windows (command spellings from Epic's All Commands page, seen 2026-10-11; chaining on one line is the documented pattern in examples, but test it):
 
 ```
-RealityScan.exe -headless -newScene -addFolder "D:/scan/images" -align -calculateNormalModel -simplify 500000 -calculateTexture -exportModel "Model 1" "D:/scan/out/model.obj" -save "D:/scan/scan.rsproj" -quit
+RealityScan.exe -headless -newScene -addFolder "D:/<scan>/images" -align -calculateNormalModel -simplify 500000 -calculateTexture -exportModel "Model 1" "D:/<scan>/out/model.obj" -save "D:/<scan>/scan.rsproj" -quit
 ```
 
 COLMAP plus OpenMVS, any OS (prior knowledge for exact flags, not re-verified):

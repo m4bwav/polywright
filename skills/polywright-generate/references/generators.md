@@ -9,7 +9,7 @@ where it says tested). Re-check versions and licences at each refresh: this tabl
 | Model | Input | Output | Licence | VRAM | ComfyUI | Best for |
 |---|---|---|---|---|---|---|
 | TRELLIS.2 4B (Microsoft, 2025-12) | 1 image | GLB with PBR (base colour, roughness, metallic, opacity), textures to 4096 | MIT | 24 GB stated; the INT8 template ran on 16 GB (tested) | native since 2026-08-22 (with remesh, decimate, UV, bake nodes) | best open all-rounder |
-| Pixal3D (Tencent ARC, 2026-05) | 1 image; multi-view reported 2026-09 | GLB with PBR | MIT | low-VRAM mode | native since 2026-08-22 | faithful to the input |
+| Pixal3D (Tencent ARC, 2026-05) | 1 image; or a front/side/back turnaround on one image with the separate multi-view model `pixal3d_multiview_int8_convrot` (ComfyUI docs, read 2026-10-17) | GLB with PBR | MIT | low-VRAM mode | native since 2026-08-22 | faithful to the input |
 | Hunyuan3D 2.0 / 2mv / turbo | 1 image or 4 views | shape | Tencent community | about 6 GB shape | native | multi-view shape; **tested** on a 16 GB card: 100 s at 30 steps |
 | Hunyuan3D 2.1 | 1 image | shape plus PBR paint | Tencent community | 10 GB shape, 21 GB paint | community wrappers | shape plus texture on 24 GB+ |
 | Hunyuan3D-Omni | image plus points, voxels, skeleton or box | shape | Tencent community | about 10 GB | not found | following a blockout or pose |
@@ -71,4 +71,5 @@ RAIL), anything research-only.
 
 Back and underside are guesses; thin parts melt or fuse; extra or missing limbs on characters; lumpy flat
 surfaces; soft edges; textures with baked light. Multi-view input fixes most back-side errors; a repainted
-blockout (polywright-references Step 3) fixes view disagreement.
+blockout (polywright-references Step 3) fixes view disagreement. What to fix in the picture before a run:
+[images-for-3d.md](../../polywright-references/references/images-for-3d.md).

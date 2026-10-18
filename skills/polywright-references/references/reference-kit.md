@@ -2,7 +2,8 @@
 
 Prompt templates for image models, per kind of reference, and the checks to run before a reference is used.
 Back to [SKILL.md](../SKILL.md). Sources: polywright research notes of 2026-10-11 (generative-3d section 2,
-craft-and-academics section 4); prompt wording from Scenario's turnaround help and template sites (secondary).
+craft-and-academics section 4); prompt wording from Scenario's turnaround help and template sites (secondary). What a
+picture must give the mesher, and what to fix in it: [images-for-3d.md](images-for-3d.md).
 
 ## Templates
 

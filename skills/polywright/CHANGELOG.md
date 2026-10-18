@@ -4,6 +4,21 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-5 · 2026-10-17 · Private names and machine paths generalised
+- because: user request (public repository: no private project names, no person's name but the author credit, no machine paths; AGENTS.md)
+- files: SKILL.md "Compose a model into a picture" (worked example); LEARNINGS.md L-003, L-006 (triggers and evidence); CHANGELOG.md C-20261012-1; references/figures-for-video.md ("Who stands where"); scripts/pw.py lineup hint; TESTS.md in all seven skills; tests/check_skills.py (new guards); tests/run_evals.py (switches off any installed polywright)
+- Film and toy names, the owner's name in a ruling, a private skill's name and absolute drive paths became generic descriptions or "the owner's private notes"; the lessons are unchanged. check_skills.py now fails on any absolute drive path with two real segments and on the owner's private project names.
+
+### C-20261017-4 · 2026-10-17 · targets.json advice for web-threejs, game-roblox, game-unity and video-blockout
+- because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); ../polywright-finish R-20261017-1, R-20261017-2, R-20261017-3; R-20261017-1
+- files: references/targets.json advice lines (no rule numbers changed)
+- web-threejs adds `--join-named false` to the optimize advice; game-roblox replaces the unverified texture limit with 4096 px uploads, a 1024 px ceiling and 256 px rigid-accessory maps, adds the emissive mask, and replaces "scale by 1/0.28" with studs or the Importer's Scale Unit; game-unity says what pw.py's FBX export writes and leaves the choice to a 1 m cube test, explains that `pw.py lods` files must be joined for an LOD Group, adds the 255-triangle convex hull limit and glTFast's own shaders; video-blockout adds building from the shot cameras and grey passes.
+
+### C-20261017-3 · 2026-10-17 · references/film-and-video.md: models and blockouts for film and AI video
+- because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); R-20261017-1
+- files: references/film-and-video.md (new); SKILL.md "Crowd and battle blockouts" (pointer); references/crowd-blockouts.md and figures-for-video.md (links)
+- The 3D artist's side of a film shot: cameras first, detail by largest on-screen size, scale and lens checks, the passes a video model reads, set dressing, figures, and the pw.py commands; shot planning stays with cinewright.
+
 ### C-20261017-2 · 2026-10-17 · convert --level and --tilt-deg
 - because: ../polywright-generate C-20261017-2
 - files: scripts/pw.py convert, scripts/pw_bpy.py level_rotation and act_convert; references/cli.md
@@ -30,7 +45,7 @@ The crowd pose pass no longer draws a nose and eyes on figures seen from behind,
 - New command builds two armies of low-poly soldiers with offset walk cycles and renders depth, mask, clay and OpenPose passes plus camera.json for Wan VACE or Fun Control.
 
 ### C-20261012-1 · 2026-10-12 · pw.py match and "Compose a model into a picture"
-- because: L-003 (a designed prop pasted into the No-God film's set still from a camera solved from two pixels and a depth); polywright-blender L-004 (bpy option order)
+- because: L-003 (a designed prop pasted into a film's set still from a camera solved from two pixels and a depth); polywright-blender L-004 (bpy option order)
 - files: SKILL.md description and new section "Compose a model into a picture"; scripts/pw.py (`match`, `split_bpy_args`), scripts/pw_bpy.py (`act_match`); references/cli.md; tests/test_pw.py
 - New command renders a model RGBA from a picture's camera, pastes it, and writes a blend mask; `pw.py bpy` takes its options on either side of the script name.
 

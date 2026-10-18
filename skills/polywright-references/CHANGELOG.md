@@ -4,6 +4,16 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-3 · 2026-10-17 · Private names generalised
+- because: user request (public repository: no private project names, no person's name but the author credit, no machine paths; AGENTS.md)
+- files: LEARNINGS.md L-002; CHANGELOG.md C-20261012-1; TESTS.md
+- A film's name, its prop file names and a machine path became generic; the lesson is unchanged.
+
+### C-20261017-2 · 2026-10-17 · references/images-for-3d.md: what a picture must give the mesher
+- because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); R-20261017-1
+- files: references/images-for-3d.md (new); SKILL.md Step 5 (pointer); references/reference-kit.md (link)
+- What each generator does with a picture, a six-point check before the GPU run, fix-in-picture or fix-in-mesh, styles that mesh well, single image or multi-view, background removal.
+
 ### C-20261017-1 · 2026-10-17 · Description excludes flat graphic patterns
 - because: T-20261017-1 (decoy-2 'seamless pattern for wrapping paper' fired the skill 1 of 3)
 - files: SKILL.md frontmatter description
@@ -15,7 +25,7 @@ Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (ID
 - Say a real object's colour as measured, not as a word; expect back views to copy a front marking.
 
 ### C-20261012-1 · 2026-10-12 · Step 2b: a designed prop's sheet comes from the model
-- because: L-002 (five failed text rounds for the No-God Spear; six owner notes each a seconds-long re-render from the model)
+- because: L-002 (five failed text rounds for a film's spear; six owner notes each a seconds-long re-render from the model)
 - files: SKILL.md Step 2b; LEARNINGS.md
 - Build the prop with bpy and render side and top on flat grey; raise the side view for paired parts.
 

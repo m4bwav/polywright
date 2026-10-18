@@ -2,7 +2,8 @@
 
 Back to [SKILL.md](../SKILL.md). Source: polywright research note `2026-10-11-craft-and-academics.md` section
 5b; [verified] = Prusa knowledge base read 2026-10-11; [secondary] = vendor or forum; [rule] = practitioner
-rule of thumb, unverified.
+rule of thumb, unverified. Orientation, supports, splitting and slicing from the modeller's side:
+[supports-and-slicing.md](supports-and-slicing.md).
 
 ## Geometry checklist
 

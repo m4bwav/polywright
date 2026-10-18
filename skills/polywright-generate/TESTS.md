@@ -14,7 +14,7 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 - Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
 - led to: C-20261017-1
 
-### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from mark-local 0.1.1 · Windows 11 dev machine · 3/4
+### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from a local marketplace 0.1.1 · Windows 11 dev machine · 3/4
 - trigger-1 · trigger · undertrigger: no drawing was attached, the model asked for it instead
 - First pass the same day (descriptions of 0.1.0) passed 17/28 over all seven skills; the descriptions were made explicit about when to fire (C-20261011-2). A harness bug (subprocess could not start claude.cmd) made an earlier run report 0 invocations; not counted.
 - led to: C-20261011-2

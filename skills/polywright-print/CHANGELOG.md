@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-2 · 2026-10-17 · references/supports-and-slicing.md: supports and slicing from the modeller's side
+- because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); R-20261017-2
+- files: references/supports-and-slicing.md (new); SKILL.md Step 3 (pointer); references/dfam.md (link)
+- Orientation, overhangs and islands, where tree and normal supports scar, splitting instead of supporting, brims, what the slicer already does, multi-colour purge, resin, miniatures and the hand-off.
+
 ### C-20261017-1 · 2026-10-17 · check measures wall thickness; printable fills hollow shells
 - because: R-20261017-1, L-004, HANDOFF owed item 5 (min_feature was "unchecked")
 - files: SKILL.md Step 2 and Step 4; ../polywright/scripts/pw_bpy.py wall_thickness, fill_cavities, act_printable; ../polywright/scripts/pw.py check (--thickness-samples, --no-thickness), printable (--seal-mm, --hollow); ../polywright/references/cli.md

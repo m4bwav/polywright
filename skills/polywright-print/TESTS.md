@@ -16,7 +16,7 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 - action-1 pass: polywright-print invoked; Bash ran pw.py printable on tests/fixtures/two.glb at 40 mm, then pw.py check --target print-fdm (watertight, one part)
 - led to: L-002, C-20261011-3 (planar dissolve in printable)
 
-### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from mark-local 0.1.1 · Windows 11 dev machine · 4/4
+### T-20261011-2 · 2026-10-11 · headless claude -p, one run per case, fresh session, plugin installed from a local marketplace 0.1.1 · Windows 11 dev machine · 4/4
 - all trigger and decoy cases passed
 - First pass the same day (descriptions of 0.1.0) passed 17/28 over all seven skills; the descriptions were made explicit about when to fire (C-20261011-2). A harness bug (subprocess could not start claude.cmd) made an earlier run report 0 invocations; not counted.
 - led to: C-20261011-2, L-002

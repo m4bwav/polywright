@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-3 · 2026-10-17 · Pixal3D multi-view model named
+- because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); ../polywright-references R-20261017-1
+- files: references/generators.md Open weights (Pixal3D row), Known output problems (link to images-for-3d.md)
+- "multi-view reported 2026-09" becomes the separate `pixal3d_multiview_int8_convrot` model taking a front/side/back turnaround on one image (ComfyUI docs).
+
 ### C-20261017-2 · 2026-10-17 · Pixal3D output is levelled by pw.py convert --level
 - because: HANDOFF owed item 2 (Pixal3D's camera-frame output leans by the camera's elevation); tested on the 2026-10-11 Pixal3D fountain (17.7 degrees, 9 s, both side views upright)
 - files: SKILL.md Step 2; references/generators.md (Running on ComfyUI table); ../polywright/scripts/pw.py, pw_bpy.py level_rotation; ../polywright/references/cli.md

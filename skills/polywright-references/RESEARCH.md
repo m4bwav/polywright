@@ -40,6 +40,13 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261017-1 · 2026-10-17 · Subject: what image-to-3D generators need from a picture
+- summary: Input rules gathered for the mesh side. ComfyUI's Pixal3D tutorial: BiRefNet removes the background and the workflow crops the subject to a centred canvas; MoGe estimates depth and field of view for pixel-aligned back-projection (front matches the input 1:1); a separate multi-view model (`pixal3d_multiview_int8_convrot`) takes a front/side/back turnaround on one image, which settles generators.md's "multi-view reported 2026-09" (updated there). Hunyuan3D-2mv: front, left, back, right as separate images, front alone allowed, background pre-removed. Meshy docs: at least 512x512, evenly lit (shadows give black patches), near-orthographic or telephoto, front/side/back/3-4 under one light, clutter merges into one mesh; A-pose and T-pose are output options for humanoids. TRELLIS.2 and Hunyuan3D-2 READMEs give no input rules. Thin, transparent and reflective parts remain failure cases (sub-voxel parts smoothed by sparse voxels and the Hunyuan ShapeVAE; flat-colour illustrations come out paper-thin). Tripo's blog favours a three-quarter view (vendor content).
+- track: subject
+- sources: https://docs.comfy.org/tutorials/3d/pixal3d ; https://docs.comfy.org/tutorials/3d/hunyuan3D-2 ; https://docs.meshy.ai/en/webapp/image-to-3d ; https://github.com/microsoft/TRELLIS.2 ; https://github.com/Tencent-Hunyuan/Hunyuan3D-2 ; https://www.tripo3d.ai/blog/how-to-turn-an-image-into-a-3d-model-with-ai ; https://arxiv.org/pdf/2504.10466 ; https://arxiv.org/pdf/2609.15639 (all read 2026-10-17)
+- magnitude: minor (new reference)
+- applied: C-20261017-2; ../polywright-generate C-20261017-3
+
 ### R-20261011-2 · 2026-10-11 · Practice: Expert reference practice
 - summary: Orthographic views on one ground line with a height bar, PureRef boards, reference empties scaled to a known dimension.
 - track: practice

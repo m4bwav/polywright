@@ -74,7 +74,8 @@ extra limbs; the back can only show what the blockout implies. Feed the repainte
 
 - In Blender: reference images as empties in front, right and top views, scaled to a known dimension
   (orthographic renders from `pw.py render` report `metres_per_px`); recipe in polywright-blender.
-- For image-to-3D: square, padded, 1024 px; `pw.py gen` pads and removes backgrounds itself.
+- For image-to-3D: square, padded, 1024 px; `pw.py gen` pads and removes backgrounds itself. Judge the picture
+  before the GPU run, and what to fix in it rather than in the mesh: [references/images-for-3d.md](references/images-for-3d.md).
 - On a board (PureRef 2.1) for a human: group by view, note dimensions on the board.
 
 ## Maintenance
