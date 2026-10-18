@@ -58,6 +58,10 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 
 - Owner's go-ahead ("yes, do all the things"). Version 0.2.0 in plugin.json and pw.py; tag v0.2.0 publishes the zip through release.yml.
 
+## 2026-10-17: wiki for 0.2.0
+
+- Wiki updated for 0.2.0 (wiki commit aa2bf87; live: 11 pages, 0 failures); its extended verification program found a `printable` regression on terrain sheets, workaround `--hollow`: [notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md).
+
 ## 2026-10-17: topic pages from the sibling plugins' research; private-name scrub
 
 - Six pages, drafted from the research each sibling plugin did for its own 3D page (threewright, roblox-agent, unity-agent, cinewright, the image side, the printing side) and written from polywright's side: finish `web-threejs.md`, `roblox.md`, `unity.md`; hub `film-and-video.md`; references `images-for-3d.md`; print `supports-and-slicing.md`. R- and C- entries per skill; one pointer line in each SKILL.md; linked from engines.md, dfam.md, reference-kit.md, crowd-blockouts.md, figures-for-video.md and generators.md.

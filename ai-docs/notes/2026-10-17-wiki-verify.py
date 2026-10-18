@@ -1,0 +1,350 @@
+"""Wiki verification for polywright: every example on the wiki, run against a published release.
+
+    python ai-docs/notes/2026-10-17-wiki-verify.py VERSION > ai-docs/notes/2026-10-17-wiki-verify.out.txt
+
+0.2.0 additions (2026-10-17): check's wall thickness, printable's hollow-shell fill, convert --level and --tilt-deg,
+place with roof shapes and building parts, crowd --preview, turnaround, mark, lineup --preview, match, manifest
+--review, bpy options after the script name. The test meshes are binary STLs written here (prisms in millimetres
+or metres), so the program needs nothing from the repository.
+
+Downloads polywright-VERSION.zip from the GitHub release into a scratch folder (never the working tree), then runs
+each page's commands as the page shows them, from that scratch folder. Output sections are '## label' lines, as
+wikiwright's diffout and outputs expect. The scratch path is masked as <work>, timings as <s>, the Blender path as
+<blender>. Commands on the pages read `python pw.py ...`; here `pw.py` is the release's skills/polywright/scripts/pw.py.
+Needs Blender (POLYWRIGHT_BLENDER or an install pw.py finds), numpy and Pillow for texture, trimesh for 3mf.
+"""
+import io
+import json
+import os
+import re
+import shlex
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+import urllib.request
+import zipfile
+import zlib
+
+VERSION = sys.argv[1] if len(sys.argv) > 1 else "0.2.0"
+WORK = tempfile.mkdtemp(prefix="pwwiki_")
+PLUGIN = os.path.join(WORK, "plugin")
+url = "https://github.com/m4bwav/polywright/releases/download/v%s/polywright-%s.zip" % (VERSION, VERSION)
+zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url, timeout=120).read())).extractall(PLUGIN)
+PW = os.path.join(PLUGIN, "skills", "polywright", "scripts", "pw.py")
+RUN = os.path.join(WORK, "run")
+os.makedirs(RUN)
+
+
+def mask(text):
+    for w in (RUN, WORK):
+        for form in (w, w.replace("\\", "\\\\"), w.replace("\\", "/")):
+            text = text.replace(form + "\\\\", "").replace(form + "\\", "").replace(form + "/", "").replace(form, "<work>")
+    text = re.sub(r'"(render_)?seconds": [0-9.]+', lambda m: '"%sseconds": "<s>"' % (m.group(1) or ""), text)
+    text = re.sub(r'"path": "[^"]*blender(\.exe)?"', '"path": "<blender>"', text, flags=re.I)
+    return text.rstrip()
+
+
+def show(label, value):
+    print("## " + label)
+    print(value)
+    print()
+
+
+def snippet(label, text):
+    """Run a page's shell block line by line, as the page shows it, in the scratch run folder."""
+    out = []
+    for line in text.strip().splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        args = shlex.split(line)
+        if args[:2] == ["python", "pw.py"]:
+            args = [sys.executable, PW] + args[2:]
+        p = subprocess.run(args, cwd=RUN, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        out.append(mask(p.stdout))
+        if p.stderr.strip():
+            out.append("[stderr] " + mask(p.stderr))
+        out.append("[exit %d]" % p.returncode)
+    show(label, "\n".join(out))
+
+
+def write(name, text):
+    path = os.path.join(RUN, name)
+    os.makedirs(os.path.dirname(path) or RUN, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
+def png(name, w=64, h=64):
+    raw = b"".join(b"\x00" + bytes(((x * 7 + y * 3) ^ (x * y)) % 256 for x in range(w) for _ in range(3)) for y in range(h))
+
+    def chunk(t, d):
+        return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+
+    with open(os.path.join(RUN, name), "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def prisms_stl(name, prisms, tilt_deg=0.0):
+    """Binary STL of closed prisms: each (ring of (x, y), z0, z1), ring counter-clockwise and convex.
+    tilt_deg rotates everything about X (y toward z), as a leaning image-to-3D model."""
+    import math
+    c, s = math.cos(math.radians(tilt_deg)), math.sin(math.radians(tilt_deg))
+    tris = []
+    for ring, z0, z1 in prisms:
+        n = len(ring)
+        lo = [(x, y, z0) for x, y in ring]
+        hi = [(x, y, z1) for x, y in ring]
+        for i in range(1, n - 1):
+            tris.append((lo[0], lo[i + 1], lo[i]))
+            tris.append((hi[0], hi[i], hi[i + 1]))
+        for i in range(n):
+            j = (i + 1) % n
+            tris.append((lo[i], lo[j], hi[j]))
+            tris.append((lo[i], hi[j], hi[i]))
+    rot = [tuple((x, y * c - z * s, y * s + z * c) for x, y, z in t) for t in tris]
+    path = os.path.join(RUN, name)
+    os.makedirs(os.path.dirname(path) or RUN, exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(b"wiki fixture".ljust(80, b" ") + struct.pack("<I", len(rot)))
+        for t in rot:
+            f.write(struct.pack("<12fH", 0, 0, 0, *[v for p in t for v in p], 0))
+
+
+def box(x0, y0, x1, y1):
+    return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+
+show("installed", "polywright %s from %s" % (VERSION, url))
+
+# ---- Home and Getting started
+snippet("version", """
+python pw.py --version
+""")
+
+# ---- Commands: the asset folder
+snippet("new", """
+python pw.py new fountain --name Fountain --kind imagined --route generate --targets game-roblox,print-fdm --real-size-m 1.0
+""")
+
+# ---- Places: a small invented OSM extract, offline (flat ground), so no server is asked
+OSM = {"version": 0.6, "generator": "wiki fixture (invented coordinates)", "elements": [
+    {"type": "node", "id": 1, "lat": 40.0001, "lon": -74.99995}, {"type": "node", "id": 2, "lat": 40.0001, "lon": -74.9988},
+    {"type": "node", "id": 3, "lat": 40.0009, "lon": -74.9988}, {"type": "node", "id": 4, "lat": 40.0009, "lon": -74.99995},
+    {"type": "node", "id": 11, "lat": 40.0004, "lon": -74.9995}, {"type": "node", "id": 12, "lat": 40.0004, "lon": -74.99938},
+    {"type": "node", "id": 13, "lat": 40.0005, "lon": -74.99938}, {"type": "node", "id": 14, "lat": 40.0005, "lon": -74.9995},
+    {"type": "node", "id": 21, "lat": 40.0002, "lon": -75.0005}, {"type": "node", "id": 22, "lat": 40.0002, "lon": -74.9980},
+    {"type": "node", "id": 31, "lat": 40.0007, "lon": -74.9991, "tags": {"natural": "tree", "height": "7"}},
+    {"type": "way", "id": 100, "nodes": [1, 2, 3, 4, 1], "tags": {"leisure": "park", "name": "Fixture Park"}},
+    {"type": "way", "id": 101, "nodes": [11, 12, 13, 14, 11], "tags": {"building": "yes", "height": "6"}},
+    {"type": "way", "id": 102, "nodes": [21, 22], "tags": {"highway": "residential"}}]}
+write("park/data/osm.json", json.dumps(OSM))
+snippet("place", """
+python pw.py place --bbox 40.0000,-75.0000,40.0010,-74.9987 --dem flat --res 2 --out park --print-mm 60
+""")
+
+# ---- Commands: looking at a model
+snippet("inspect", """
+python pw.py inspect park/scene.glb --fast
+""")
+snippet("check fail", """
+python pw.py check park/scene.glb --target game-roblox --real-size-m 110
+""")
+snippet("convert", """
+python pw.py convert park/scene.glb park/roblox.glb --join --uv --max-tris 5000
+""")
+snippet("check list", """
+python pw.py check --list
+""")
+snippet("render", """
+python pw.py render park/print.stl --out park/renders --views front,top,iso --size 256
+""")
+snippet("lods", """
+python pw.py lods park/roblox.glb --out park/lods --ratios 1,0.5,0.25
+""")
+
+# ---- Printing
+# 0.2.0: the default hollow-shell fill breaks this open terrain sheet (found by this program); --hollow gives the
+# 0.1.2 result. The page shows the --hollow run and the default run as a known limit.
+snippet("printable", """
+python pw.py printable park/roblox.glb park/solid.stl --size-mm 60 --wall-mm 1.2 --hollow
+python pw.py check park/solid.stl --target print-fdm
+""")
+snippet("printable terrain default fill", """
+python pw.py printable park/roblox.glb park/solid-filled.stl --size-mm 60 --wall-mm 1.2
+""")
+snippet("3mf", """
+python pw.py 3mf park/print.stl park/solid.stl --out park/two-colours.3mf
+""")
+
+# ---- The contract: manifest
+snippet("manifest", """
+python pw.py manifest fountain --add-output park/solid.stl --target print-fdm
+python pw.py manifest fountain --add-source https://example.com/ref.png --what "reference photo" --author "A. Person"
+python pw.py manifest fountain --validate
+""")
+
+# ---- Recipes: a bpy script
+HELLO = """
+import bpy, sys
+args = sys.argv[sys.argv.index("--") + 1:]
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.ops.mesh.primitive_cylinder_add(radius=0.3, depth=float(args[0]))
+print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
+"""
+write("hello_bpy.py", HELLO.lstrip())
+show("hello_bpy.py (file)", open(os.path.join(RUN, "hello_bpy.py"), encoding="utf-8").read().rstrip())
+snippet("bpy", """
+python pw.py bpy hello_bpy.py -- 2.5
+""")
+write("old_api.py", """import bpy
+bpy.ops.import_scene.obj(filepath="chair.obj")
+""")
+snippet("bpy traceback", """
+python pw.py bpy old_api.py
+""")
+
+# ---- Recipes: textures
+png("bricks.png")
+snippet("texture", """
+python pw.py texture bricks.png --out tex --seamless
+""")
+
+# ---- Errors and edge cases
+snippet("error missing file", """
+python pw.py inspect nothing-here.glb
+""")
+snippet("error unknown target", """
+python pw.py check park/solid.stl --target game-godot
+""")
+snippet("error bad bbox", """
+python pw.py place --bbox 40.0010,-75.0000,40.0000,-74.9987 --out park2
+""")
+snippet("error no comfyui", """
+python pw.py gen --image bricks.png --out raw.glb --host http://127.0.0.1:9
+""")
+write("ui-workflow.json", json.dumps({"nodes": [], "links": []}))
+snippet("error workflow no host", """
+python pw.py gen --image bricks.png --workflow ui-workflow.json --out raw.glb --host http://127.0.0.1:9
+""")
+
+# =============== 0.2.0 ===============
+
+# ---- check: wall thickness (Blender found). A 20 mm block, then the block with a 0.5 mm fin beside it.
+prisms_stl("block.stl", [(box(0, 0, 20, 20), 0, 20)])
+prisms_stl("fin.stl", [(box(0, 0, 20, 20), 0, 20), (box(30, 0, 50, 0.5), 0, 20)])
+snippet("check thickness pass", """
+python pw.py check block.stl --target print-fdm
+""")
+snippet("check thickness warn", """
+python pw.py check fin.stl --target print-fdm
+""")
+snippet("check no-thickness", """
+python pw.py check fin.stl --target print-fdm --no-thickness
+""")
+
+# ---- printable: a hollow shell (0.3 mm walls, air inside, a 0.6 mm slot in the lid) comes out filled
+W = 0.3
+prisms_stl("shell.stl", [(box(0, 0, 20, 20), 0, W), (box(0, 0, 9.7, 20), 20 - W, 20), (box(10.3, 0, 20, 20), 20 - W, 20),
+                         (box(0, 0, W, 20), 0, 20), (box(20 - W, 0, 20, 20), 0, 20),
+                         (box(0, 0, 20, W), 0, 20), (box(0, 20 - W, 20, 20), 0, 20)])
+snippet("printable hollow shell", """
+python pw.py printable shell.stl shell-filled.stl --size-mm 20 --base-cut-mm 0 --no-planar --voxel-mm 0.1
+python pw.py printable shell.stl shell-hollow.stl --size-mm 20 --base-cut-mm 0 --no-planar --voxel-mm 0.1 --hollow
+""")
+
+# ---- convert --level: a 1 x 1 x 2 m block leaning 20 degrees about X (Pixal3D output in a raised camera's frame)
+prisms_stl("leaning.stl", [(box(0, 0, 1, 1), 0, 2)], tilt_deg=20)
+snippet("convert level", """
+python pw.py inspect leaning.stl --fast
+python pw.py convert leaning.stl level.glb --level --ground
+python pw.py convert leaning.stl given.glb --tilt-deg -20
+""")
+
+# ---- place: roofs and building parts (Simple 3D Buildings), on the invented extract plus four buildings
+TOWN = json.loads(json.dumps(OSM))
+nid = [200]
+
+
+def ring_nodes(lat0, lon0, lat1, lon1):
+    ids = []
+    for la, lo in ((lat0, lon0), (lat0, lon1), (lat1, lon1), (lat1, lon0)):
+        nid[0] += 1
+        TOWN["elements"].append({"type": "node", "id": nid[0], "lat": la, "lon": lo})
+        ids.append(nid[0])
+    return ids + ids[:1]
+
+
+for wid, (bb, tags) in enumerate([
+        ((40.00075, -74.9992, 40.00085, -74.99902), {"building": "house", "height": "9", "roof:shape": "gabled", "roof:height": "3"}),
+        ((40.0006, -74.9998, 40.0007, -74.99962), {"building": "house", "building:levels": "2", "roof:shape": "hipped", "roof:levels": "1"}),
+        ((40.0002, -74.9998, 40.0003, -74.99968), {"building": "yes", "roof:shape": "pyramidal"}),
+        ((40.0002, -74.9993, 40.0003, -74.9990), {"building": "church", "height": "10"}),
+        ((40.0002, -74.9993, 40.0003, -74.99915), {"building:part": "yes", "height": "10", "roof:shape": "gabled"}),
+        ((40.0002, -74.99915, 40.0003, -74.9990), {"building:part": "yes", "min_height": "4", "height": "18", "roof:shape": "pyramidal", "roof:height": "6"})],
+        start=200):
+    TOWN["elements"].append({"type": "way", "id": wid, "nodes": ring_nodes(*bb), "tags": tags})
+write("town/data/osm.json", json.dumps(TOWN))
+snippet("place roofs", """
+python pw.py place --bbox 40.0000,-75.0000,40.0010,-74.9987 --dem flat --res 2 --out town --print-mm 60
+""")
+
+# ---- crowd: an army blockout preview (first, middle and last frame) at a small size
+snippet("crowd preview", """
+python pw.py crowd --out crowd --size 320x192 --frames 17 --ranks 2 --cols 4 --action clash --preview --pose-min-px 10
+""")
+snippet("crowd bad size", """
+python pw.py crowd --out crowd2 --size 830x480 --frames 80
+""")
+
+# ---- figures for video: a box figure (0.3 x 0.2 x 0.8 m body, 0.2 m head on top, face toward -Y)
+prisms_stl("figure.stl", [(box(-0.15, -0.1, 0.15, 0.1), 0, 0.8), (box(-0.1, -0.1, 0.1, 0.1), 0.8, 1.0)])
+snippet("turnaround", """
+python pw.py turnaround figure.stl --out turn --views front,3q,back --size 96x144 --samples 2 --height-m 0.13
+""")
+snippet("turnaround unknown view", """
+python pw.py turnaround figure.stl --out turn2 --views top
+""")
+snippet("mark", """
+python pw.py mark figure.stl --out marked.glb --text 2 --colour 0.8,0.1,0.2 --height-m 0.13
+""")
+LAYOUT = """{
+ "size": [192, 112],
+ "lens": 35,
+ "cam": [0, -0.6, 0.07],
+ "aim": [0, 0, 0.065],
+ "backdrop_m": 0.6,
+ "figures": [
+  {"name": "b1", "file": "marked.glb", "at": [0.12, 0], "face": "-60", "team": "b"},
+  {"name": "a1", "file": "marked.glb", "at": [-0.12, 0], "face": "60", "team": "a"}
+ ]
+}
+"""
+write("layout.json", LAYOUT)
+show("layout.json (file)", open(os.path.join(RUN, "layout.json"), encoding="utf-8").read().rstrip())
+snippet("lineup", """
+python pw.py lineup --layout layout.json --out lineup --preview
+""")
+
+# ---- match: a 1 m spear along +X rendered from a picture's camera and pasted into it
+prisms_stl("spear.stl", [(box(0, -0.015, 1.0, 0.015), -0.015, 0.015)])
+png("street.png", 320, 192)
+snippet("match", """
+python pw.py match spear.stl --out spear.png --still street.png --anchor-px 120,120 --aim-px 260,80 --aim-local=1,0,0 --depth 2
+""")
+
+# ---- manifest --review
+snippet("manifest review", """
+python pw.py new toy --name "Toy figure" --kind real --route generate --targets video-blockout
+python pw.py manifest toy --review turn/sheet.png --verdict "good: front, three-quarter and back read"
+""")
+with open(os.path.join(RUN, "toy", "manifest.json"), encoding="utf-8") as f:
+    show("manifest review (reviews)", mask(json.dumps({"reviews": json.load(f).get("reviews")}, indent=1)))
+
+# ---- bpy: pw.py's options after the script name (0.2.0)
+snippet("bpy options after script", """
+python pw.py bpy hello_bpy.py --timeout 120 -- 2.5
+""")
+
+shutil.rmtree(WORK, ignore_errors=True)
