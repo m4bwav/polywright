@@ -8,6 +8,12 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-2 · 2026-10-17 · tests/run_evals.py, action and outcome cases three runs each, installed 0.2.1 loaded from the checkout; outcome baselines without polywright · Windows 11 dev machine, Blender 5.2.1 · 9/9
+- action-crowd 3/3 by hand (every run called `pw.py crowd --preview` and read sheet.png); action-1 3/3, outcome-1 3/3 (trace and answer evidence).
+- Baseline without the skill: outcome-1 2/3. The outcome cases do not discriminate: the model answers them from general knowledge. Sharper outcome cases (polywright-specific facts or commands) are owed.
+- Whole suite: 42/42 graded plus crowd 3/3 by hand ($16.16); baselines 20/21 ($5.26).
+- led to: none (HANDOFF owed: sharper outcome cases)
+
 ### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 15/15
 - Trigger and decoy cases only; action and outcome cases and baselines without the skill are still owed. Whole suite: 80/87 first pass ($29), the four weak cases 24/24 after the fixes.
 - led to: none

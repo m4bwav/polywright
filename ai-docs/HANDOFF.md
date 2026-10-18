@@ -14,7 +14,7 @@ Last updated 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell
 
 ## Owed
 
-1. Evals: the action and outcome cases three times each, and baselines without the skill (`--baseline`). Action cases run real tools: run them one skill at a time, with the GPU free, and read the traces.
+1. Evals: every case has run three times (2026-10-17: triggers 80/87 then fixes 24/24; actions and outcomes 42/42 graded plus crowd 3/3 by hand). Owed: outcome cases that discriminate (baselines without polywright pass 20/21), polywright-specific questions or commands.
 2. TRELLIS.2 template's other resolutions on the 16 GB card (the GPU was busy with another session's job on 2026-10-17; never queue behind or cancel someone else's job).
 3. `pw.py place`: Overture heights where OSM has none, open imagery for ground textures, per-colour 3MF output. A European old-town tile at 150 mm unions through the voxel fallback with 62 non-manifold edges, with or without roofs: find which operand Manifold rejects.
 4. Linux snap and distro packages, `~/Applications` on macOS, Steam installs: Blender discovery unchecked there.

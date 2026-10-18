@@ -73,6 +73,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-17: wiki for 0.2.1
 
 - Wiki updated for 0.2.1 (wiki commit 8363f76; live: 11 pages, 0 failures): the terrain regression entry is now "fixed in 0.2.1", printable runs without `--hollow`, new reference pages listed on The-Skills; verify output saved over the 2026-10-17 one ([notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md)).
+- Action and outcome evals, three runs each on 0.2.1: 42/42 graded, crowd 3/3 by hand ($16.16); outcome baselines without polywright 20/21 ($5.26), so the outcome cases do not discriminate (owed).
 
 ## 2026-10-17: pw.py duel
 

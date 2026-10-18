@@ -8,6 +8,12 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261017-2 · 2026-10-17 · tests/run_evals.py, action and outcome cases three runs each, installed 0.2.1 loaded from the checkout; outcome baselines without polywright · Windows 11 dev machine, Blender 5.2.1 · 6/6
+- action-1 3/3, outcome-1 3/3 (trace and answer evidence).
+- Baseline without the skill: outcome-1 3/3. The outcome cases do not discriminate: the model answers them from general knowledge. Sharper outcome cases (polywright-specific facts or commands) are owed.
+- Whole suite: 42/42 graded plus crowd 3/3 by hand ($16.16); baselines 20/21 ($5.26).
+- led to: none (HANDOFF owed: sharper outcome cases)
+
 ### T-20261017-1 · 2026-10-17 · tests/run_evals.py: headless claude -p, three runs per case, fresh session in a throwaway copy, this checkout through --plugin-dir, installed polywright off · Windows 11 dev machine, Claude Code 2.1.281 · 11/12
 - decoy-2 · trigger · overtrigger: 1 of 3 runs loaded the skill for a seamless wrapping-paper pattern
 - after C-20261017-1: decoy-2 3/3, trigger-1 3/3
