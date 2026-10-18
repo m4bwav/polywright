@@ -613,7 +613,8 @@ def cmd_check(a):
     if "min_feature" in rules:
         th = info.get("thickness") or {}
         if th.get("thin_fraction") is None:
-            rule("min_feature", "unchecked", "not measured (needs Blender): render it and look for parts thinner than %s %s" % (rules["min_feature"], unit), "info")
+            why = "skipped (--no-thickness)" if a.no_thickness else "not measured (needs Blender)"
+            rule("min_feature", "unchecked", "%s: render it and look for parts thinner than %s %s" % (why, rules["min_feature"], unit), "info")
         else:
             spots = "; ".join("%s %s at %s" % (s["thickness"], unit, s["at"]) for s in th.get("thin_spots", [])[:3])
             rule("min_feature", True if th["thin_fraction"] < 0.005 else "warn",

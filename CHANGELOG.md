@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## Unreleased
+
+- `pw.py printable`: 0.2.0's hollow-shell fill also ran on solid models and terrain slabs (it counted the solid's own inside as air) and could leave them open: a park tile that was watertight in 0.1.2 came out with 393k triangles and boundary edges. Only air the outside reaches through the gaps counts now. `check --no-thickness` says it was skipped instead of "needs Blender".
+
 ## 0.2.0 (2026-10-17)
 
 - `pw.py place`: buildings follow OpenStreetMap's Simple 3D Buildings. `min_height` and `building:min_level` lift a part off the ground (a print stands it on the ground), `building:part` areas replace their outline, and `roof:shape` gabled, hipped, pyramidal and skillion are built (other shapes mapped to the nearest) from `roof:height`, `roof:levels`, `roof:angle` or a 30 degree pitch; `counts.roofs` says what was built. A European old town: 229 buildings, 82 roofs.

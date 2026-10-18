@@ -425,6 +425,7 @@ class WithBlender(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertTrue(out["watertight"])
         self.assertAlmostEqual(max(out["dims_mm"]), 40, delta=0.8)
+        self.assertFalse(any(s.startswith("hollow shell") for s in out["steps"]), out["steps"])  # solids are not filled
 
     def test_check_measures_wall_thickness(self):
         # a 20 mm block passes the 0.9 mm FDM wall rule; a 0.5 mm fin standing on it is found and located
@@ -485,6 +486,7 @@ class WithBlender(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertTrue(out["watertight"], out)
         self.assertGreater(out["dims_mm"][2], 0.5)
+        self.assertFalse(any(s.startswith("hollow shell") for s in out["steps"]), out["steps"])  # a slab is not a shell
 
     def test_render_sheet(self):
         d = os.path.join(self.tmp, "r")
