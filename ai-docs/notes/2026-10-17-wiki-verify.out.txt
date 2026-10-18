@@ -1,0 +1,1563 @@
+## installed
+polywright 0.2.0 from https://github.com/m4bwav/polywright/releases/download/v0.2.0/polywright-0.2.0.zip
+
+## version
+0.2.0
+[exit 0]
+
+## new
+{
+ "ok": true,
+ "dir": "fountain",
+ "manifest": "fountain\\manifest.json",
+ "layout": {
+  "refs/": "reference images, blueprints, textures (each listed in sources)",
+  "work/": ".blend and intermediates",
+  "out/": "deliverables, one per target",
+  "renders/": "review sheets"
+ }
+}
+[exit 0]
+
+## place
+{
+ "ok": true,
+ "out": "park",
+ "scene": "park\\scene.glb",
+ "bbox": [
+  40.0,
+  -75.0,
+  40.001,
+  -74.9987
+ ],
+ "center": [
+  40.0005,
+  -74.99935
+ ],
+ "size_m": [
+  111.0,
+  111.0
+ ],
+ "grid": [
+  56,
+  56
+ ],
+ "res_m": 2.0,
+ "dem": "flat",
+ "relief_m": 0.0,
+ "elevation_min_m": 0.0,
+ "counts": {
+  "water_points_flattened": 0,
+  "buildings": 1,
+  "building_height_source": {
+   "osm height": 1
+  },
+  "roofs": {
+   "flat": 1
+  },
+  "road_segments": 1,
+  "trees": 1,
+  "ground_cells": {
+   "default": 869,
+   "park": 2156
+  }
+ },
+ "frame": "glTF: metres, +Y up, -Z north, +X east, origin at the bbox centre, y=0 at the lowest ground",
+ "credits": [
+  "Map data (c) OpenStreetMap contributors, ODbL 1.0 (openstreetmap.org/copyright)"
+ ],
+ "notes": [
+  "OSM from cache"
+ ],
+ "print": {
+  "parts_stl": "park\\print_parts.stl",
+  "tris": 6720,
+  "size_mm": [
+   60.0,
+   60.0,
+   7.9
+  ],
+  "scale": "1:1851",
+  "exaggerate": 1.5,
+  "base_mm": 3.0,
+  "buildings_dropped_under_min_feature": 0,
+  "note": "overlapping closed shells; slicers union them, but run union for one manifold solid",
+  "union": {
+   "ok": true,
+   "solver": "MANIFOLD",
+   "watertight": true,
+   "tris": 6742,
+   "error": null,
+   "non_manifold_edges": 0,
+   "boundary_edges": 0
+  },
+  "print_stl": "park\\print.stl"
+ },
+ "next": "render scene.glb (pw.py render, --color material) and compare with an aerial photo; hand-detail landmarks; credits go in the game's or print's notes"
+}
+[exit 0]
+
+## inspect
+{
+ "file": "park\\scene.glb",
+ "objects": 6,
+ "tris": 6196,
+ "verts": 3458,
+ "bbox_min": [
+  -55.50565,
+  -55.51731,
+  -0.3
+ ],
+ "bbox_max": [
+  55.50565,
+  55.51731,
+  7.0
+ ],
+ "dims": [
+  111.01131,
+  111.03461,
+  7.3
+ ],
+ "units_note": "Blender units; metres unless the source used other units (an STL in mm reads as 1000x too big)",
+ "materials": [
+  "buildings",
+  "ground_default",
+  "ground_park",
+  "roads",
+  "tree_trunks",
+  "trees"
+ ],
+ "images": [],
+ "max_image_px": 0,
+ "uv_missing": [
+  "ground_park",
+  "ground_default",
+  "roads",
+  "buildings",
+  "trees",
+  "tree_trunks"
+ ],
+ "armatures": 0,
+ "actions": 0,
+ "cameras": 0,
+ "lights": 0,
+ "unapplied_scale": [],
+ "seconds": "<s>",
+ "object_rows": [
+  {
+   "name": "ground_park",
+   "tris": 4312,
+   "verts": 2250,
+   "faces": 4312,
+   "materials": [
+    "ground_park"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  },
+  {
+   "name": "ground_default",
+   "tris": 1738,
+   "verts": 1072,
+   "faces": 1738,
+   "materials": [
+    "ground_default"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  },
+  {
+   "name": "roads",
+   "tris": 110,
+   "verts": 112,
+   "faces": 110,
+   "materials": [
+    "roads"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  },
+  {
+   "name": "buildings",
+   "tris": 12,
+   "verts": 8,
+   "faces": 12,
+   "materials": [
+    "buildings"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  },
+  {
+   "name": "trees",
+   "tris": 12,
+   "verts": 8,
+   "faces": 12,
+   "materials": [
+    "trees"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  },
+  {
+   "name": "tree_trunks",
+   "tris": 12,
+   "verts": 8,
+   "faces": 12,
+   "materials": [
+    "tree_trunks"
+   ],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  }
+ ],
+ "ok": true,
+ "action": "inspect",
+ "blender": "5.2.1 LTS",
+ "backend": "blender",
+ "file_bytes": 155132
+}
+[exit 0]
+
+## check fail
+{
+ "ok": false,
+ "target": "game-roblox",
+ "status": "fail",
+ "results": [
+  {
+   "rule": "max_tris",
+   "status": "pass",
+   "detail": "6196 tris (limit 20000)"
+  },
+  {
+   "rule": "max_tris_per_object",
+   "status": "pass",
+   "detail": "ground_park has 4312 tris (limit 20000)"
+  },
+  {
+   "rule": "max_materials",
+   "status": "warn",
+   "detail": "6 materials (limit 1)"
+  },
+  {
+   "rule": "max_image_px",
+   "status": "pass",
+   "detail": "largest texture 0 px (limit 1024)"
+  },
+  {
+   "rule": "require_uvs",
+   "status": "fail",
+   "detail": "objects without UVs: ground_park, ground_default, roads, buildings, trees, tree_trunks"
+  },
+  {
+   "rule": "real_scale",
+   "status": "pass",
+   "detail": "longest side 111 m vs expected 110 m (x1.01)"
+  }
+ ],
+ "advice": [
+  "20,000 triangles per mesh (create.roblox.com specifications, checked 2026-10-11; vendors quote 21,000, test the importer). Split bigger models into several MeshParts.",
+  "One material per mesh; SurfaceAppearance takes colour, normal (OpenGL, Y+), roughness, metalness. Texture size limit unverified (historically 1024 px).",
+  "1 stud = 0.28 m: a 1.8 m person is about 6.4 studs. Export in metres and scale in Studio, or scale by 1/0.28 before export.",
+  "At most 4 bone influences per vertex, root joint at the origin, no zero-thickness surfaces. CollisionFidelity Box or Hull for props."
+ ],
+ "inspect": {
+  "tris": 6196,
+  "objects": 6,
+  "dims": [
+   111.01131,
+   111.03461,
+   7.3
+  ],
+  "watertight": false,
+  "parts": 6,
+  "materials": [
+   "buildings",
+   "ground_default",
+   "ground_park",
+   "roads",
+   "tree_trunks",
+   "trees"
+  ],
+  "max_image_px": 0,
+  "backend": "blender",
+  "blender": "5.2.1 LTS",
+  "thickness": null
+ }
+}
+[exit 1]
+
+## convert
+{
+ "path": "park\\roblox.glb",
+ "bytes": 127588,
+ "tris": 5000,
+ "dims": [
+  111.011307,
+  111.034615,
+  7.3
+ ],
+ "notes": [
+  "hierarchy flattened, transforms applied, non-mesh objects removed",
+  "Smart UV Project on 1 object(s)"
+ ],
+ "ok": true,
+ "action": "convert",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>"
+}
+[exit 0]
+
+## check list
+{
+ "targets": {
+  "game-roblox": "Roblox MeshPart through the 3D Importer (FBX, OBJ or glTF)",
+  "game-unity": "Unity prop or character (GLB through glTFast or FBX)",
+  "game-unreal": "Unreal Engine 5 static mesh (FBX, glTF or USD)",
+  "web-threejs": "three.js, model-viewer or Babylon page (GLB)",
+  "ar-usdz": "Apple AR Quick Look (USDZ)",
+  "commerce-gltf": "Product model for e-commerce viewers (Khronos 3D Commerce guidelines)",
+  "print-fdm": "FDM print, 0.4 mm nozzle, 256 mm cube bed (Bambu P1S, X1, A1 class)",
+  "print-resin": "Resin (MSLA) print: miniatures and fine detail",
+  "video-blockout": "Blockout or proxy for AI video and previs (structure guides, depth and normal passes)",
+  "cad-step": "Engineering interchange (STEP from code CAD), with a mesh preview"
+ },
+ "checked": "2026-10-11"
+}
+[exit 0]
+
+## render
+{
+ "shots": [
+  {
+   "view": "front",
+   "path": "park\\renders\\view_front.png",
+   "projection": "ortho",
+   "metres_per_px": 0.253072
+  },
+  {
+   "view": "top",
+   "path": "park\\renders\\view_top.png",
+   "projection": "ortho",
+   "metres_per_px": 0.253125
+  },
+  {
+   "view": "iso",
+   "path": "park\\renders\\view_iso.png",
+   "projection": "perspective"
+  }
+ ],
+ "dims": [
+  59.98741,
+  60.0,
+  7.86335
+ ],
+ "engine": "BLENDER_WORKBENCH",
+ "sheet": {
+  "path": "park\\renders\\sheet.png",
+  "layout": "3 columns, row-major in the order of shots"
+ },
+ "ok": true,
+ "action": "render",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "Read sheet.png (one image) and judge silhouette, proportions, scale, missing parts, shading artifacts"
+}
+[exit 0]
+
+## lods
+{
+ "ok": true,
+ "lods": [
+  {
+   "lod": 0,
+   "ratio": 1.0,
+   "path": "park\\lods\\roblox_LOD0.glb",
+   "ok": true,
+   "tris": 5000,
+   "error": null
+  },
+  {
+   "lod": 1,
+   "ratio": 0.5,
+   "path": "park\\lods\\roblox_LOD1.glb",
+   "ok": true,
+   "tris": 2499,
+   "error": null
+  },
+  {
+   "lod": 2,
+   "ratio": 0.25,
+   "path": "park\\lods\\roblox_LOD2.glb",
+   "ok": true,
+   "tris": 1250,
+   "error": null
+  }
+ ],
+ "note": "Unity: name LOD children <name>_LOD0.. for automatic LOD groups; Unreal: import with Auto Generate LODs off and add these; three.js: THREE.LOD"
+}
+[exit 0]
+
+## printable
+{
+ "out": {
+  "path": "park\\solid.stl",
+  "bytes": 230584
+ },
+ "steps": [
+  "scaled x0.5404 to 60.0 mm (longest)",
+  "open surface: solidified 1.20 mm inward",
+  "voxel remesh 0.120 mm",
+  "flat base: clamped below 0.60 mm",
+  "planar dissolve 0.5 deg: 391651 -> 4610 faces"
+ ],
+ "tris": 4610,
+ "dims_mm": [
+  59.987,
+  60.0,
+  4.304
+ ],
+ "boundary_edges": 0,
+ "non_manifold_edges": 0,
+ "parts": 1,
+ "volume_cm3": 2.28,
+ "watertight": true,
+ "ok": true,
+ "action": "printable",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "render it (pw.py render) and compare with the source; then check --target print-fdm; slicer last"
+}
+[exit 0]
+{
+ "ok": true,
+ "target": "print-fdm",
+ "status": "warn",
+ "results": [
+  {
+   "rule": "max_tris",
+   "status": "pass",
+   "detail": "4610 tris (limit 1000000)"
+  },
+  {
+   "rule": "require_watertight",
+   "status": "pass",
+   "detail": "boundary edges 0, non-manifold edges 0"
+  },
+  {
+   "rule": "single_part",
+   "status": "pass",
+   "detail": "1 separate parts (loose pieces print as separate islands or fall off)"
+  },
+  {
+   "rule": "max_dims",
+   "status": "pass",
+   "detail": "size [59.987, 60.0, 4.304] mm (largest allowed [256, 256, 256] mm; rotation is allowed)"
+  },
+  {
+   "rule": "min_feature",
+   "status": "warn",
+   "detail": "96.4% of the surface is thinner than 0.9 mm (thinnest 0.0717, 5th percentile 0.5997; 18440 sample points): 0.072 mm at [11.55, 12.561, 3.901]; 0.413 mm at [29.992, -22.172, 0.0]; 0.498 mm at [-29.989, 9.491, 0.0]"
+  }
+ ],
+ "advice": [
+  "Walls at least 2 perimeters (about 0.9 mm), better 1.2 to 1.6 mm. Details under 0.5 mm vanish.",
+  "Overhangs past about 45 degrees need support; chamfer rather than fillet bed-facing edges; 0.3 mm clearance for parts that move or slot together (Prusa guide).",
+  "Too big for the bed: split with pins (3 mm, 0.2 mm clearance) or the slicer's Cut tool.",
+  "Hand the slicer a 3MF when a printer-specific skill or the slicer CLI is available; the STL stays the verified artefact."
+ ],
+ "inspect": {
+  "tris": 4610,
+  "objects": 1,
+  "dims": [
+   59.98741,
+   60.0,
+   4.30415
+  ],
+  "watertight": true,
+  "parts": 1,
+  "materials": [],
+  "max_image_px": 0,
+  "backend": "blender",
+  "blender": "5.2.1 LTS",
+  "thickness": {
+   "minimum": 0.9,
+   "samples": 18440,
+   "thin_fraction": 0.9638,
+   "thinnest": 0.0717,
+   "p05": 0.5997,
+   "method": "inward rays from 18440 surface points, area-weighted",
+   "thin_spots": [
+    {
+     "at": [
+      11.55,
+      12.561,
+      3.901
+     ],
+     "thickness": 0.072
+    },
+    {
+     "at": [
+      29.992,
+      -22.172,
+      0.0
+     ],
+     "thickness": 0.413
+    },
+    {
+     "at": [
+      -29.989,
+      9.491,
+      0.0
+     ],
+     "thickness": 0.498
+    },
+    {
+     "at": [
+      -29.989,
+      -11.254,
+      0.0
+     ],
+     "thickness": 0.499
+    },
+    {
+     "at": [
+      29.986,
+      19.336,
+      0.0
+     ],
+     "thickness": 0.502
+    }
+   ]
+  }
+ }
+}
+[exit 0]
+
+## printable terrain default fill
+{
+ "out": {
+  "path": "park\\solid-filled.stl",
+  "bytes": 19677534
+ },
+ "steps": [
+  "scaled x0.5404 to 60.0 mm (longest)",
+  "open surface: solidified 1.20 mm inward",
+  "voxel remesh 0.120 mm",
+  "hollow shell: filled 2935 mm3 the outside cannot reach (seal 1.00 mm, 0.114 mm cells)",
+  "flat base: clamped below 0.60 mm",
+  "planar dissolve not kept (it broke the solid)"
+ ],
+ "tris": 393549,
+ "dims_mm": [
+  59.987,
+  60.0,
+  4.284
+ ],
+ "boundary_edges": 2,
+ "non_manifold_edges": 1,
+ "parts": 1,
+ "volume_cm3": 0.0,
+ "watertight": false,
+ "ok": true,
+ "action": "printable",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "render it (pw.py render) and compare with the source; then check --target print-fdm; slicer last"
+}
+[exit 1]
+
+## 3mf
+{
+ "ok": true,
+ "out": "park\\two-colours.3mf",
+ "objects": [
+  {
+   "name": "print",
+   "tris": 6742,
+   "watertight": true,
+   "dims_mm": [
+    59.987,
+    60.0,
+    7.863
+   ]
+  },
+  {
+   "name": "solid",
+   "tris": 4610,
+   "watertight": true,
+   "dims_mm": [
+    59.987,
+    60.0,
+    4.304
+   ]
+  }
+ ],
+ "units": "millimetre",
+ "note": "geometry only: the slicer applies its defaults; set printer, filament and process there"
+}
+[exit 0]
+
+## manifest
+{
+ "ok": true,
+ "manifest": "fountain\\manifest.json",
+ "status": "brief",
+ "outputs": 1,
+ "sources": 0,
+ "problems": []
+}
+[exit 0]
+{
+ "ok": false,
+ "manifest": "fountain\\manifest.json",
+ "status": "brief",
+ "outputs": 1,
+ "sources": 1,
+ "problems": [
+  "source without a licence: https://example.com/ref.png"
+ ]
+}
+[exit 1]
+{
+ "ok": false,
+ "manifest": "fountain\\manifest.json",
+ "status": "brief",
+ "outputs": 1,
+ "sources": 1,
+ "problems": [
+  "source without a licence: https://example.com/ref.png"
+ ]
+}
+[exit 1]
+
+## hello_bpy.py (file)
+import bpy, sys
+args = sys.argv[sys.argv.index("--") + 1:]
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.ops.mesh.primitive_cylinder_add(radius=0.3, depth=float(args[0]))
+print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
+
+## bpy
+{
+ "ok": true,
+ "exit_code": 0,
+ "seconds": "<s>",
+ "blender": "5.2.1",
+ "output": [
+  "[pw] height 2.5"
+ ],
+ "errors": []
+}
+[exit 0]
+
+## bpy traceback
+{
+ "ok": false,
+ "exit_code": 3,
+ "seconds": "<s>",
+ "blender": "5.2.1",
+ "output": [],
+ "errors": [
+  "Traceback (most recent call last):",
+  "  File \"old_api.py\", line 2, in <module>",
+  "    bpy.ops.import_scene.obj(filepath=\"chair.obj\")",
+  "    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^",
+  "AttributeError: Calling operator \"bpy.ops.import_scene.obj\" error, could not be found",
+  "Error: script failed, file: 'old_api.py', exiting."
+ ],
+ "traceback": [
+  "Traceback (most recent call last):",
+  "  File \"old_api.py\", line 2, in <module>",
+  "    bpy.ops.import_scene.obj(filepath=\"chair.obj\")",
+  "    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^",
+  "AttributeError: Calling operator \"bpy.ops.import_scene.obj\" error, could not be found"
+ ],
+ "hint": "bpy API traps by Blender version: polywright-blender references/bpy-api-traps.md"
+}
+[exit 1]
+
+## texture
+{
+ "ok": true,
+ "maps": {
+  "albedo_seamless": "tex\\bricks_seamless.png",
+  "height": "tex\\bricks_height.png",
+  "normal": "tex\\bricks_normal_opengl.png",
+  "roughness": "tex\\bricks_roughness.png"
+ },
+ "convention": "opengl",
+ "note": "luminance-derived approximations (the classic CrazyBump trick), fine for props and terrain, wrong for measured materials; OpenGL = glTF, Blender, Unity; DirectX = Unreal"
+}
+[exit 0]
+
+## error missing file
+{
+ "ok": false,
+ "error": "file not found: nothing-here.glb"
+}
+[exit 1]
+
+## error unknown target
+{
+ "ok": false,
+ "error": "unknown target game-godot",
+ "known": [
+  "game-roblox",
+  "game-unity",
+  "game-unreal",
+  "web-threejs",
+  "ar-usdz",
+  "commerce-gltf",
+  "print-fdm",
+  "print-resin",
+  "video-blockout",
+  "cad-step"
+ ]
+}
+[exit 2]
+
+## error bad bbox
+{
+ "ok": false,
+ "error": "bbox must be S,W,N,E with S<N and W<E"
+}
+[exit 2]
+
+## error no comfyui
+{
+ "ok": false,
+ "error": "no ComfyUI host with hunyuan3d-dit-v2.safetensors or hunyuan3d-dit-v2-turbo.safetensors",
+ "tried": [
+  {
+   "host": "http://127.0.0.1:9",
+   "up": false,
+   "error": "<urlopen error [WinError 10061] No connection could be made because the target machine actively refu"
+  }
+ ],
+ "next": "start ComfyUI with the Hunyuan3D-2 checkpoints in models/checkpoints, set POLYWRIGHT_COMFYUI, or use a hosted generator (polywright-generate)"
+}
+[exit 1]
+
+## error workflow no host
+{
+ "ok": false,
+ "error": "no ComfyUI host has every node in the workflow",
+ "tried": [
+  {
+   "host": "http://127.0.0.1:9",
+   "up": false,
+   "error": "<urlopen error [WinError 10061] No connection could be made because the target machine actively refu"
+  }
+ ],
+ "next": "a server on another port: pass --host http://127.0.0.1:PORT or set POLYWRIGHT_COMFYUI (the default is only 8188)"
+}
+[exit 1]
+
+## check thickness pass
+{
+ "ok": true,
+ "target": "print-fdm",
+ "status": "pass",
+ "results": [
+  {
+   "rule": "max_tris",
+   "status": "pass",
+   "detail": "12 tris (limit 1000000)"
+  },
+  {
+   "rule": "require_watertight",
+   "status": "pass",
+   "detail": "boundary edges 0, non-manifold edges 0"
+  },
+  {
+   "rule": "single_part",
+   "status": "pass",
+   "detail": "1 separate parts (loose pieces print as separate islands or fall off)"
+  },
+  {
+   "rule": "max_dims",
+   "status": "pass",
+   "detail": "size [20.0, 20.0, 20.0] mm (largest allowed [256, 256, 256] mm; rotation is allowed)"
+  },
+  {
+   "rule": "min_feature",
+   "status": "pass",
+   "detail": "0.0% of the surface is thinner than 0.9 mm (thinnest None, 5th percentile None; 48 sample points)"
+  }
+ ],
+ "advice": [
+  "Walls at least 2 perimeters (about 0.9 mm), better 1.2 to 1.6 mm. Details under 0.5 mm vanish.",
+  "Overhangs past about 45 degrees need support; chamfer rather than fillet bed-facing edges; 0.3 mm clearance for parts that move or slot together (Prusa guide).",
+  "Too big for the bed: split with pins (3 mm, 0.2 mm clearance) or the slicer's Cut tool.",
+  "Hand the slicer a 3MF when a printer-specific skill or the slicer CLI is available; the STL stays the verified artefact."
+ ],
+ "inspect": {
+  "tris": 12,
+  "objects": 1,
+  "dims": [
+   20.0,
+   20.0,
+   20.0
+  ],
+  "watertight": true,
+  "parts": 1,
+  "materials": [],
+  "max_image_px": 0,
+  "backend": "blender",
+  "blender": "5.2.1 LTS",
+  "thickness": {
+   "minimum": 0.9,
+   "samples": 48,
+   "thin_fraction": 0.0,
+   "thinnest": null,
+   "p05": null,
+   "method": "inward rays from 48 surface points, area-weighted",
+   "thin_spots": []
+  }
+ }
+}
+[exit 0]
+
+## check thickness warn
+{
+ "ok": true,
+ "target": "print-fdm",
+ "status": "warn",
+ "results": [
+  {
+   "rule": "max_tris",
+   "status": "pass",
+   "detail": "24 tris (limit 1000000)"
+  },
+  {
+   "rule": "require_watertight",
+   "status": "pass",
+   "detail": "boundary edges 0, non-manifold edges 0"
+  },
+  {
+   "rule": "single_part",
+   "status": "warn",
+   "detail": "2 separate parts (loose pieces print as separate islands or fall off)"
+  },
+  {
+   "rule": "max_dims",
+   "status": "pass",
+   "detail": "size [50.0, 20.0, 20.0] mm (largest allowed [256, 256, 256] mm; rotation is allowed)"
+  },
+  {
+   "rule": "min_feature",
+   "status": "warn",
+   "detail": "24.0% of the surface is thinner than 0.9 mm (thinnest 0.5, 5th percentile 0.5; 96 sample points): 0.5 mm at [35.597, 0.5, 4.663]; 0.5 mm at [42.592, 0.5, 19.973]; 0.5 mm at [39.22, 0.5, 10.376]"
+  }
+ ],
+ "advice": [
+  "Walls at least 2 perimeters (about 0.9 mm), better 1.2 to 1.6 mm. Details under 0.5 mm vanish.",
+  "Overhangs past about 45 degrees need support; chamfer rather than fillet bed-facing edges; 0.3 mm clearance for parts that move or slot together (Prusa guide).",
+  "Too big for the bed: split with pins (3 mm, 0.2 mm clearance) or the slicer's Cut tool.",
+  "Hand the slicer a 3MF when a printer-specific skill or the slicer CLI is available; the STL stays the verified artefact."
+ ],
+ "inspect": {
+  "tris": 24,
+  "objects": 1,
+  "dims": [
+   50.0,
+   20.0,
+   20.0
+  ],
+  "watertight": true,
+  "parts": 2,
+  "materials": [],
+  "max_image_px": 0,
+  "backend": "blender",
+  "blender": "5.2.1 LTS",
+  "thickness": {
+   "minimum": 0.9,
+   "samples": 96,
+   "thin_fraction": 0.2396,
+   "thinnest": 0.5,
+   "p05": 0.5,
+   "method": "inward rays from 96 surface points, area-weighted",
+   "thin_spots": [
+    {
+     "at": [
+      35.597,
+      0.5,
+      4.663
+     ],
+     "thickness": 0.5
+    },
+    {
+     "at": [
+      42.592,
+      0.5,
+      19.973
+     ],
+     "thickness": 0.5
+    },
+    {
+     "at": [
+      39.22,
+      0.5,
+      10.376
+     ],
+     "thickness": 0.5
+    },
+    {
+     "at": [
+      49.683,
+      0.0,
+      1.014
+     ],
+     "thickness": 0.5
+    },
+    {
+     "at": [
+      33.021,
+      0.5,
+      19.899
+     ],
+     "thickness": 0.5
+    }
+   ]
+  }
+ }
+}
+[exit 0]
+
+## check no-thickness
+{
+ "ok": true,
+ "target": "print-fdm",
+ "status": "warn",
+ "results": [
+  {
+   "rule": "max_tris",
+   "status": "pass",
+   "detail": "24 tris (limit 1000000)"
+  },
+  {
+   "rule": "require_watertight",
+   "status": "pass",
+   "detail": "boundary edges 0, non-manifold edges 0"
+  },
+  {
+   "rule": "single_part",
+   "status": "warn",
+   "detail": "2 separate parts (loose pieces print as separate islands or fall off)"
+  },
+  {
+   "rule": "max_dims",
+   "status": "pass",
+   "detail": "size [50.0, 20.0, 20.0] mm (largest allowed [256, 256, 256] mm; rotation is allowed)"
+  },
+  {
+   "rule": "min_feature",
+   "status": "unchecked",
+   "detail": "not measured (needs Blender): render it and look for parts thinner than 0.9 mm"
+  }
+ ],
+ "advice": [
+  "Walls at least 2 perimeters (about 0.9 mm), better 1.2 to 1.6 mm. Details under 0.5 mm vanish.",
+  "Overhangs past about 45 degrees need support; chamfer rather than fillet bed-facing edges; 0.3 mm clearance for parts that move or slot together (Prusa guide).",
+  "Too big for the bed: split with pins (3 mm, 0.2 mm clearance) or the slicer's Cut tool.",
+  "Hand the slicer a 3MF when a printer-specific skill or the slicer CLI is available; the STL stays the verified artefact."
+ ],
+ "inspect": {
+  "tris": 24,
+  "objects": 1,
+  "dims": [
+   50.0,
+   20.0,
+   20.0
+  ],
+  "watertight": true,
+  "parts": 2,
+  "materials": [],
+  "max_image_px": 0,
+  "backend": "blender",
+  "blender": "5.2.1 LTS",
+  "thickness": null
+ }
+}
+[exit 0]
+
+## printable hollow shell
+{
+ "out": {
+  "path": "shell-filled.stl",
+  "bytes": 20000084
+ },
+ "steps": [
+  "scaled x1 to 20.0 mm (longest)",
+  "open surface: solidified 1.00 mm inward",
+  "voxel remesh 0.100 mm",
+  "hollow shell: filled 7076 mm3 the outside cannot reach (seal 1.00 mm, 0.087 mm cells)"
+ ],
+ "tris": 400000,
+ "dims_mm": [
+  20.0,
+  20.0,
+  20.0
+ ],
+ "boundary_edges": 0,
+ "non_manifold_edges": 0,
+ "parts": 1,
+ "volume_cm3": 7.997,
+ "watertight": true,
+ "ok": true,
+ "action": "printable",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "render it (pw.py render) and compare with the source; then check --target print-fdm; slicer last"
+}
+[exit 0]
+{
+ "out": {
+  "path": "shell-hollow.stl",
+  "bytes": 20000084
+ },
+ "steps": [
+  "scaled x1 to 20.0 mm (longest)",
+  "open surface: solidified 1.00 mm inward",
+  "voxel remesh 0.100 mm"
+ ],
+ "tris": 400000,
+ "dims_mm": [
+  20.0,
+  20.0,
+  20.0
+ ],
+ "boundary_edges": 0,
+ "non_manifold_edges": 0,
+ "parts": 1,
+ "volume_cm3": 0.696,
+ "watertight": true,
+ "ok": true,
+ "action": "printable",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "render it (pw.py render) and compare with the source; then check --target print-fdm; slicer last"
+}
+[exit 0]
+
+## convert level
+{
+ "file": "leaning.stl",
+ "objects": 1,
+ "tris": 12,
+ "verts": 8,
+ "bbox_min": [
+  0.0,
+  -0.68404,
+  0.0
+ ],
+ "bbox_max": [
+  1.0,
+  0.93969,
+  2.22141
+ ],
+ "dims": [
+  1.0,
+  1.62373,
+  2.22141
+ ],
+ "units_note": "Blender units; metres unless the source used other units (an STL in mm reads as 1000x too big)",
+ "materials": [],
+ "images": [],
+ "max_image_px": 0,
+ "uv_missing": [
+  "leaning"
+ ],
+ "armatures": 0,
+ "actions": 0,
+ "cameras": 0,
+ "lights": 0,
+ "unapplied_scale": [],
+ "seconds": "<s>",
+ "object_rows": [
+  {
+   "name": "leaning",
+   "tris": 12,
+   "verts": 8,
+   "faces": 12,
+   "materials": [],
+   "uv_layers": [],
+   "color_attributes": [],
+   "modifiers": [],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shape_keys": 0
+  }
+ ],
+ "ok": true,
+ "action": "inspect",
+ "blender": "5.2.1 LTS",
+ "backend": "blender",
+ "file_bytes": 684
+}
+[exit 0]
+{
+ "path": "level.glb",
+ "bytes": 1456,
+ "tris": 12,
+ "dims": [
+  1.0,
+  1.0,
+  2.0
+ ],
+ "notes": [
+  "levelled by 20.00 deg (hull base)",
+  "hierarchy flattened, transforms applied, non-mesh objects removed"
+ ],
+ "level": {
+  "tilt_deg": 20.0,
+  "base_share": 0.1,
+  "base_normal": [
+   0.0,
+   0.342,
+   -0.9397
+  ],
+  "how": "hull base"
+ },
+ "ok": true,
+ "action": "convert",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>"
+}
+[exit 0]
+{
+ "path": "given.glb",
+ "bytes": 1456,
+ "tris": 12,
+ "dims": [
+  1.0,
+  1.0,
+  2.0
+ ],
+ "notes": [
+  "levelled by -20.00 deg (given)"
+ ],
+ "level": {
+  "tilt_deg": -20.0,
+  "how": "given"
+ },
+ "ok": true,
+ "action": "convert",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>"
+}
+[exit 0]
+
+## place roofs
+{
+ "ok": true,
+ "out": "town",
+ "scene": "town\\scene.glb",
+ "bbox": [
+  40.0,
+  -75.0,
+  40.001,
+  -74.9987
+ ],
+ "center": [
+  40.0005,
+  -74.99935
+ ],
+ "size_m": [
+  111.0,
+  111.0
+ ],
+ "grid": [
+  56,
+  56
+ ],
+ "res_m": 2.0,
+ "dem": "flat",
+ "relief_m": 0.0,
+ "elevation_min_m": 0.0,
+ "counts": {
+  "water_points_flattened": 0,
+  "buildings": 6,
+  "building_height_source": {
+   "osm height": 4,
+   "levels": 1,
+   "default": 1
+  },
+  "roofs": {
+   "flat": 1,
+   "gabled": 2,
+   "hipped": 1,
+   "pyramidal": 2
+  },
+  "road_segments": 1,
+  "trees": 1,
+  "ground_cells": {
+   "default": 869,
+   "park": 2156
+  }
+ },
+ "frame": "glTF: metres, +Y up, -Z north, +X east, origin at the bbox centre, y=0 at the lowest ground",
+ "credits": [
+  "Map data (c) OpenStreetMap contributors, ODbL 1.0 (openstreetmap.org/copyright)"
+ ],
+ "notes": [
+  "OSM from cache"
+ ],
+ "print": {
+  "parts_stl": "town\\print_parts.stl",
+  "tris": 6816,
+  "size_mm": [
+   60.0,
+   60.0,
+   17.6
+  ],
+  "scale": "1:1851",
+  "exaggerate": 1.5,
+  "base_mm": 3.0,
+  "buildings_dropped_under_min_feature": 0,
+  "note": "overlapping closed shells; slicers union them, but run union for one manifold solid",
+  "union": {
+   "ok": true,
+   "solver": "EXACT (MANIFOLD dropped operands)+voxel",
+   "watertight": true,
+   "tris": 451640,
+   "error": null,
+   "non_manifold_edges": 0,
+   "boundary_edges": 0
+  },
+  "print_stl": "town\\print.stl"
+ },
+ "next": "render scene.glb (pw.py render, --color material) and compare with an aerial photo; hand-detail landmarks; credits go in the game's or print's notes"
+}
+[exit 0]
+
+## crowd preview
+{
+ "out": "crowd",
+ "figures": {
+  "a": 8,
+  "b": 8
+ },
+ "objects": 208,
+ "frames_rendered": 3,
+ "frames": 17,
+ "fps": 16,
+ "size": [
+  320,
+  192
+ ],
+ "near_m": 8.0,
+ "far_m": 15.95,
+ "camera": [
+  0.0,
+  -8.0,
+  6.0
+ ],
+ "aim": [
+  0.0,
+  1.1,
+  0.8
+ ],
+ "passes": [
+  "depth",
+  "mask",
+  "clay",
+  "pose"
+ ],
+ "render_seconds": "<s>",
+ "ok": true,
+ "action": "crowd",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "pose": {
+  "frames": 3,
+  "skeletons": 48
+ },
+ "sheet": "crowd\\sheet.png",
+ "next": "Read sheet.png: both sides in frame, readable ranks, no figure crossing the camera. Then feed depth.mp4 (and pose.mp4 for the front ranks) to Wan VACE or Fun Control with a start frame repainted from clay frame 1 (polywright hub, 'Crowd and battle blockouts')"
+}
+[exit 0]
+
+## crowd bad size
+{
+ "ok": false,
+ "error": "--size 830x480: Wan wants both sides divisible by 16 (832x480, 1280x720); --frames 80: Wan wants 4n+1 frames (49, 65, 81), MiniMax H3 17k+5 at 24 fps (56, 73, 209)",
+ "hint": "--any-size skips this check"
+}
+[exit 2]
+
+## turnaround
+{
+ "shots": [
+  {
+   "view": "front",
+   "path": "turn\\view_front.png",
+   "azimuth_deg": 0
+  },
+  {
+   "view": "3q",
+   "path": "turn\\view_3q.png",
+   "azimuth_deg": 45
+  },
+  {
+   "view": "back",
+   "path": "turn\\view_back.png",
+   "azimuth_deg": 180
+  }
+ ],
+ "dims_m": [
+  0.039,
+  0.026,
+  0.13
+ ],
+ "scale": 0.13,
+ "lens": 85.0,
+ "size": [
+  96,
+  144
+ ],
+ "sheet": {
+  "path": "turn\\sheet.png",
+  "layout": "3 columns, row-major in the order of shots"
+ },
+ "ok": true,
+ "action": "turnaround",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "Read sheet.png next to the source photo: markings, colour, nothing invented. The views are a video model's reference pictures (one figure per picture; H3 --ref)"
+}
+[exit 0]
+
+## turnaround unknown view
+{
+ "ok": false,
+ "error": "ValueError: unknown view top (known: front, 3q, side, 3q_back, back, 3q_left, left)",
+ "trace": "Traceback (most recent call last):\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1924, in main\n    res = ACTIONS[action](params)\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1501, in act_turnaround\n    raise ValueError(\"unknown view %s (known: %s)\" % (v, \", \".join(TURN_AZ)))\nValueError: unknown view top (known: front, 3q, side, 3q_back, back, 3q_left, left)\n",
+ "action": "turnaround",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>"
+}
+[exit 1]
+
+## mark
+{
+ "dims_m": [
+  0.039,
+  0.026,
+  0.13
+ ],
+ "scale": 0.13,
+ "mark": {
+  "text": "2",
+  "face_m": [
+   0.02535,
+   0.01563
+  ],
+  "letter_h_m": 0.01172,
+  "ray_hits": 1080
+ },
+ "export": {
+  "path": "marked.glb",
+  "bytes": 17008
+ },
+ "ok": true,
+ "action": "mark",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "next": "turnaround the output and compare it with the photo: the marking's size and place, the colour"
+}
+[exit 0]
+
+## layout.json (file)
+{
+ "size": [192, 112],
+ "lens": 35,
+ "cam": [0, -0.6, 0.07],
+ "aim": [0, 0, 0.065],
+ "backdrop_m": 0.6,
+ "figures": [
+  {"name": "b1", "file": "marked.glb", "at": [0.12, 0], "face": "-60", "team": "b"},
+  {"name": "a1", "file": "marked.glb", "at": [-0.12, 0], "face": "60", "team": "a"}
+ ]
+}
+
+## lineup
+{
+ "size": [
+  96,
+  56
+ ],
+ "lens": 35.0,
+ "cam": [
+  0.0,
+  -0.6,
+  0.07
+ ],
+ "aim": [
+  0,
+  0,
+  0.065
+ ],
+ "near_m": 0.2043,
+ "far_m": 1.26,
+ "depth": "inverse 1/z from 1/far (black) to 1/near (white)",
+ "boxes_px": {
+  "b1": [
+   63,
+   18,
+   71,
+   39
+  ],
+  "a1": [
+   25,
+   18,
+   33,
+   39
+  ]
+ },
+ "passes": {
+  "clay": "lineup\\clay.png",
+  "depth": "lineup\\depth.png"
+ },
+ "ok": true,
+ "action": "lineup",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "left_to_right": [
+  "a1",
+  "b1"
+ ],
+ "next": "Read colour.png: who stands where, every marking readable, nothing cut by the frame. colour.png is a guide frame at 0 (H3 guides). Do not run the looped depth video as a control over moving action: the figures freeze on their spots and double (comfyui-gen L-134)"
+}
+[exit 0]
+
+## match
+{
+ "out": "spear.png",
+ "aim_lands": [
+  260.0,
+  80.0
+ ],
+ "aim_px": [
+  260.0,
+  80.0
+ ],
+ "anchor_lands": [
+  120.0,
+  120.0
+ ],
+ "aim_depth_m": 2.269,
+ "forward_pitch_deg": 15.28,
+ "forward_yaw_deg": 79.27,
+ "f_px": 311.1,
+ "ok": true,
+ "action": "match",
+ "blender": "5.2.1 LTS",
+ "seconds": "<s>",
+ "paste": "spear_paste.png",
+ "mask": "spear_mask.png",
+ "mask_bbox": [
+  109,
+  67,
+  272,
+  133
+ ],
+ "next": "Read the paste crop at full size: shape, size in frame, aim; then blend inside the mask with a low-denoise image edit (polywright hub, 'Compose a model into a picture')"
+}
+[exit 0]
+
+## manifest review
+{
+ "ok": true,
+ "dir": "toy",
+ "manifest": "toy\\manifest.json",
+ "layout": {
+  "refs/": "reference images, blueprints, textures (each listed in sources)",
+  "work/": ".blend and intermediates",
+  "out/": "deliverables, one per target",
+  "renders/": "review sheets"
+ }
+}
+[exit 0]
+{
+ "ok": true,
+ "manifest": "toy\\manifest.json",
+ "status": "brief",
+ "outputs": 0,
+ "sources": 0,
+ "problems": []
+}
+[exit 0]
+
+## manifest review (reviews)
+{
+ "reviews": [
+  {
+   "render": "turn/sheet.png",
+   "verdict": "good: front, three-quarter and back read",
+   "by": "agent",
+   "date": "2026-10-17"
+  }
+ ]
+}
+
+## bpy options after script
+{
+ "ok": true,
+ "exit_code": 0,
+ "seconds": "<s>",
+ "blender": "5.2.1",
+ "output": [
+  "[pw] height 2.5"
+ ],
+ "errors": []
+}
+[exit 0]
+

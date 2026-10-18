@@ -57,3 +57,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-17: release 0.2.0
 
 - Owner's go-ahead ("yes, do all the things"). Version 0.2.0 in plugin.json and pw.py; tag v0.2.0 publishes the zip through release.yml.
+
+## 2026-10-17: wiki for 0.2.0
+
+- Wiki updated for 0.2.0 (wiki commit aa2bf87; live: 11 pages, 0 failures); its extended verification program found a `printable` regression on terrain sheets, workaround `--hollow`: [notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md).
