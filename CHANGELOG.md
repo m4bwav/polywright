@@ -2,7 +2,7 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
-## Unreleased
+## 0.2.1 (2026-10-17)
 
 - `pw.py printable`: 0.2.0's hollow-shell fill also ran on solid models and terrain slabs (it counted the solid's own inside as air) and could leave them open: a park tile that was watertight in 0.1.2 came out with 393k triangles and boundary edges. Only air the outside reaches through the gaps counts now. `check --no-thickness` says it was skipped instead of "needs Blender".
 - Six topic pages, each the 3D artist's side of a sibling plugin's subject (sources in each skill's RESEARCH.md, R-20261017): polywright-finish `references/web-threejs.md` (threewright), `references/roblox.md` (roblox-agent) and `references/unity.md` (unity-agent); polywright `references/film-and-video.md` (cinewright); polywright-references `references/images-for-3d.md` (what an image-to-3D generator needs from a picture); polywright-print `references/supports-and-slicing.md` (orientation, supports, splitting, slicing from the modeller's side). Each skill's SKILL.md points at its page.
