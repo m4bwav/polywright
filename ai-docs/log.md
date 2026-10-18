@@ -61,3 +61,4 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-17: wiki for 0.2.0
 
 - Wiki updated for 0.2.0 (wiki commit aa2bf87; live: 11 pages, 0 failures); its extended verification program found a `printable` regression on terrain sheets, workaround `--hollow`: [notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md).
+- printable fix: the fill counted the solid's own inside as air (found by the 0.2.0 wiki verification: a park sheet came out open). Air is now cells reachable through gaps but not once sealed; the park case is back to 4,610 triangles, watertight, 2.28 cm3; the TRELLIS.2 figure still fills (3.43 cm3).

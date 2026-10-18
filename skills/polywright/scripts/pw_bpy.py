@@ -937,7 +937,10 @@ def fill_cavities(obj, seal_mm=1.0, max_cells=12_000_000):
     shell = _shift_or(surf, k)
     outside = _flood_outside(~shell)
     core = ~_shift_or(outside, k + 1)
-    cavity = core & ~_shift_or(surf, 1)
+    # air only: cells the outside reaches through the gaps (unsealed) but not once they are sealed. Counting the
+    # whole core would count a solid's own inside and send solid models and terrain sheets through the fill.
+    reach = _flood_outside(~_shift_or(surf, 1))
+    cavity = core & reach
     filled = float(cavity.sum()) * g ** 3
     if not core.any():
         return 0.0, g, None
