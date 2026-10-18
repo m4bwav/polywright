@@ -18,6 +18,6 @@ Last updated 2026-10-17 (evals harness, wall thickness, hollow-shell fill, conve
 3. `pw.py place`: Overture heights where OSM has none, open imagery for ground textures, per-colour 3MF output. A European old-town tile at 150 mm unions through the voxel fallback with 62 non-manifold edges, with or without roofs: find which operand Manifold rejects.
 4. Linux snap and distro packages, `~/Applications` on macOS, Steam installs: Blender discovery unchecked there.
 5. The private printing skill (miniatures) calls `printable`: its figures were hollow before the fill; re-run one and check walls with `check --target print-fdm`.
-6. `printable` regression in 0.2.0: the hollow-shell fill breaks an open terrain sheet (not watertight, volume 0; `--hollow` gives the 0.1.2 result). Exact case in [notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md); add it as a regression test. The wiki for 0.2.0 is done and documents `--hollow` as the workaround.
+6. Fixed 2026-10-17 (unreleased): the 0.2.0 hollow-shell fill broke an open terrain sheet; it now counts only air the outside reaches through gaps (C-20261017-2 in polywright-print). Release it as 0.2.1 and drop `--hollow` as the workaround from the wiki (Errors-and-Edge-Cases, Commands).
 
 Related: [INDEX.md](INDEX.md)

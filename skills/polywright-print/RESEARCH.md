@@ -43,7 +43,7 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 - track: subject
 - sources: https://bambuhub.net/articles/bambu-studio-supports, https://wiki.bambulab.com/en/software/bambu-studio/support-painting, https://wiki.bambulab.com/en/software/bambu-studio/cut-tool, https://wiki.bambulab.com/en/software/bambu-studio/adaptive-layer-height, https://wiki.bambulab.com/en/software/bambu-studio/reduce-wasting-during-filament-change, https://help.prusa3d.com/article/organic-supports_480131, https://help.prusa3d.com/article/hollowing_117285, https://formlabs.com/global/blog/how-to-hollow-out-3d-models/, https://wiki.elegoo.com/mars/model-orientation-and-support-generation-in-chitubox, https://lychee.co/changelogs/lychee-slicer-7-5-4-and-7-5-5, https://evezone.evetech.co.za/build-lab/fdm-vs-resin-for-tabletop-miniatures-which-should-you-print, https://makerworld.com/en/models/3372170-traveler-32mm, https://pixup3d.com/blog/pre-supported-vs-unsupported-stl-which-should-you-download/
 - magnitude: minor (new reference)
-- applied: C-20261017-2
+- applied: C-20261017-3
 
 ### R-20261017-1 · 2026-10-17 · Tooling: how Blender's 3D-Print Toolbox measures wall thickness
 - summary: the Print3D Toolbox extension (1.4.1, GPL-3.0-or-later) checks thickness by casting a ray from six random points on every face backwards along the face normal, up to the minimum thickness, and marks the face (and the face hit) as thin. polywright's check uses the same idea, written fresh for the MIT licence: area-weighted surface points, a BVH tree over all objects, the first exit-facing hit as the local thickness, faces pointing back at the ray stepped over.
