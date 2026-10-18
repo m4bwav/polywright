@@ -82,9 +82,8 @@ poster), take the composition from the picture and the shape from the model:
    picture's own. A whole-picture edit redraws everything (HDR colour, a bigger prop).
 5. Check at full size; keep two or more seeds.
 
-Worked example and the reasons: the No-God film's storyboard method (comfyui-gen LEARNINGS L-091
-`compose-the-hero-prop`; `nogod/storyboard-method.md` in the owner's video folder). Reference sheets of the
-prop come from the model too (polywright-references, Step 2b).
+Worked example and the reasons: a storyboard method kept in the owner's notes. Reference sheets of the prop
+come from the model too (polywright-references, Step 2b).
 
 ## Crowd and battle blockouts (AI video)
 
@@ -103,6 +102,8 @@ Depth convention, views, screen direction, your own soldier, two-fighter previs 
 A small cast of real figures or toys (sides swapped, an extra figure, markings lost): mesh each from photos, fix
 colour and painted markings with `pw.py mark`, give the video model `pw.py turnaround` pictures as references and a
 `pw.py lineup` (teams on fixed sides, depth and mask) as its opening: [references/figures-for-video.md](references/figures-for-video.md).
+
+Sets and props for a film shot: [references/film-and-video.md](references/film-and-video.md).
 
 ## Step 5: finish and hand over
 

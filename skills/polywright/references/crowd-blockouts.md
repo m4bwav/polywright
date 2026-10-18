@@ -5,7 +5,7 @@ figures with exact perspective in seconds. So let Blender do the crowd and let t
 `pw.py crowd` builds the army and renders the control videos, and the video model (Wan VACE, Wan 2.2 Fun
 Control, or a hosted model taking a reference video) only adds the look.
 
-Back to [SKILL.md](../SKILL.md). Command options: [cli.md](cli.md). Checked with Blender 5.2.1 on Windows 11,
+Back to [SKILL.md](../SKILL.md). Command options: [cli.md](cli.md). Building for the shot: [film-and-video.md](film-and-video.md). Checked with Blender 5.2.1 on Windows 11,
 2026-10-13 (240 figures, 81 frames, four passes at 832x480 in 81 s on the CPU). The depth video then drove
 MiniMax H3 through Fun ControlNet Union 2.0 on a 16 GB card: formation, direction, camera and the moment the
 lines meet all followed the blockout (608x352, 56 frames, 27 to 36 s). Wan is untested; see Open below.

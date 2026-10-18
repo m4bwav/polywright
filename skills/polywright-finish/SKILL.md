@@ -7,7 +7,8 @@ description: "Use whenever a mesh must be made ready for a game engine, the web 
 
 A mesh is finished when it passes its target's check, looks right in a render, and imports at the right size and
 orientation. Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Engine details:
-[references/engines.md](references/engines.md).
+[references/engines.md](references/engines.md). Making and finishing for one engine, step by step:
+[references/roblox.md](references/roblox.md), [references/unity.md](references/unity.md), [references/web-threejs.md](references/web-threejs.md).
 
 ## Step 1: measure, then decide
 
@@ -61,7 +62,7 @@ off (feet slide) and AccuRIG importing once at 0.01 scale: check scale and pivot
 | game-roblox | FBX, OBJ or GLB per MeshPart, under 20k triangles, one material | `check --target game-roblox`; roblox-agent places it |
 | game-unity | GLB (glTFast) or FBX `--fbx-bake-axes` | import test in the project (unity-agent) |
 | game-unreal | FBX or GLB; Nanite for dense opaque meshes | scale check on import |
-| web-threejs | GLB, then `gltf-transform optimize in.glb out.glb --compress meshopt --texture-compress ktx2` | gltf_validator; page check (threewright) |
+| web-threejs | GLB, then `gltf-transform optimize in.glb out.glb --compress meshopt --texture-compress ktx2 --join-named false` | gltf_validator; page check (threewright) |
 | ar-usdz | `convert in.glb out.usdz` | `usdchecker --arkit` when usd-core is installed |
 | video-blockout | GLB or .blend at real scale, plus turntables and depth/normal passes (recipes) | hand to the video plugin (cinewright) |
 | commerce-gltf | GLB, real size, origin bottom centre, triangles only | `check --target commerce-gltf` |

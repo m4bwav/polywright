@@ -6,6 +6,7 @@ clean reference pictures (`pw.py turnaround`) and a blockout of who stands where
 rigid statues; posing them needs a rig (polywright-finish).
 
 Back to [SKILL.md](../SKILL.md). Commands: [cli.md](cli.md). Crowds of dozens or hundreds: [crowd-blockouts.md](crowd-blockouts.md).
+Building for the shot: [film-and-video.md](film-and-video.md).
 Worked through on 2026-10-16 with four jointed 13 cm toy figures and five accessories photographed lying on a table
 (Blender 5.2.1, ComfyUI 0.38.2 with TRELLIS.2 on a 16 GB card).
 
@@ -41,11 +42,10 @@ Worked through on 2026-10-16 with four jointed 13 cm toy figures and five access
   meshes on a table with each team on a fixed side and writes `colour.png` (textured: a start or guide frame),
   `clay.png`, `depth.png` (inverse depth, near white, the crowd convention), `mask.png` (team a red, team b blue),
   `lineup.json` (camera, depth range, each figure's screen box, `left_to_right`) and looped control videos. The
-  figures do not move, and a looped still control freezes the action: on the Dummy 13 brawl (2026-10-17) depth
+  figures do not move, and a looped still control freezes the action: on a four-figure toy fight (2026-10-17) depth
   at 0.6, end 0.3 over a 362-frame fight kept snapping the figures back to their spots while copies fought.
   Pass `colour.png` as an H3 guide at frame 0 instead (four figures and the sides held, the look stayed real
   footage) and let the prompt carry the action; use the control only in a short standoff section of its own.
-  Details: comfyui-gen L-134 `still-control-freezes`.
 
 Layout file (paths relative to it; `face` is +x, -x, +y, -y or a heading in degrees, 90 = +x):
 

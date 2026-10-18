@@ -31,10 +31,10 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
 ### L-006 · 2026-10-17 · To take an accessory off a TRELLIS.2 mesh, delete its loose pieces by their texture colour
-- Trigger: Mark ruled that the Dummy 13 Nightmare wears no shoulder pad and has two black legs, though the photo shows a teal pad and a leg that catches the light as silver. A bounding box around the pad, used to grey out its square, also caught the skull and turned half the face teal.
+- Trigger: The owner ruled that one toy figure wears no shoulder pad and has two black legs, though the photo shows a teal pad and a leg that catches the light as silver. A bounding box around the pad, used to grey out its square, also caught the skull and turned half the face teal.
 - Hypothesis: TRELLIS.2 output is a soup of thousands of loose pieces (4690 here), not one surface, and an accessory is made of its own pieces, so it can be cut out piece by piece. A box in 3D overlaps whatever sits next to the accessory.
 - Rule: label the pieces (`trimesh.graph.connected_component_labels` on the face adjacency, seconds on 700k faces, where `split()` ran past two minutes), sample the base colour at each face's UV centroid, delete the pieces where most faces are the accessory's colour, then the pieces inside its box that hold its other colours (grow the box outward only). Paint any of that colour left in the texture the body's colour, scaled by brightness. A wrong colour on one part (a silver leg) is a texture fix: the part's lower-body UV islands, side chosen by which holds more pale texels. Check with `pw.py turnaround` after each step; the body under the accessory was already modelled, so nothing showed through.
-- Evidence: D:/ComfyUI/output/video/dummy13_brawl/models/_work/nm_blackleg.py, nm_nopad.py (nm_pad_grey.py is the failed box try); nightmare/renders/turnaround_blackleg_pad (teal skull) and turnaround_nopad (fixed), 2026-10-17.
+- Evidence: the fix scripts, the failed box try and before-and-after turnarounds (teal skull, then fixed) are in the owner's private notes, 2026-10-17.
 - Scope: skill (polywright-generate cleanup of an image-to-3D mesh; pw.py mark has no accessory removal yet)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-17
 
@@ -55,9 +55,9 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-13
 
 ### L-003 · 2026-10-12 · To fix a prop in a picture, match the picture's camera and paste the model; the solve needs only two pixels and a depth
-- Trigger: the No-God film's set still showed a plain spear where the designed one belonged; text and whole-picture edits redraw the prop (comfyui-gen L-091). The camera was unknown.
+- Trigger: a film's set still showed a plain spear where the designed one belonged; text and whole-picture edits redraw the prop (the owner's image-generation notes). The camera was unknown.
 - Hypothesis: with a fixed lens (35 mm) and the horizon row for pitch, a hand pixel at a guessed depth plus the exact tip pixel fix the pose; depth alone sets the size in frame (match the stand-in's width in pixels: width = f_px x diameter / depth). Depth 3.3 m drew the Spear twice too thick and crossing the king's head; 6.5 m matched.
 - Rule: `pw.py match` (new) renders the model RGBA from that camera, pastes it, drops boxes in front of it (`--hide`, the fist) and writes a blend mask (alpha grown, plus `--mask-add` ellipses for the hands). Then blend inside the mask with a low-denoise edit and paste back through the mask. Hub section "Compose a model into a picture".
-- Evidence: 2026-10-12 No-God film: D:/ComfyUI/output/video/nogod/refs/spear/ (build_spear.py, render_views.py, camera_match.py, _sheet_v1..v5c.png); pw.py match reproduced the hand-rolled solve exactly (aim 720,404; yaw 31.9, pitch 5.88).
+- Evidence: 2026-10-12 film session: the spear's build, render and camera-match scripts and sheets v1 to v5c, kept in the owner's private notes; pw.py match reproduced the hand-rolled solve exactly (aim 720,404; yaw 31.9, pitch 5.88).
 - Scope: skill (pw.py, hub)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-12

@@ -316,7 +316,7 @@ Input: `brief.json` (or the same fields in the prompt).
   "route": "auto",
   "licence_needed": "commercial",
   "ai_generation_allowed": true,
-  "out": "D:/project/assets/barrel"
+  "out": "D:/<project>/assets/barrel"
 }
 ```
 

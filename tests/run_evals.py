@@ -35,7 +35,18 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, "skills")
-DISABLE = {"enabledPlugins": {"polywright@mark-local": False, "polywright@polywright": False}}
+def installed_copies():
+    """Every installed polywright plugin (any marketplace), so the checkout under test is the only copy loaded."""
+    names = {"polywright@polywright"}
+    try:
+        with open(os.path.join(os.path.expanduser("~"), ".claude", "settings.json"), encoding="utf-8") as fh:
+            names |= {k for k in json.load(fh).get("enabledPlugins", {}) if k.split("@", 1)[0] == "polywright"}
+    except (OSError, ValueError, AttributeError):
+        pass
+    return {"enabledPlugins": {n: False for n in sorted(names)}}
+
+
+DISABLE = installed_copies()
 DEFAULT_TURNS = {"trigger": 6, "action": 30, "outcome": 12}
 
 

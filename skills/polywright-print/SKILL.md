@@ -54,6 +54,7 @@ than this: drop the inner parts and plug gaps first, then remesh; look at a rend
 - Terrain and towns: exaggerate height (2 to 5 for flat places), base 2 to 3 mm, buildings at least 1.2 mm,
   trees as lollipops on 1.5 mm trunks; `pw.py place --print-mm` does this (polywright-capture).
 - Miniatures: heroic scale (bigger heads, hands, weapons); FDM at 0.4 mm loses faces: 0.2 mm nozzle or resin.
+- Orientation, where supports scar, tree vs normal, splitting instead of supporting, brims, what the slicer already does, AMS colour parts, resin and miniatures: [references/supports-and-slicing.md](references/supports-and-slicing.md).
 
 ## Step 4: check, then hand over
 

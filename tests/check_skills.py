@@ -21,6 +21,13 @@ LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 HOME_PATH = re.compile(r"(?i)\b[a-z]:[\\/]+users[\\/]+(?!<)[a-z0-9._-]+|/home/(?!<)[a-z0-9._-]+/|/Users/(?!<|Shared)[a-z0-9._-]+/")
 # The owner's own machine paths and private project folders (generalise lessons before committing them).
 PRIVATE = re.compile(r"(?i)\b[a-z]:[\\/]+m4bwa\b|[\\/]Claude[\\/]Projects[\\/]")
+# Any absolute Windows drive path with at least two real segments (D:/ComfyUI/output/...). A placeholder
+# segment such as D:/<project>/... is allowed, and so is a drive root alone (C:\ in a sentence).
+DRIVE_PATH = re.compile(r"(?<![A-Za-z0-9\\])[A-Za-z]:[\\/]+(?!<)[A-Za-z0-9_. -]*[A-Za-z0-9_-][\\/]+(?!<)[A-Za-z0-9_.-]")
+# The owner's private project, skill and marketplace names, and his name used for a ruling (the author
+# credit "Mark Rogers" stays). Generalise to "a film", "a toy figure", "the owner".
+PRIVATE_NAMES = re.compile(r"(?i)\bno-?god\b|\bdummy[ _-]?13(?![0-9])|\bcomfyui-gen\b|\bmark-local\b|\bcrashsite\b|\bmentos\b"
+                           r"|(?-i:\bMark (?:ruled|said|asked|wants|wanted|approved|chose|picked)\b)")
 ATTRIBUTION = re.compile(r"(?i)co-authored-by:|generated with (claude|chatgpt|copilot)|written by (claude|an ai)")
 
 problems = []
@@ -136,6 +143,12 @@ def check_links_and_text():
         pv = PRIVATE.search(text)
         if pv:
             problems.append(f"{rel(f)}: private machine path {pv.group(0)!r}; generalise it")
+        dp = DRIVE_PATH.search(text)
+        if dp and not pv:
+            problems.append(f"{rel(f)}: absolute drive path {dp.group(0)!r}; use a placeholder such as D:/<folder>/")
+        pn = PRIVATE_NAMES.search(text)
+        if pn:
+            problems.append(f"{rel(f)}: private name {pn.group(0)!r}; generalise it")
         a = ATTRIBUTION.search(text)
         if a:
             problems.append(f"{rel(f)}: AI attribution {a.group(0)!r}")
