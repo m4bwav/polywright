@@ -68,6 +68,11 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - Six pages, drafted from the research each sibling plugin did for its own 3D page (threewright, roblox-agent, unity-agent, cinewright, the image side, the printing side) and written from polywright's side: finish `web-threejs.md`, `roblox.md`, `unity.md`; hub `film-and-video.md`; references `images-for-3d.md`; print `supports-and-slicing.md`. R- and C- entries per skill; one pointer line in each SKILL.md; linked from engines.md, dfam.md, reference-kit.md, crowd-blockouts.md, figures-for-video.md and generators.md.
 - targets.json advice updated from that research (numbers unchanged). Found while reading the Unity draft: the game-unity advice said Apply Scalings "FBX All" while pw_bpy.py writes FBX Units Scale; the code was left alone and the advice now says what pw.py writes, with a 1 m cube import test as the judge.
 - Scrub: film and toy names, the owner's name in a ruling, a private skill and marketplace name and absolute drive paths replaced by generic wording ("a film", "one toy figure", "the owner's private notes"). New guards in tests/check_skills.py (DRIVE_PATH, PRIVATE_NAMES); run against the old main they report 26 problems, all fixed here. One false positive found and fixed narrowly: a time regex in pw.py (two digits, a colon, a backslash) read as a drive path, so a backslash before the drive letter no longer counts. The research notes' example paths now use placeholders (`D:/<scan>/`).
+- Released 0.2.1 (fill fix, topic pages, scrub).
+
+## 2026-10-17: wiki for 0.2.1
+
+- Wiki updated for 0.2.1 (wiki commit 8363f76; live: 11 pages, 0 failures): the terrain regression entry is now "fixed in 0.2.1", printable runs without `--hollow`, new reference pages listed on The-Skills; verify output saved over the 2026-10-17 one ([notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md)).
 
 ## 2026-10-17: pw.py duel
 
