@@ -1,8 +1,8 @@
 ## installed
-polywright 0.2.0 from https://github.com/m4bwav/polywright/releases/download/v0.2.0/polywright-0.2.0.zip
+polywright 0.2.1 from https://github.com/m4bwav/polywright/releases/download/v0.2.1/polywright-0.2.1.zip
 
 ## version
-0.2.0
+0.2.1
 [exit 0]
 
 ## new
@@ -300,8 +300,9 @@ polywright 0.2.0 from https://github.com/m4bwav/polywright/releases/download/v0.
  ],
  "advice": [
   "20,000 triangles per mesh (create.roblox.com specifications, checked 2026-10-11; vendors quote 21,000, test the importer). Split bigger models into several MeshParts.",
-  "One material per mesh; SurfaceAppearance takes colour, normal (OpenGL, Y+), roughness, metalness. Texture size limit unverified (historically 1024 px).",
-  "1 stud = 0.28 m: a 1.8 m person is about 6.4 studs. Export in metres and scale in Studio, or scale by 1/0.28 before export.",
+  "One material per mesh; SurfaceAppearance takes colour, normal (OpenGL, Y+), roughness, metalness and an optional emissive mask (create.roblox.com surface-appearance, checked 2026-10-17).",
+  "Textures upload up to 4096 px, but Roblox's budget tops out at 1024 px per map (about 256 px per 2x2x2 studs); rigid-accessory non-colour maps at most 256 px (create.roblox.com texture-specifications and rigid-accessory specifications, checked 2026-10-17).",
+  "1 stud = 0.28 m: a 1.8 m person is about 6.4 studs. Model in studs (Blender Unit System None) or set the Importer's Scale Unit to the file's unit; FBX: Apply Scalings = FBX Unit Scale, Add Leaf Bones off (create.roblox.com blender and importer pages, checked 2026-10-17).",
   "At most 4 bone influences per vertex, root joint at the origin, no zero-thickness surfaces. CollisionFidelity Box or Hull for props."
  ],
  "inspect": {
@@ -577,38 +578,37 @@ polywright 0.2.0 from https://github.com/m4bwav/polywright/releases/download/v0.
 }
 [exit 0]
 
-## printable terrain default fill
+## printable terrain --hollow
 {
  "out": {
-  "path": "park\\solid-filled.stl",
-  "bytes": 19677534
+  "path": "park\\solid-hollow.stl",
+  "bytes": 230584
  },
  "steps": [
   "scaled x0.5404 to 60.0 mm (longest)",
   "open surface: solidified 1.20 mm inward",
   "voxel remesh 0.120 mm",
-  "hollow shell: filled 2935 mm3 the outside cannot reach (seal 1.00 mm, 0.114 mm cells)",
   "flat base: clamped below 0.60 mm",
-  "planar dissolve not kept (it broke the solid)"
+  "planar dissolve 0.5 deg: 391651 -> 4610 faces"
  ],
- "tris": 393549,
+ "tris": 4610,
  "dims_mm": [
   59.987,
   60.0,
-  4.284
+  4.304
  ],
- "boundary_edges": 2,
- "non_manifold_edges": 1,
+ "boundary_edges": 0,
+ "non_manifold_edges": 0,
  "parts": 1,
- "volume_cm3": 0.0,
- "watertight": false,
+ "volume_cm3": 2.28,
+ "watertight": true,
  "ok": true,
  "action": "printable",
  "blender": "5.2.1 LTS",
  "seconds": "<s>",
  "next": "render it (pw.py render) and compare with the source; then check --target print-fdm; slicer last"
 }
-[exit 1]
+[exit 0]
 
 ## 3mf
 {
@@ -997,7 +997,7 @@ print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
   {
    "rule": "min_feature",
    "status": "unchecked",
-   "detail": "not measured (needs Blender): render it and look for parts thinner than 0.9 mm"
+   "detail": "skipped (--no-thickness): render it and look for parts thinner than 0.9 mm"
   }
  ],
  "advice": [
@@ -1035,7 +1035,7 @@ print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
   "scaled x1 to 20.0 mm (longest)",
   "open surface: solidified 1.00 mm inward",
   "voxel remesh 0.100 mm",
-  "hollow shell: filled 7076 mm3 the outside cannot reach (seal 1.00 mm, 0.087 mm cells)"
+  "hollow shell: filled 7003 mm3 the outside cannot reach (seal 1.00 mm, 0.087 mm cells)"
  ],
  "tris": 400000,
  "dims_mm": [
@@ -1379,7 +1379,7 @@ print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
 {
  "ok": false,
  "error": "ValueError: unknown view top (known: front, 3q, side, 3q_back, back, 3q_left, left)",
- "trace": "Traceback (most recent call last):\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1924, in main\n    res = ACTIONS[action](params)\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1501, in act_turnaround\n    raise ValueError(\"unknown view %s (known: %s)\" % (v, \", \".join(TURN_AZ)))\nValueError: unknown view top (known: front, 3q, side, 3q_back, back, 3q_left, left)\n",
+ "trace": "Traceback (most recent call last):\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1927, in main\n    res = ACTIONS[action](params)\n  File \"plugin\\skills\\polywright\\scripts\\pw_bpy.py\", line 1504, in act_turnaround\n    raise ValueError(\"unknown view %s (known: %s)\" % (v, \", \".join(TURN_AZ)))\nValueError: unknown view top (known: front, 3q, side, 3q_back, back, 3q_left, left)\n",
  "action": "turnaround",
  "blender": "5.2.1 LTS",
  "seconds": "<s>"
@@ -1474,7 +1474,7 @@ print("[pw] height", round(bpy.context.active_object.dimensions.z, 3))
   "a1",
   "b1"
  ],
- "next": "Read colour.png: who stands where, every marking readable, nothing cut by the frame. colour.png is a guide frame at 0 (H3 guides). Do not run the looped depth video as a control over moving action: the figures freeze on their spots and double (comfyui-gen L-134)"
+ "next": "Read colour.png: who stands where, every marking readable, nothing cut by the frame. colour.png is a guide frame at 0 (H3 guides). Do not run the looped depth video as a control over moving action: the figures freeze on their spots and double"
 }
 [exit 0]
 
