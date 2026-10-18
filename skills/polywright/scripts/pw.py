@@ -20,6 +20,7 @@ commands that need it say so in the JSON when Blender is missing instead of cras
   python pw.py gen --image FRONT.png [--left L --back B --right R] --out raw.glb [--host URL] [--steps 30]
   python pw.py gen --image IMG.png --workflow trellis2.api.json --out model.glb [--set NODE.input=VALUE]
   python pw.py place --bbox S,W,N,E --out DIR [--dem auto|usgs|terrarium|flat] [--res M] [--print-mm 200]
+  python pw.py duel DUEL.json [--out DIR] [--preview] [--check]   two fighters' clay, Canny, depth and pose controls
   python pw.py texture IMG --out DIR [--seamless] [--strength 2]   quick normal/height/roughness maps
 
 Environment: POLYWRIGHT_BLENDER (path to blender), POLYWRIGHT_BPY_PYTHON (a Python with the bpy module),
@@ -2113,10 +2114,34 @@ POSE_COLORS = [(255, 0, 0), (255, 85, 0), (255, 170, 0), (255, 255, 0), (170, 25
                (170, 0, 255), (255, 0, 255), (255, 0, 170), (255, 0, 85)]
 
 
-def draw_pose_frames(joints_path, out_dir):
+def hidden_face_points(j, cam):
+    """COCO-18 indices a pose detector would not find from a camera at `cam`, given 18 world-space joints: the nose
+    and each eye once turned away from the lens (a profile keeps the nose and the near eye), an ear behind the head.
+    Pose controls read drawn face points as a face to the camera, so a back drawn with them becomes a face.
+    Plain maths on (x, y, z) sequences, so pw_bpy passes mathutils vectors and the tests pass tuples."""
+    def unit(a, b):
+        v = [a[i] - b[i] for i in range(3)]
+        n = math.sqrt(sum(c * c for c in v)) or 1.0
+        return [c / n for c in v]
+    head = [(j[16][i] + j[17][i]) / 2 for i in range(3)]
+    to_cam = unit(cam, head)
+    away = lambda i: sum(a * b for a, b in zip(unit(j[i], head), to_cam))  # noqa: E731
+    return [i for i in (0, 14, 15) if away(i) < -0.2] + [i for i in (16, 17) if away(i) < -0.35]
+
+
+def video_size_problems(W, H, frames):
+    problems = []
+    if W % 16 or H % 16:
+        problems.append("size %dx%d: Wan wants both sides divisible by 16 (832x480, 1280x720)" % (W, H))
+    if (frames - 1) % 4 and (frames - 5) % 17:
+        problems.append("frames %d: Wan wants 4n+1 frames (49, 65, 81), MiniMax H3 17k+5 at 24 fps (56, 73, 209)" % frames)
+    return problems
+
+
+def draw_pose_frames(joints_path, out_dir, max_width=None):
     """OpenPose skeleton PNGs from the 2D joints pw_bpy wrote, far figures first so near ones overdraw them.
-    Line width scales with each figure's height in pixels. A joint at (-1, -1) is hidden (a face turned away):
-    it and its limbs are left out."""
+    Line width scales with each figure's height in pixels, up to `max_width`. A joint at (-1, -1) is hidden (a
+    face turned away): it and its limbs are left out."""
     from PIL import Image, ImageDraw
     with open(joints_path, encoding="utf-8") as f:
         data = json.load(f)
@@ -2129,8 +2154,9 @@ def draw_pose_frames(joints_path, out_dir):
         for _, pts in fr["people"]:
             seen = [x >= 0 and y >= 0 for x, y in pts]
             top = pts[0] if seen[0] else pts[1]
-            tall = abs(top[1] - (pts[10][1] + pts[13][1]) / 2)
-            width = max(1, int(round(tall / 45)))
+            feet = [pts[i][1] for i in (10, 13) if seen[i]] or [H]
+            width = max(1, int(round(abs(top[1] - sum(feet) / len(feet)) / 45)))
+            width = min(width, max_width or width)
             for i, (a, b) in enumerate(POSE_LIMBS):
                 if seen[a] and seen[b]:
                     c = tuple(int(v * 0.6) for v in POSE_COLORS[i])
@@ -2144,8 +2170,8 @@ def draw_pose_frames(joints_path, out_dir):
     return {"frames": len(data["frames"]), "skeletons": drawn}
 
 
-def encode_passes(out, passes, fps):
-    """One H.264 video per pass (what ComfyUI's video loaders take), when ffmpeg is on PATH."""
+def encode_passes(out, passes, fps, prefix=""):
+    """One H.264 video per pass, `<prefix><pass>.mp4` (what ComfyUI's video loaders take), when ffmpeg is on PATH."""
     ff = shutil.which("ffmpeg")
     if not ff:
         return {"skipped": "ffmpeg not found; load the PNG folders with an image-sequence loader"}
@@ -2154,7 +2180,7 @@ def encode_passes(out, passes, fps):
         src = os.path.join(out, name)
         if not os.path.isdir(src) or not any(n.endswith(".png") for n in os.listdir(src)):
             continue
-        dst = os.path.join(out, name + ".mp4")
+        dst = os.path.join(out, prefix + name + ".mp4")
         cmd = [ff, "-y", "-loglevel", "error", "-framerate", str(fps), "-start_number", "1",
                "-i", os.path.join(src, "%04d.png"), "-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv420p", dst]
         r = subprocess.run(cmd, capture_output=True, text=True)
@@ -2162,24 +2188,29 @@ def encode_passes(out, passes, fps):
     return vids
 
 
-def crowd_sheet(out, passes):
-    """First, middle and last rendered frame of every pass in one image, for one look."""
-    from PIL import Image
+def crowd_sheet(out, passes, frames=None, fps=None):
+    """One image for one look: a row per pass, its first, middle and last rendered frame, or the rendered frames
+    nearest each of `frames` (1-based); every cell labelled with the pass and the frame or second."""
+    from PIL import Image, ImageDraw
     rows = []
     for name in passes:
         d = os.path.join(out, name)
-        if os.path.isdir(d):
-            fs = sorted(n for n in os.listdir(d) if n.endswith(".png"))
-            if fs:
-                rows.append([os.path.join(d, n) for n in sorted({fs[0], fs[len(fs) // 2], fs[-1]})])
+        fs = sorted(n for n in os.listdir(d) if n.endswith(".png")) if os.path.isdir(d) else []
+        if fs:
+            pick = ([min(fs, key=lambda n: abs(int(n[:4]) - f)) for f in frames] if frames
+                    else sorted({fs[0], fs[len(fs) // 2], fs[-1]}))
+            rows.append((name, pick))
     if not rows:
         return None
-    w, h = Image.open(rows[0][0]).size
+    w, h = Image.open(os.path.join(out, rows[0][0], rows[0][1][0])).size
     tw, th = w // 2, h // 2
-    sheet = Image.new("RGB", (tw * 3, th * len(rows)), (0, 0, 0))
-    for r, row in enumerate(rows):
-        for c, pth in enumerate(row):
-            sheet.paste(Image.open(pth).convert("RGB").resize((tw, th)), (c * tw, r * th))
+    sheet = Image.new("RGB", (tw * max(len(r) for _, r in rows), th * len(rows)), (0, 0, 0))
+    draw = ImageDraw.Draw(sheet)
+    for r, (name, row) in enumerate(rows):
+        for c, n in enumerate(row):
+            sheet.paste(Image.open(os.path.join(out, name, n)).convert("RGB").resize((tw, th)), (c * tw, r * th))
+            k = int(n[:4])
+            draw.text((c * tw + 6, r * th + 4), "%s %s" % (name, "%.2fs" % ((k - 1) / fps) if fps else "f%d" % k), fill=(0, 200, 255))
     path = os.path.join(out, "sheet.png")
     sheet.save(path)
     return path
@@ -2187,11 +2218,7 @@ def crowd_sheet(out, passes):
 
 def cmd_crowd(a):
     W, H = (int(v) for v in a.size.lower().split("x"))
-    problems = []
-    if W % 16 or H % 16:
-        problems.append("--size %dx%d: Wan wants both sides divisible by 16 (832x480, 1280x720)" % (W, H))
-    if (a.frames - 1) % 4 and (a.frames - 5) % 17:
-        problems.append("--frames %d: Wan wants 4n+1 frames (49, 65, 81), MiniMax H3 17k+5 at 24 fps (56, 73, 209)" % a.frames)
+    problems = video_size_problems(W, H, a.frames)
     if problems and not a.any_size:
         return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips this check"}, 2)
     passes = [x.strip() for x in a.passes.split(",") if x.strip()]
@@ -2224,6 +2251,212 @@ def cmd_crowd(a):
     res["next"] = ("Read sheet.png: both sides in frame, readable ranks, no figure crossing the camera. Then feed "
                    "depth.mp4 (and pose.mp4 for the front ranks) to Wan VACE or Fun Control with a start frame "
                    "repainted from clay frame 1 (polywright hub, 'Crowd and battle blockouts')")
+    return emit(res)
+
+
+# ------------------------------------------------------------------------------------------ duel
+
+# A fighter's frame: faces local +X, left +Y, up +Z. `root` and the feet are in it; hands are relative to their
+# shoulder; blade directions are in the same frame (null: no blade in that hand for this pose).
+DUEL_FIELDS = {"root": 2, "yaw": 0, "pelvis_z": 0, "spine": 3, "chest": 3, "rhand": 3, "lhand": 3,
+               "rblade": 3, "lblade": 3, "rfoot": 3, "lfoot": 3}
+DUEL_POSES = {
+    "stand": {"root": [0, 0], "yaw": 0, "pelvis_z": 0.95, "spine": [0, 0, 1], "chest": [1, 0, 0],
+              "rhand": [0.05, -0.05, -0.58], "lhand": [0.05, 0.05, -0.58], "rblade": [0.3, 0, -1], "lblade": [0.3, 0, -1],
+              "rfoot": [0, -0.12, 0.08], "lfoot": [0, 0.12, 0.08]},
+    "guard": {"base": "stand", "pelvis_z": 0.88, "spine": [0.08, 0, 1], "chest": [0.8, 0.6, 0],
+              "rhand": [0.42, -0.05, -0.12], "rblade": [1, 0, 0.15], "lhand": [0.15, 0.15, -0.25], "lblade": [1, 0.2, 0.4],
+              "rfoot": [0.35, -0.1, 0.08], "lfoot": [-0.3, 0.15, 0.08]},
+    "guard_low": {"base": "guard", "rhand": [0.35, -0.05, -0.3], "rblade": [1, 0, -0.35],
+                  "lhand": [0.25, 0.1, -0.35], "lblade": [1, 0.1, -0.2]},
+    "kneel": {"base": "stand", "pelvis_z": 0.6, "rfoot": [-0.42, -0.12, 0.08], "lfoot": [-0.42, 0.12, 0.08]},
+}
+DUEL_PASSES = ["canny", "depth", "depth_thick", "pose", "clay"]
+FLY_PARTS = {"rblade": "right", "rguard": "right", "lblade": "left", "lguard": "left", "hood": "cloak", "cloak": "cloak"}
+
+
+def duel_resolve(name, pool):
+    """A named pose with its base chain applied (base first, overrides last)."""
+    chain, seen = [], set()
+    while name is not None:
+        if name in seen:
+            raise ValueError("pose %s: its base chain loops" % name)
+        if name not in pool:
+            raise ValueError("unknown pose %s" % name)
+        seen.add(name)
+        chain.append(pool[name])
+        name = pool[name].get("base")
+    out = {}
+    for s in reversed(chain):
+        out.update({k: v for k, v in s.items() if k != "base"})
+    return out
+
+
+def duel_mix(a, b, u):
+    if a is None or b is None:  # a blade appears or goes: switch halfway
+        return a if u < 0.5 else b
+    if isinstance(a, list):
+        return [x + (y - x) * u for x, y in zip(a, b)]
+    return a + (b - a) * u
+
+
+def duel_pose_at(keys, t, pool):
+    """The pose at t seconds from [[seconds, name], ...]: held before the first and after the last key,
+    smoothstep between keys."""
+    if t <= keys[0][0]:
+        return duel_resolve(keys[0][1], pool)
+    for (t0, n0), (t1, n1) in zip(keys, keys[1:]):
+        if t0 <= t <= t1:
+            a, b = duel_resolve(n0, pool), duel_resolve(n1, pool)
+            u = (t - t0) / max(t1 - t0, 1e-6)
+            u = u * u * (3 - 2 * u)
+            return {k: duel_mix(a[k], b.get(k, a[k]), u) for k in a}
+    return duel_resolve(keys[-1][1], pool)
+
+
+def duel_frames(spec, preview=False):
+    """(frames to render, frames for the sheet), 0-based: the sheet shows frame 1, each check second and the last."""
+    n, fps = spec["frames"], spec["fps"]
+    sheet = sorted({0, n - 1} | {min(n - 1, max(0, int(round(t * fps)))) for t in spec.get("check_s", [])})
+    return (sheet if preview else list(range(n))), sheet
+
+
+def bearing(a, b):
+    """Compass bearing in degrees from point a to point b (0 faces +Y, 90 faces +X)."""
+    return math.degrees(math.atan2(b[0] - a[0], b[1] - a[1])) % 360
+
+
+def duel_load(spec, base_dir=".", any_size=False):
+    """Check a duel file and fill its defaults. Returns (spec, problems); paths become absolute."""
+    s, P = dict(spec), []
+    num = lambda v, n: isinstance(v, (list, tuple)) and len(v) == n and all(isinstance(x, (int, float)) for x in v)  # noqa: E731
+    s.setdefault("name", "duel")
+    s["size"] = [int(v) for v in s.get("size", [864, 480])]
+    s["frames"], s["fps"] = int(s.get("frames", 73)), int(s.get("fps", 24))
+    s.setdefault("check_s", [])
+    for k, d in (("near", 1.0), ("far", 30.0), ("thick_blade_m", 0.045)):
+        s[k] = float(s.get(k, d))
+    s["canny"] = list(s.get("canny", [12, 40]))
+    if s["frames"] < 1 or s["fps"] < 1:
+        P.append("frames and fps must be positive")
+    if not any_size:
+        P += video_size_problems(s["size"][0], s["size"][1], s["frames"])
+    if not 0 < s["near"] < s["far"]:
+        P.append("near must be above 0 and below far")
+    room = dict(s.get("room") or {})
+    for k in ("blend", "script"):
+        if room.get(k):
+            room[k] = os.path.abspath(os.path.join(base_dir, room[k]))
+            if not os.path.isfile(room[k]):
+                P.append("room %s not found: %s" % (k, room[k]))
+    s["room"] = room
+    cam = s.get("camera") or {}
+    if not (cam.get("object") or (num(cam.get("pos"), 3) and num(cam.get("aim"), 3))):
+        P.append("camera needs pos and aim ([x, y, z]) or the name of a camera object in the room")
+    ox, oy = (s.get("origin") or [0, 0])[:2]
+    pool = dict(DUEL_POSES, **s.get("poses", {}))
+    figs = s.get("fighters") or s.get("figures") or {}
+    if not figs:
+        P.append("no fighters")
+    s["fighters"] = {}
+    for name, f in figs.items():
+        f = dict(f)
+        if not num(f.get("mark"), 2):
+            P.append("%s: mark must be [x, y]" % name)
+            continue
+        f["mark"] = [f["mark"][0] + ox, f["mark"][1] + oy]
+        f.setdefault("scale", 1.0)
+        f.setdefault("weapons", {})
+        if any(h not in ("right", "left") or not v or v <= 0 for h, v in f["weapons"].items()):
+            P.append("%s: weapons are {\"right\": metres, \"left\": metres}" % name)
+        keys = f.get("keys") or []
+        if not keys or any(not isinstance(k, (list, tuple)) or len(k) != 2 for k in keys):
+            P.append("%s: keys must be [[seconds, pose name], ...]" % name)
+            continue
+        if any(b[0] < a[0] for a, b in zip(keys, keys[1:])):
+            P.append("%s: keys out of time order" % name)
+        for _, pose in keys:
+            try:
+                q = duel_resolve(pose, pool)
+            except ValueError as e:
+                P.append("%s: %s" % (name, e))
+                continue
+            for fld, n in DUEL_FIELDS.items():
+                v = q.get(fld, "missing")
+                ok = isinstance(v, (int, float)) if n == 0 else (num(v, n) or (v is None and fld.endswith("blade")))
+                if not ok:
+                    P.append("pose %s: %s must be %s" % (pose, fld, "a number" if n == 0 else "%d numbers" % n))
+        s["fighters"][name] = f
+    for name, f in s["fighters"].items():
+        fc = f.get("facing", 90)
+        if isinstance(fc, str):
+            if fc not in s["fighters"] or fc == name:
+                P.append("%s: facing %r is neither a bearing nor another fighter" % (name, fc))
+                fc = 0
+            else:
+                fc = bearing(f["mark"], s["fighters"][fc]["mark"])
+        f["facing"] = float(fc)
+    s["fly"] = [dict(x) for x in s.get("fly", [])]
+    for i, x in enumerate(s["fly"]):
+        x["fighter"] = x.get("fighter") or x.get("figure")
+        f = s["fighters"].get(x["fighter"])
+        if f is None:
+            P.append("fly %d: no fighter %r" % (i, x["fighter"]))
+            continue
+        bad = [p for p in x.get("parts", []) if FLY_PARTS.get(p) not in list(f["weapons"]) + (["cloak"] if f.get("cloak") else [])]
+        if bad or not x.get("parts"):
+            P.append("fly %d: %s cannot throw %s" % (i, x["fighter"], ",".join(bad) or "nothing (parts is empty)"))
+        if not (num(x.get("to"), 2) and float(x.get("t1", 0)) > float(x.get("t0", 0))):
+            P.append("fly %d: needs to [x, y] and t1 after t0" % i)
+        else:
+            x["to"] = [x["to"][0] + ox, x["to"][1] + oy]
+    return s, P
+
+
+def cmd_duel(a):
+    path = os.path.abspath(a.duel)
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, ValueError) as e:
+        return emit({"ok": False, "error": "cannot read %s: %s" % (a.duel, e)}, 2)
+    raw.setdefault("name", os.path.splitext(os.path.basename(path))[0])
+    spec, problems = duel_load(raw, os.path.dirname(path), a.any_size)
+    if problems:
+        return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips the size and frame-count check"}, 2)
+    render, sheet = duel_frames(spec, a.preview)
+    fps, (W, H) = spec["fps"], spec["size"]
+    pool = dict(DUEL_POSES, **spec.get("poses", {}))
+    poses = {n: [duel_pose_at(f["keys"], k / fps, pool) for k in render] for n, f in spec["fighters"].items()}
+    for x in spec["fly"]:
+        x["pose_t0"] = duel_pose_at(spec["fighters"][x["fighter"]]["keys"], float(x["t0"]), pool)
+    out = os.path.abspath(a.out or os.path.join(os.path.dirname(path), spec["name"]))
+    res = {"ok": True, "name": spec["name"], "out": out, "size": [W, H], "frames": spec["frames"], "fps": fps,
+           "seconds": round(spec["frames"] / fps, 2), "frames_to_render": len(render), "sheet_frames": [k + 1 for k in sheet],
+           "fighters": {n: {"mark": f["mark"], "facing": round(f["facing"], 1), "keys": len(f["keys"])} for n, f in spec["fighters"].items()}}
+    if a.check:
+        return emit(dict(res, check="valid; nothing rendered"))
+    params = {"out": out, "size": [W, H], "fps": fps, "render": render, "spec": spec, "poses": poses,
+              "gpu": a.gpu, "samples": a.samples, "save_blend": a.save_blend}
+    r = bpy_action("duel", params, timeout=a.timeout)
+    if not r.get("ok"):
+        return emit(r, 1)
+    res.update({k: r[k] for k in ("in_frame", "near_m", "far_m", "render_seconds") if k in r})
+    try:
+        res["pose"] = draw_pose_frames(os.path.join(out, "joints.json"), os.path.join(out, "pose"), max_width=3)
+    except ImportError:
+        res["pose"] = {"skipped": "drawing skeletons needs Pillow (pip install pillow); joints.json is written"}
+    if not a.preview:
+        res["videos"] = encode_passes(out, DUEL_PASSES, fps, prefix=spec["name"] + "_")
+    try:
+        res["sheet"] = crowd_sheet(out, DUEL_PASSES, [k + 1 for k in sheet], fps)
+    except ImportError:
+        pass
+    res["warnings"] = ["%s: %d%% of the joints in frame at the %s frame; move the camera or the mark" % (n, v * 100, w)
+                       for n, d in res.get("in_frame", {}).items() for w, v in d.items() if v < 0.5]
+    res["next"] = ("Read sheet.png: each fighter's facing and the blades at every check time, both ends in frame. Then "
+                   "give the video model one control: depth_thick (holds a back to the camera; try 0.8 strength ending "
+                   "at 0.6), canny (start and end states), or pose (nose and eyes left out when turned away)")
     return emit(res)
 
 
@@ -2508,6 +2741,18 @@ def main(argv=None):
     p.add_argument("--any-size", action="store_true", help="skip the Wan size and frame-count check")
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_crowd)
+
+    p = sub.add_parser("duel", help="two posed fighters in a set, through the shot's camera: clay, Canny, depth, thick-blade depth and pose controls")
+    p.add_argument("duel", help="the duel file (JSON): room, camera, fighters with marks and keyed poses, thrown props")
+    p.add_argument("--out", help="folder (default: <the file's folder>/<name>)")
+    p.add_argument("--preview", action="store_true", help="render only frame 1, the check_s frames and the last frame")
+    p.add_argument("--check", action="store_true", help="validate the file and print the schedule; no Blender")
+    p.add_argument("--gpu", action="store_true", help="Cycles on the GPU for the depth passes")
+    p.add_argument("--samples", type=int, default=4)
+    p.add_argument("--any-size", action="store_true", help="skip the Wan and H3 size and frame-count check")
+    p.add_argument("--save-blend", action="store_true", help="also save duel.blend")
+    p.add_argument("--timeout", type=int, default=3600)
+    p.set_defaults(fn=cmd_duel)
 
     p = sub.add_parser("texture", help="quick height, normal and roughness maps from a photo")
     p.add_argument("image")

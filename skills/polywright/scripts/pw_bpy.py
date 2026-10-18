@@ -6,7 +6,7 @@ or with any Python that can `import bpy` (the bpy module from PyPI):
 
     python pw_bpy.py -- <action> <params.json> <result.json>
 
-Actions: inspect (with an optional wall-thickness pass), render, match, convert, printable, union, crowd, turnaround, mark, lineup. Each reads its parameters from params.json and writes one
+Actions: inspect (with an optional wall-thickness pass), render, match, convert, printable, union, crowd, duel, turnaround, mark, lineup. Each reads its parameters from params.json and writes one
 JSON object to result.json. Units: Blender scene units are treated as metres, except in `printable` and
 `union`, which work in millimetres because their output is for a slicer.
 Checked against Blender 5.2.1 LTS (2026-10-11).
@@ -19,7 +19,10 @@ import time
 
 import bpy
 import bmesh
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix, Quaternion
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pw import hidden_face_points  # noqa: E402  plain maths, shared with pw.py and tested there
 
 try:
     import numpy as np
@@ -1054,29 +1057,37 @@ CROWD_ACTIONS = {  # step cycles per second, metres per second, leg swing (rad),
 CROWD_PARTS = ["torso", "head", "rthigh", "lthigh", "rshin", "lshin", "rupper", "lupper", "rfore", "lfore"]
 
 
+def make(name, build):
+    bm = bmesh.new()
+    build(bm)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    return me
+
+
+def cyl(r, length, segs=6):
+    """A cylinder whose origin is its top end, hanging along -Z."""
+    return lambda bm: bmesh.ops.create_cone(bm, cap_ends=True, segments=segs, radius1=r, radius2=r, depth=length,
+                                            matrix=Matrix.Translation((0, 0, -length / 2)))
+
+
+def box(sx, sy, sz, z0=0.0):
+    def b(bm):
+        bmesh.ops.create_cube(bm, size=1.0)
+        bmesh.ops.scale(bm, vec=(sx, sy, sz), verts=bm.verts)
+        bmesh.ops.translate(bm, vec=(0, 0, z0 + sz / 2), verts=bm.verts)
+    return b
+
+
+def sphere(r, u=8, v=6):
+    return lambda bm: bmesh.ops.create_uvsphere(bm, u_segments=u, v_segments=v, radius=r)
+
+
 def crowd_meshes(kit):
     """Low-poly parts shared by every figure. Limbs hang from their origin along -Z."""
-    def make(name, build):
-        bm = bmesh.new()
-        build(bm)
-        me = bpy.data.meshes.new(name)
-        bm.to_mesh(me)
-        bm.free()
-        return me
-
-    def cyl(r, length, segs=6):
-        return lambda bm: bmesh.ops.create_cone(bm, cap_ends=True, segments=segs, radius1=r, radius2=r, depth=length,
-                                                matrix=Matrix.Translation((0, 0, -length / 2)))
-
-    def box(sx, sy, sz, z0=0.0):
-        def b(bm):
-            bmesh.ops.create_cube(bm, size=1.0)
-            bmesh.ops.scale(bm, vec=(sx, sy, sz), verts=bm.verts)
-            bmesh.ops.translate(bm, vec=(0, 0, z0 + sz / 2), verts=bm.verts)
-        return b
-
     m = {"torso": make("pw_torso", box(0.24, 0.40, 0.55)),
-         "head": make("pw_head", lambda bm: bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.12)),
+         "head": make("pw_head", sphere(0.12)),
          "thigh": make("pw_thigh", cyl(0.075, 0.46)), "shin": make("pw_shin", cyl(0.06, 0.46)),
          "upper": make("pw_upper", cyl(0.055, 0.30)), "fore": make("pw_fore", cyl(0.05, 0.30))}
     if "spear" in kit:
@@ -1160,16 +1171,6 @@ def crowd_pose(fig, t):
     return parts, [base @ j for j in joints]
 
 
-def hidden_face_points(j, cam_loc):
-    """COCO-18 indices a pose detector would not find from this camera: the nose and each eye once turned away from
-    the lens (a profile keeps the nose and the near eye), an ear behind the head. Pose controls read drawn face
-    points as a face to the camera, so a back drawn with them becomes a face."""
-    head = (j[16] + j[17]) / 2
-    to_cam = (cam_loc - head).normalized()
-    away = lambda i: (j[i] - head).normalized().dot(to_cam)  # noqa: E731
-    return [i for i in (0, 14, 15) if away(i) < -0.2] + [i for i in (16, 17) if away(i) < -0.35]
-
-
 def crowd_gap(p):
     """Metres between the front ranks at frame 1. Default: what both sides close in two thirds of the shot,
     so a clash or charge meets on screen; 30 m when both sides only march or hold."""
@@ -1228,6 +1229,48 @@ def crowd_camera(p):
     if view == "high":  # crane or god's eye
         return Vector((0, -dist * 0.7, max(h, dist))), Vector((0, frontage * 0.4, 0.0))
     raise ValueError("unknown view %s (side, behind, high, or cam and aim points)" % view)
+
+
+def depth_material(near, far):
+    """Inverse depth as emission, near white to far black, one range for the whole shot (a range per frame pulses)."""
+    mat = bpy.data.materials.new("pw_depth")
+    nt = mat.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    cd, outn = nt.nodes.new("ShaderNodeCameraData"), nt.nodes.new("ShaderNodeOutputMaterial")
+    inv = nt.nodes.new("ShaderNodeMath")
+    inv.operation = "DIVIDE"
+    inv.inputs[0].default_value = 1.0
+    nt.links.new(cd.outputs["View Z Depth"], inv.inputs[1])
+    mr = nt.nodes.new("ShaderNodeMapRange")
+    mr.clamp = True
+    mr.inputs["From Min"].default_value = 1.0 / far
+    mr.inputs["From Max"].default_value = 1.0 / near
+    nt.links.new(inv.outputs[0], mr.inputs["Value"])
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (1, 1, 1, 1)
+    nt.links.new(mr.outputs["Result"], em.inputs["Strength"])
+    nt.links.new(em.outputs[0], outn.inputs["Surface"])
+    return mat
+
+
+def render_depth(path, mat, p):
+    """One depth frame in Cycles with every object drawn by `mat` and the world black."""
+    sc = bpy.context.scene
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "GPU" if p.get("gpu") else "CPU"
+    sc.cycles.samples = int(p.get("samples", 4))
+    sc.cycles.use_denoising = False
+    sc.view_settings.view_transform = "Raw"  # write the emission value as it is
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("pw_world")
+    sc.world.color = (0, 0, 0)
+    if sc.world.node_tree and sc.world.node_tree.nodes.get("Background"):
+        sc.world.node_tree.nodes["Background"].inputs[1].default_value = 0.0
+    bpy.context.view_layer.material_override = mat
+    sc.render.filepath = path
+    bpy.ops.render.render(write_still=True)
+    bpy.context.view_layer.material_override = None
 
 
 def act_crowd(p):
@@ -1307,24 +1350,7 @@ def act_crowd(p):
     near = max(0.3, near if near < math.inf else 1.0)
     far = float(p.get("far") or max(far, near + 1) * 1.3)
 
-    depth_mat = bpy.data.materials.new("pw_depth")
-    nt = depth_mat.node_tree
-    for n in list(nt.nodes):
-        nt.nodes.remove(n)
-    cd, outn = nt.nodes.new("ShaderNodeCameraData"), nt.nodes.new("ShaderNodeOutputMaterial")
-    inv = nt.nodes.new("ShaderNodeMath")
-    inv.operation = "DIVIDE"
-    inv.inputs[0].default_value = 1.0
-    nt.links.new(cd.outputs["View Z Depth"], inv.inputs[1])
-    mr = nt.nodes.new("ShaderNodeMapRange")
-    mr.clamp = True
-    mr.inputs["From Min"].default_value = 1.0 / far
-    mr.inputs["From Max"].default_value = 1.0 / near
-    nt.links.new(inv.outputs[0], mr.inputs["Value"])
-    em = nt.nodes.new("ShaderNodeEmission")
-    em.inputs["Color"].default_value = (1, 1, 1, 1)
-    nt.links.new(mr.outputs["Result"], em.inputs["Strength"])
-    nt.links.new(em.outputs[0], outn.inputs["Surface"])
+    depth_mat = depth_material(near, far)
 
     side_rgb = {"a": (1.0, 0.0, 0.0, 1), "b": (0.0, 0.0, 1.0, 1)}
     clay_rgb = {"a": (0.55, 0.42, 0.36, 1), "b": (0.36, 0.42, 0.52, 1)}
@@ -1361,18 +1387,7 @@ def act_crowd(p):
             joints_out.append({"frame": k + 1, "people": people})
         name = "%04d.png" % (k + 1)
         if "depth" in passes:
-            sc.render.engine = "CYCLES"
-            sc.cycles.device = "GPU" if p.get("gpu") else "CPU"
-            sc.cycles.samples = int(p.get("samples", 4))
-            sc.cycles.use_denoising = False
-            sc.view_settings.view_transform = "Raw"  # write the emission value as it is
-            sc.world.color = (0, 0, 0)
-            if sc.world.node_tree and sc.world.node_tree.nodes.get("Background"):
-                sc.world.node_tree.nodes["Background"].inputs[1].default_value = 0.0
-            bpy.context.view_layer.material_override = depth_mat
-            sc.render.filepath = os.path.join(out, "depth", name)
-            bpy.ops.render.render(write_still=True)
-            bpy.context.view_layer.material_override = None
+            render_depth(os.path.join(out, "depth", name), depth_mat, p)
         for pas in ("mask", "clay"):
             if pas not in passes:
                 continue
@@ -1409,6 +1424,269 @@ def act_crowd(p):
             "objects": len(objs), "frames_rendered": len(keys), "frames": frames, "fps": fps, "size": [W, H],
             "near_m": round(near, 2), "far_m": round(far, 2), "camera": [round(v, 2) for v in loc0],
             "aim": [round(v, 2) for v in aim], "passes": passes, "render_seconds": round(time.time() - t0, 1)}
+
+
+# ------------------------------------------------------------------------------------------ duel
+
+def ik(a, t, l1, l2, pole):
+    """Two-bone IK: (middle joint, end) of a limb from a toward t with segment lengths l1 and l2, bent toward pole."""
+    d = t - a
+    dist = max(min(d.length, (l1 + l2) * 0.999), 0.05)
+    dn = d.normalized()
+    x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist)
+    h = math.sqrt(max(l1 * l1 - x * x, 0.0))
+    side = pole - dn * pole.dot(dn)
+    if side.length < 1e-6:
+        side = Vector((0, 0, 1)) - dn * dn.z
+    return a + dn * x + side.normalized() * h, a + dn * dist
+
+
+def duel_figure(f, q):
+    """World matrices of each part and the 18 COCO joints of fighter f in the resolved pose q (pw.py's
+    duel_pose_at): the crowd mannequin posed by IK to hand and foot targets, blades rigid on the wrists."""
+    s = f["scale"]
+    base = (Matrix.Translation((f["mark"][0], f["mark"][1], 0)) @ Matrix.Rotation(math.radians(90 - f["facing"]), 4, "Z")
+            @ Matrix.Translation((q["root"][0], q["root"][1], 0)) @ Matrix.Rotation(math.radians(q["yaw"]), 4, "Z")
+            @ Matrix.Diagonal((s, s, s, 1.0)))
+    up = Vector(q["spine"]).normalized()
+    fw = Vector(q["chest"])
+    fw = (fw - up * fw.dot(up)).normalized()
+    lf = up.cross(fw)
+    T3 = Matrix((fw, lf, up)).transposed()
+    pelvis = Vector((0, 0, q["pelvis_z"]))
+    neck = pelvis + up * 0.55
+    head = neck + up * 0.15
+    J = {}
+    parts = {"torso": base @ Matrix.Translation(pelvis) @ T3.to_4x4(), "head": base @ Matrix.Translation(head)}
+    for side, sg in (("r", -1), ("l", 1)):
+        hip, sh = pelvis + lf * 0.1 * sg, pelvis + up * 0.48 + lf * 0.2 * sg
+        knee, ank = ik(hip, Vector(q[side + "foot"]), 0.46, 0.46, fw + lf * 0.15 * sg)
+        elb, wri = ik(sh, sh + Vector(q[side + "hand"]), 0.30, 0.30, T3 @ Vector((-0.3, 0.6 * sg, -1)))
+        J.update({side + "hip": hip, side + "knee": knee, side + "ankle": ank, side + "sh": sh, side + "elbow": elb, side + "wrist": wri})
+        parts[side + "thigh"], parts[side + "shin"] = base @ seg(hip, knee - hip), base @ seg(knee, ank - knee)
+        parts[side + "upper"], parts[side + "fore"] = base @ seg(sh, elb - sh), base @ seg(elb, wri - elb)
+        if f["weapons"].get({"r": "right", "l": "left"}[side]) and q[side + "blade"] is not None:
+            bd = Vector(q[side + "blade"]).normalized()
+            parts[side + "guard"] = base @ Matrix.Translation(wri + bd * 0.06)
+            parts[side + "blade"] = base @ seg(wri + bd * 0.08, bd)
+    if f.get("cloak"):
+        parts["hood"] = base @ Matrix.Translation(head - fw * 0.025 + up * 0.01)
+        parts["cloak"] = base @ Matrix.Translation(pelvis + up * 0.52 - fw * 0.15) @ T3.to_4x4()
+    joints = [head + fw * 0.12, neck, J["rsh"], J["relbow"], J["rwrist"], J["lsh"], J["lelbow"], J["lwrist"],
+              J["rhip"], J["rknee"], J["rankle"], J["lhip"], J["lknee"], J["lankle"],
+              head + fw * 0.1 + up * 0.03 - lf * 0.045, head + fw * 0.1 + up * 0.03 + lf * 0.045, head - lf * 0.12, head + lf * 0.12]
+    return parts, [base @ j for j in joints]
+
+
+def duel_room(p):
+    """The set: a .blend opened, a script run (it sees the duel file as DUEL; `call` names a function to run
+    after it), or a plain floor. Returns the room's objects."""
+    reset()
+    room = p["spec"].get("room") or {}
+    if room.get("blend"):
+        bpy.ops.wm.open_mainfile(filepath=room["blend"])
+    elif room.get("script"):
+        g = {"__file__": room["script"], "__name__": "pw_duel_room", "DUEL": p["spec"]}
+        with open(room["script"], encoding="utf-8") as fh:
+            exec(compile(fh.read(), room["script"], "exec"), g)
+        if room.get("call"):
+            g[room["call"]]()
+    else:
+        floor = bpy.data.objects.new("pw_floor", make("pw_floor", lambda bm: bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=15)))
+        bpy.context.scene.collection.objects.link(floor)
+    return [o for o in bpy.context.scene.objects if o.type in ("MESH", "CURVE", "SURFACE", "META", "FONT")]
+
+
+def duel_camera(c):
+    sc = bpy.context.scene
+    if c.get("object"):
+        cam = bpy.data.objects.get(c["object"])
+        if cam is None or cam.type != "CAMERA":
+            raise ValueError("no camera object %r in the room" % c["object"])
+    else:
+        cam = bpy.data.objects.new("pw_duel_cam", bpy.data.cameras.new("pw_duel_cam"))
+        sc.collection.objects.link(cam)
+        cam.location = Vector(c["pos"])
+        cam.rotation_euler = (Vector(c["aim"]) - cam.location).to_track_quat("-Z", "Y").to_euler()
+        cam.data.sensor_width = 36.0
+    if c.get("lens"):
+        cam.data.lens = float(c["lens"])
+    cam.data.sensor_fit = "HORIZONTAL"
+    sc.camera = cam
+    return cam
+
+
+def canny(g, lo, hi):
+    """Edges (bool) of a grey image (rows top first, 0-255) as OpenCV's Canny after a 3x3 Gaussian: Sobel, L1
+    magnitude, non-maximum suppression in four directions, hysteresis between lo and hi."""
+    H, W = g.shape
+
+    def conv(a, k):
+        pad = np.pad(a, 1, mode="edge")
+        return sum(k[i][j] * pad[i:i + H, j:j + W] for i in range(3) for j in range(3) if k[i][j])
+
+    g = conv(g, [[1 / 16, 2 / 16, 1 / 16], [2 / 16, 4 / 16, 2 / 16], [1 / 16, 2 / 16, 1 / 16]])
+    gx, gy = conv(g, [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]), conv(g, [[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+    mag = np.abs(gx) + np.abs(gy)
+    ang = np.degrees(np.arctan2(gy, gx)) % 180
+    pad = np.pad(mag, 1)
+    nb = lambda dy, dx: pad[1 + dy:1 + dy + H, 1 + dx:1 + dx + W]  # noqa: E731
+    thin = np.zeros((H, W), bool)
+    for a0, a1, dy, dx in ((0, 22.5, 0, 1), (157.5, 181, 0, 1), (22.5, 67.5, 1, 1), (67.5, 112.5, 1, 0), (112.5, 157.5, 1, -1)):
+        thin |= (ang >= a0) & (ang < a1) & (mag > nb(dy, dx)) & (mag >= nb(-dy, -dx))
+    weak, edges = thin & (mag >= lo), thin & (mag >= hi)
+    for _ in range(2000):  # grow strong edges along weak ones until nothing changes
+        e = np.pad(edges, 1)
+        grown = weak & np.logical_or.reduce([e[1 + dy:1 + dy + H, 1 + dx:1 + dx + W] for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+        if (grown == edges).all():
+            break
+        edges = grown
+    return edges
+
+
+def canny_png(src, dst, factor, lo, hi):
+    """Canny of a rendered PNG, shrunk by an integer factor first (an area average, as the clay is rendered large)."""
+    img = bpy.data.images.load(src, check_existing=False)
+    w, h = img.size
+    px = np.empty(w * h * 4, np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    g = (px.reshape(h, w, 4)[::-1, :, :3] @ np.array([0.299, 0.587, 0.114], np.float32)) * 255
+    g = g[:h - h % factor, :w - w % factor].reshape(h // factor, factor, w // factor, factor).mean(axis=(1, 3))
+    e = canny(g, lo, hi)[::-1].astype(np.float32)
+    out = bpy.data.images.new("pw_canny", e.shape[1], e.shape[0])
+    rgba = np.ones((e.size, 4), np.float32)
+    rgba[:, :3] = e.reshape(-1, 1)
+    out.pixels.foreach_set(rgba.ravel())
+    out.filepath_raw, out.file_format = dst, "PNG"
+    out.save()
+    bpy.data.images.remove(out)
+
+
+def act_duel(p):
+    """Two (or more) posed fighters in a set, through the shot's camera, one PNG per frame and pass: depth (real
+    blades), depth_thick (blades thick_blade_m square, so a far blade stays a bar), clay (Workbench at twice the
+    size, fighters tinted) and its Canny, and COCO-18 joints in joints.json with face points turned from the lens
+    left out. Poses come resolved per frame from pw.py."""
+    from bpy_extras.object_utils import world_to_camera_view
+    spec, poses = p["spec"], p["poses"]
+    room = duel_room(p)
+    sc = bpy.context.scene
+    cam = duel_camera(spec["camera"])
+    W, H = p["size"]
+    fps, out, frames = int(p["fps"]), os.path.abspath(p["out"]), p["render"]
+    figs = spec["fighters"]
+    mesh = crowd_meshes(())
+    mesh.update({"guard": make("pw_guard", sphere(0.05)), "hood": make("pw_hood", sphere(0.155, 12, 8)),
+                 "cloak": make("pw_cloak", box(0.10, 0.62, 1.15, -1.15))})
+    col = bpy.data.collections.new("pw_duel")
+    sc.collection.children.link(col)
+    objs = {}  # fighter -> part -> object
+    for fn, f in figs.items():
+        names = ["torso", "head"] + [s + n for s in "rl" for n in ("thigh", "shin", "upper", "fore")]
+        for hand, length in f["weapons"].items():
+            mesh["%s_%s" % (fn, hand)] = make("pw_blade", box(0.016, 0.006, length, -length))
+            names += [hand[0] + "guard", hand[0] + "blade"]
+        names += ["hood", "cloak"] if f.get("cloak") else []
+        objs[fn] = {}
+        for n in names:
+            me = mesh["%s_%s" % (fn, {"r": "right", "l": "left"}[n[0]])] if n.endswith("blade") else mesh[n[1:] if n[1:] in mesh and n[0] in "rl" else n]
+            o = bpy.data.objects.new("%s_%s" % (fn, n), me)
+            col.objects.link(o)
+            objs[fn][n] = o
+    rest = {}
+
+    def flown(fn, part, t, held):
+        """A part in flight: from where it was at t0 to its mark on the floor, arcing and spinning; its lead part
+        (the first listed) carries the others, so a hood stays on its cloak."""
+        for i, x in enumerate(spec["fly"]):
+            if x["fighter"] != fn or part not in x["parts"]:
+                continue
+            if t < x["t0"]:
+                return held
+            if i not in rest:
+                rest[i] = duel_figure(figs[fn], x["pose_t0"])[0]
+            m0, p0 = rest[i].get(part), rest[i][x["parts"][0]].to_translation()
+            if m0 is None:
+                return None
+            u = min(1.0, (t - x["t0"]) / (x["t1"] - x["t0"]))
+            e = u * u * (3 - 2 * u)
+            rot = m0.to_quaternion().slerp(Quaternion((0, 1, 0), math.pi / 2) @ Quaternion((0, 0, 1), math.radians(x.get("land_yaw", 0))), e)
+            if x.get("spin"):
+                rot = Quaternion((0, 0, 1), 2 * math.pi * x["spin"] * e) @ rot
+            end = Vector((x["to"][0], x["to"][1], x.get("rest_z", 0.05)))
+            pos = p0.lerp(end, e) + Vector((0, 0, x.get("arc", 0.4) * math.sin(math.pi * u))) + (m0.to_translation() - p0) * (1 - e)
+            return Matrix.Translation(pos) @ rot.to_matrix().to_4x4()
+        return held
+
+    def place(i, thick):
+        joints = {}
+        for fn, f in figs.items():
+            parts, joints[fn] = duel_figure(f, poses[fn][i])
+            for n, o in objs[fn].items():
+                m = flown(fn, n, frames[i] / fps, parts.get(n))
+                o.hide_render = m is None
+                if m is not None:
+                    o.matrix_world = m @ Matrix.Diagonal((thick / 0.016, thick / 0.006, 1, 1)) if thick and n.endswith("blade") else m
+        bpy.context.view_layer.update()
+        return joints
+
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.fps = W, H, fps
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGB"
+    sc.render.image_settings.color_depth = "8"
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("pw_world")
+    depth_mat = depth_material(spec["near"], spec["far"])
+    for d in ("depth", "depth_thick", "clay", "canny"):
+        os.makedirs(os.path.join(out, d), exist_ok=True)
+    for o in room:
+        o.color = (0.75, 0.75, 0.75, 1)
+    for fn, f in figs.items():
+        for n, o in objs[fn].items():
+            o.color = (0.95, 0.95, 0.95, 1) if n.endswith(("blade", "guard")) else tuple(f.get("tint", (0.6, 0.6, 0.6))[:3]) + (1,)
+    cpos = cam.matrix_world.translation
+    joints_out, in_frame = [], {fn: {} for fn in figs}
+    t0 = time.time()
+    for i, k in enumerate(frames):
+        name = "%04d.png" % (k + 1)
+        sc.render.resolution_percentage = 100
+        J = place(i, 0)
+        render_depth(os.path.join(out, "depth", name), depth_mat, p)
+        people = []
+        for fn, js in J.items():
+            pj = [world_to_camera_view(sc, cam, v) for v in js]
+            inside = sum(1 for q in pj if q.z > 0 and 0 <= q.x <= 1 and 0 <= q.y <= 1) / 18.0
+            if i in (0, len(frames) - 1):
+                in_frame[fn]["first" if i == 0 else "last"] = round(inside, 2)
+            hide = set(hidden_face_points(js, cpos))
+            people.append([round(sum(q.z for q in pj) / 18, 2),
+                           [[round(q.x * W, 1), round((1 - q.y) * H, 1)] if q.z > 0.1 and j not in hide else [-1, -1] for j, q in enumerate(pj)]])
+        people.sort(key=lambda q: -q[0])  # far first, so the near skeleton draws on top
+        joints_out.append({"frame": k + 1, "people": people})
+        sc.render.engine = "BLENDER_WORKBENCH"
+        sc.render.resolution_percentage = 200  # clay large: a clean Canny after the shrink, and a sharp start frame
+        sc.view_settings.view_transform = "Standard"
+        sh = sc.display.shading
+        sh.light, sh.color_type, sh.background_type = "STUDIO", "OBJECT", "WORLD"
+        sh.show_cavity, sh.show_shadows, sh.show_object_outline = True, True, False
+        sh.cavity_type, sh.cavity_ridge_factor, sh.cavity_valley_factor = "BOTH", 1.5, 1.5
+        sc.world.color = (0, 0, 0)
+        sc.render.filepath = os.path.join(out, "clay", name)
+        bpy.ops.render.render(write_still=True)
+        canny_png(os.path.join(out, "clay", name), os.path.join(out, "canny", name), 2, *spec["canny"])
+        sc.render.resolution_percentage = 100
+        place(i, spec["thick_blade_m"])
+        render_depth(os.path.join(out, "depth_thick", name), depth_mat, p)
+    with open(os.path.join(out, "joints.json"), "w", encoding="utf-8") as fh:
+        json.dump({"size": [W, H], "frames": joints_out}, fh, separators=(",", ":"))
+    with open(os.path.join(out, "camera.json"), "w", encoding="utf-8") as fh:
+        json.dump({"lens_mm": cam.data.lens, "sensor_mm": cam.data.sensor_width, "size": [W, H], "fps": fps,
+                   "matrix_world_rows": [round(v, 5) for row in cam.matrix_world for v in row]}, fh)
+    if p.get("save_blend"):
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "duel.blend"))
+    return {"out": out, "frames_rendered": len(frames), "in_frame": in_frame, "room_objects": len(room),
+            "near_m": spec["near"], "far_m": spec["far"], "render_seconds": round(time.time() - t0, 1)}
 
 
 # ---------------------------------------------------------------- video references from a generated mesh
@@ -1914,7 +2192,7 @@ def act_lineup(p):
 
 
 ACTIONS = {"inspect": act_inspect, "render": act_render, "match": act_match, "convert": act_convert,
-           "printable": act_printable, "union": act_union, "crowd": act_crowd, "turnaround": act_turnaround,
+           "printable": act_printable, "union": act_union, "crowd": act_crowd, "duel": act_duel, "turnaround": act_turnaround,
            "mark": act_mark, "lineup": act_lineup}
 
 

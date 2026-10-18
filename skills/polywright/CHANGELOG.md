@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261017-6 · 2026-10-17 · pw.py duel: two-fighter previs controls
+- because: user request (the owner approved building it after a field test: figures in the control removed a duplicated fighter and held a floor shot's states; thick-blade depth held a back to the camera through the action); L-005
+- files: SKILL.md "Crowd and battle blockouts" (one paragraph; the crowd steps tightened so the hub stays under its green budget); references/crowd-blockouts.md "Two fighters" (rewritten for the command); references/cli.md; references/film-and-video.md "Commands for film"; scripts/pw.py duel and shared helpers; scripts/pw_bpy.py act_duel and the helpers split out of act_crowd; examples/duel.json, examples/duel_room.py
+- The previs route of "Two fighters" became `pw.py duel`. hidden_face_points moved to pw.py (plain maths, tested without Blender). The description is unchanged, so the trigger evals were not re-run.
+
 ### C-20261017-5 · 2026-10-17 · Private names and machine paths generalised
 - because: user request (public repository: no private project names, no person's name but the author credit, no machine paths; AGENTS.md)
 - files: SKILL.md "Compose a model into a picture" (worked example); LEARNINGS.md L-003, L-006 (triggers and evidence); CHANGELOG.md C-20261012-1; references/figures-for-video.md ("Who stands where"); scripts/pw.py lineup hint; TESTS.md in all seven skills; tests/check_skills.py (new guards); tests/run_evals.py (switches off any installed polywright)

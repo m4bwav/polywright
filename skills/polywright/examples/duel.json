@@ -1,0 +1,28 @@
+{
+  "name": "duel_example",
+  "about": "Over A's shoulder: B lunges (0.6-1.1 s), A parries (1.0-1.3) and ripostes (1.3-1.9); B's blade is knocked out of his hand (1.6-2.4) onto the floor at frame right, and B backs off disarmed. 73 frames at 24 fps (MiniMax H3's 17k+5).",
+  "size": [864, 480],
+  "frames": 73,
+  "fps": 24,
+  "near": 1.0,
+  "far": 12.0,
+  "check_s": [0.8, 1.3, 1.9, 2.4],
+  "room": {"script": "duel_room.py", "call": "build"},
+  "camera": {"pos": [-2.4, -1.0, 1.6], "aim": [1.4, 0.1, 1.15], "lens": 40},
+  "fighters": {
+    "A": {"mark": [0, 0], "facing": "B", "tint": [0.62, 0.48, 0.38], "weapons": {"right": 0.95},
+          "keys": [[0, "guard"], [1.0, "guard"], [1.3, "parry"], [1.9, "riposte"], [3.04, "riposte"]]},
+    "B": {"mark": [2.0, 0.2], "facing": "A", "tint": [0.42, 0.47, 0.58], "weapons": {"right": 0.95},
+          "keys": [[0, "guard"], [0.6, "guard"], [1.1, "lunge"], [1.6, "lunge"], [2.2, "disarmed"], [3.04, "disarmed"]]}
+  },
+  "poses": {
+    "lunge": {"base": "guard", "root": [0.3, 0], "pelvis_z": 0.8, "spine": [0.25, 0, 1], "rhand": [0.55, -0.05, 0.0],
+              "rblade": [1, 0, 0.05], "rfoot": [0.7, -0.1, 0.08], "lfoot": [-0.45, 0.15, 0.08]},
+    "parry": {"base": "guard", "chest": [0.9, 0.4, 0], "rhand": [0.4, -0.25, 0.05], "rblade": [0.6, -0.8, 0.3]},
+    "riposte": {"base": "guard", "root": [0.2, 0], "spine": [0.15, 0, 1], "rhand": [0.5, -0.05, -0.05], "rblade": [1, 0, 0]},
+    "disarmed": {"base": "guard_low", "root": [-0.3, 0], "spine": [-0.1, 0, 1], "rhand": [0.2, -0.2, -0.4], "rblade": null}
+  },
+  "fly": [
+    {"fighter": "B", "parts": ["rblade", "rguard"], "t0": 1.6, "t1": 2.4, "to": [2.6, -1.4], "arc": 0.5, "spin": 1.5, "rest_z": 0.02}
+  ]
+}
