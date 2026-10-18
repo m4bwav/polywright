@@ -2,7 +2,8 @@
 
     python ai-docs/notes/2026-10-17-wiki-verify.py VERSION > ai-docs/notes/2026-10-17-wiki-verify.out.txt
 
-0.2.0 additions (2026-10-17): check's wall thickness, printable's hollow-shell fill, convert --level and --tilt-deg,
+0.2.1 (2026-10-17): printable on the park runs without --hollow again (the 0.2.0 regression is fixed); the
+--hollow run is kept as its own section. 0.2.0 additions (2026-10-17): check's wall thickness, printable's hollow-shell fill, convert --level and --tilt-deg,
 place with roof shapes and building parts, crowd --preview, turnaround, mark, lineup --preview, match, manifest
 --review, bpy options after the script name. The test meshes are binary STLs written here (prisms in millimetres
 or metres), so the program needs nothing from the repository.
@@ -27,7 +28,7 @@ import urllib.request
 import zipfile
 import zlib
 
-VERSION = sys.argv[1] if len(sys.argv) > 1 else "0.2.0"
+VERSION = sys.argv[1] if len(sys.argv) > 1 else "0.2.1"
 WORK = tempfile.mkdtemp(prefix="pwwiki_")
 PLUGIN = os.path.join(WORK, "plugin")
 url = "https://github.com/m4bwav/polywright/releases/download/v%s/polywright-%s.zip" % (VERSION, VERSION)
@@ -165,14 +166,14 @@ python pw.py lods park/roblox.glb --out park/lods --ratios 1,0.5,0.25
 """)
 
 # ---- Printing
-# 0.2.0: the default hollow-shell fill breaks this open terrain sheet (found by this program); --hollow gives the
-# 0.1.2 result. The page shows the --hollow run and the default run as a known limit.
+# 0.2.0's default hollow-shell fill broke this open terrain sheet (found by this program); 0.2.1 fixed it, so the
+# page shows the default run again, and the --hollow run (which must give the same solid) on Versions and upgrading.
 snippet("printable", """
-python pw.py printable park/roblox.glb park/solid.stl --size-mm 60 --wall-mm 1.2 --hollow
+python pw.py printable park/roblox.glb park/solid.stl --size-mm 60 --wall-mm 1.2
 python pw.py check park/solid.stl --target print-fdm
 """)
-snippet("printable terrain default fill", """
-python pw.py printable park/roblox.glb park/solid-filled.stl --size-mm 60 --wall-mm 1.2
+snippet("printable terrain --hollow", """
+python pw.py printable park/roblox.glb park/solid-hollow.stl --size-mm 60 --wall-mm 1.2 --hollow
 """)
 snippet("3mf", """
 python pw.py 3mf park/print.stl park/solid.stl --out park/two-colours.3mf

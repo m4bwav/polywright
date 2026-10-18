@@ -1,11 +1,11 @@
 ---
-title: GitHub wiki updated for 0.2.0
+title: GitHub wiki updated for 0.2.0 and 0.2.1
 kind: note
 date: 2026-10-17
 verified: 2026-10-17
 stale_after: 2027-04-17
-tags: [wiki, docs, 0.2.0, github]
-summary: "the wiki update for release 0.2.0: pages changed, the extended verification program and its results, the printable regression it found (terrain sheets need --hollow), and the update procedure (unchanged from the 0.1.2 note)"
+tags: [wiki, docs, 0.2.0, 0.2.1, github]
+summary: "the wiki update for release 0.2.0: pages changed, the extended verification program and its results, the printable regression it found (terrain sheets need --hollow), and the update procedure (unchanged from the 0.1.2 note); then the 0.2.1 update, which confirmed the fix"
 ---
 
 # GitHub wiki for 0.2.0
@@ -41,5 +41,13 @@ _Footer, Home, Getting-Started (zip, version, needs table with ffmpeg), Commands
 - `place` with a tower `building:part` (`min_height` 4) made the print's union fall back to EXACT plus a voxel pass (451,640 triangles, watertight).
 - `turnaround` with an unknown view fails inside Blender and returns the traceback (exit 1).
 - `crowd` reports `render_seconds`; the program masks it with the other timings.
+
+## Update for 0.2.1 (2026-10-17)
+
+Wiki commit 8363f76. The program now defaults to 0.2.1, runs the park's `printable` without `--hollow` (section `printable`) and keeps the `--hollow` run as section `printable terrain --hollow` (it replaced `printable terrain default fill`); its saved output was overwritten (41 sections, LF only). Against 0.2.1 the old program's diffout gave 8 changed sections of 40: installed, version, check fail (new Roblox advice lines from targets.json), printable terrain default fill (now 4,610 triangles, watertight, 2.28 cm3, exit 0: bug 1 above is fixed), check no-thickness ("skipped (--no-thickness)": bug 2 fixed), printable hollow shell (fill reads 7003 mm3, was 7076; same volume), turnaround unknown view (pw_bpy.py line numbers), lineup (the `next` hint no longer cites a private lesson). With and without `--hollow` the park gives byte-identical output.
+
+Pages changed: _Footer, Home, Getting-Started, Commands, Errors-and-Edge-Cases (the regression section is now "A terrain sheet in 0.2.0 (fixed in 0.2.1)", known limits in 0.2.1), How-Checks-Decide (Roblox advice), Recipes, The-Skills (table of the six reference pages added in 0.2.1), Versions-and-Upgrading (0.2.1 row, "From 0.2.0 to 0.2.1").
+
+Results: `check --version 0.2.1` 11 pages, 0 errors; `outputs --address ''` 50 checked, 0 missing, 3 skipped; `snippets` 2 blocks, 48 commands, 0 missing, 4 skipped; `tells.py` 0 strong; `live` 11 pages, 0 failures, anchors 39 links, 0 broken. No new bug found.
 
 Related: builds on [2026-10-11-github-wiki.md](2026-10-11-github-wiki.md); see also [../HANDOFF.md](../HANDOFF.md), [../log.md](../log.md).
