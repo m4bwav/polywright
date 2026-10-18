@@ -21,3 +21,5 @@ Last updated 2026-10-17 (evals harness, wall thickness, hollow-shell fill, conve
 6. Fixed 2026-10-17 (unreleased): the 0.2.0 hollow-shell fill broke an open terrain sheet; it now counts only air the outside reaches through gaps (C-20261017-2 in polywright-print). Release it as 0.2.1 and drop `--hollow` as the workaround from the wiki (Errors-and-Edge-Cases, Commands).
 
 Related: [INDEX.md](INDEX.md)
+
+Eval harness caveat (a sibling repo's lesson, 2026-10-17): loading a plugin with `--plugin-dir` instead of the installed copy changed which skill fired in one of its trigger cases. When a polywright trigger result looks odd, re-run it against the installed copy (update the marketplace and plugin first).
