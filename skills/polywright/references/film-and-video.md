@@ -84,6 +84,7 @@ Back to [../SKILL.md](../SKILL.md). Target: `video-blockout` in [targets.json](t
 | Need | Command |
 |---|---|
 | an army or a crowd, with depth, pose, mask and clay videos | `pw.py crowd` ([crowd-blockouts.md](crowd-blockouts.md)) |
+| two fighters posed in the set, with Canny, depth, thick-blade depth and pose videos | `pw.py duel` ([crowd-blockouts.md](crowd-blockouts.md), Two fighters) |
 | a designed prop placed exactly in a still's hand and lens | `pw.py match` ([../SKILL.md](../SKILL.md), Compose a model into a picture) |
 | reference pictures of a model, front to back on grey | `pw.py turnaround` |
 | a generated figure's colour, painted marking or size fixed | `pw.py mark` |

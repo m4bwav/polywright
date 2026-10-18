@@ -338,6 +338,79 @@ class Commands(unittest.TestCase):
         self.assertTrue(any("OpenStreetMap" in c for c in res["credits"]))
 
 
+EXAMPLE_DUEL = os.path.join(ROOT, "skills", "polywright", "examples", "duel.json")
+
+
+def duel_spec(**over):
+    s = {"camera": {"pos": [-3, 0, 1.6], "aim": [1, 0, 1.2]},
+         "fighters": {"A": {"mark": [0, 0], "facing": "B", "weapons": {"right": 0.9}, "keys": [[0, "guard"], [1, "guard_low"]]},
+                      "B": {"mark": [2, 0], "facing": 270, "keys": [[0, "stand"]]}}}
+    s.update(over)
+    return s
+
+
+class Duel(unittest.TestCase):
+    def test_pose_keys_smoothstep_between_held_ends(self):
+        pool = dict(pw.DUEL_POSES)
+        keys = [[0, "guard"], [1, "guard_low"]]
+        z = lambda t: pw.duel_pose_at(keys, t, pool)["rhand"][2]  # noqa: E731
+        self.assertAlmostEqual(z(-1), -0.12)  # held before the first key
+        self.assertAlmostEqual(z(0.5), (-0.12 - 0.3) / 2)
+        self.assertAlmostEqual(z(0.25), -0.12 + (-0.3 + 0.12) * 0.15625)  # smoothstep(0.25)
+        self.assertAlmostEqual(z(5), -0.3)  # held after the last key
+        self.assertEqual(pw.duel_resolve("guard_low", pool)["pelvis_z"], 0.88)  # inherited from guard
+
+    def test_a_blade_that_goes_switches_halfway(self):
+        pool = dict(pw.DUEL_POSES, empty={"base": "guard", "rblade": None})
+        keys = [[0, "guard"], [1, "empty"]]
+        self.assertEqual(pw.duel_pose_at(keys, 0.4, pool)["rblade"], [1, 0, 0.15])
+        self.assertIsNone(pw.duel_pose_at(keys, 0.6, pool)["rblade"])
+
+    def test_frames_for_preview_and_sheet(self):
+        render, sheet = pw.duel_frames({"frames": 73, "fps": 24, "check_s": [1.0, 2.0, 9.0]}, preview=True)
+        self.assertEqual(sheet, [0, 24, 48, 72])  # first, each check second (clamped), last
+        self.assertEqual(render, sheet)
+        self.assertEqual(len(pw.duel_frames({"frames": 73, "fps": 24}, preview=False)[0]), 73)
+
+    def test_load_fills_defaults_facing_and_origin(self):
+        s, problems = pw.duel_load(duel_spec(origin=[10, -30]))
+        self.assertEqual(problems, [])
+        self.assertEqual(s["fighters"]["A"]["mark"], [10, -30])
+        self.assertAlmostEqual(s["fighters"]["A"]["facing"], 90.0)  # toward B, along +X
+        self.assertEqual((s["frames"], s["fps"], s["size"]), (73, 24, [864, 480]))
+        self.assertAlmostEqual(pw.bearing((0, 0), (0, -1)), 180.0)
+
+    def test_load_reports_every_problem(self):
+        bad = duel_spec(size=[830, 480], frames=80, camera={},
+                        poses={"loop1": {"base": "loop2"}, "loop2": {"base": "loop1"}, "half": {"spine": [0, 1]}},
+                        fly=[{"fighter": "B", "parts": ["rblade"], "t0": 1, "t1": 2, "to": [0, 0]}])
+        bad["fighters"]["A"]["keys"] = [[1, "guard"], [0, "loop1"], [2, "nope"]]
+        bad["fighters"]["B"]["keys"] = [[0, "half"]]
+        bad["fighters"]["C"] = {"keys": [[0, "stand"]]}
+        _, problems = pw.duel_load(bad)
+        text = " | ".join(problems)
+        for want in ("4n+1", "divisible by 16", "camera needs", "out of time order", "loops", "unknown pose nope",
+                     "pose half: spine must be 3 numbers", "C: mark", "B cannot throw rblade"):
+            self.assertIn(want, text)
+
+    def test_face_points_hidden_by_the_camera_side(self):
+        # a head at (0, 0, 1.6) facing +X: nose, right eye (-Y), left eye, right ear, left ear
+        j = [(0, 0, 0)] * 18
+        j[0], j[14], j[15] = (0.12, 0, 1.6), (0.1, -0.045, 1.63), (0.1, 0.045, 1.63)
+        j[16], j[17] = (0, -0.12, 1.6), (0, 0.12, 1.6)
+        self.assertEqual(pw.hidden_face_points(j, (5, 0, 1.6)), [])  # front
+        self.assertEqual(pw.hidden_face_points(j, (-5, 0, 1.6)), [0, 14, 15])  # back: no nose, no eyes
+        self.assertEqual(pw.hidden_face_points(j, (0, 5, 1.6)), [14, 16])  # profile from the left: far eye and ear
+
+    def test_duel_check_runs_without_blender(self):
+        code, out = run("duel", EXAMPLE_DUEL, "--check")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["sheet_frames"], [1, 20, 32, 47, 59, 73])
+        self.assertEqual(set(out["fighters"]), {"A", "B"})
+        code, out = run("duel", os.path.join(FIX, "missing.json"), "--check")
+        self.assertEqual(code, 2)
+
+
 @unittest.skipUnless(pw.backend(), "Blender not found")
 class WithBlender(unittest.TestCase):
     @classmethod
@@ -525,6 +598,42 @@ class WithBlender(unittest.TestCase):
         code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
         self.assertEqual(code, 2)
         self.assertIn("4n+1", out["error"])
+
+    def test_duel_example_preview_writes_every_pass(self):
+        d = os.path.join(self.tmp, "duel")
+        code, out = run("duel", EXAMPLE_DUEL, "--preview", "--out", d)
+        self.assertEqual(code, 0, out)
+        for name in ("clay", "canny", "depth", "depth_thick"):
+            self.assertEqual(len(os.listdir(os.path.join(d, name))), 6, name)
+        self.assertEqual(out["in_frame"]["B"], {"first": 1.0, "last": 1.0})
+        with open(os.path.join(d, "joints.json")) as f:
+            frames = json.load(f)["frames"]
+        near = [fr["people"][-1][1] for fr in frames]  # the nearest skeleton draws last: A, back to the camera
+        far = [fr["people"][0][1] for fr in frames]
+        self.assertTrue(all(p[0] == [-1, -1] for p in near), "a nose drawn on a back")
+        self.assertTrue(all(p[0] != [-1, -1] for p in far), "B faces the lens")
+        if out.get("sheet"):
+            self.assertTrue(os.path.isfile(out["sheet"]))
+
+    def test_duel_camera_from_a_room_script(self):
+        room = os.path.join(self.tmp, "room.py")
+        with open(room, "w") as f:
+            f.write("import bpy\nbpy.ops.mesh.primitive_plane_add(size=10)\n"
+                    "cam = bpy.data.objects.new('ShotCam', bpy.data.cameras.new('ShotCam'))\n"
+                    "bpy.context.scene.collection.objects.link(cam)\n"
+                    "cam.location = (DUEL['origin'][0] - 4, DUEL['origin'][1], 1.5)\n"
+                    "cam.rotation_euler = (1.5708, 0, -1.5708)\n")
+        spec = duel_spec(origin=[5, 0], room={"script": "room.py"}, camera={"object": "ShotCam", "lens": 35},
+                         size=[320, 192], frames=17, fps=16)
+        path = os.path.join(self.tmp, "cam.json")
+        with open(path, "w") as f:
+            json.dump(spec, f)
+        code, out = run("duel", path, "--preview")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["out"], os.path.join(self.tmp, "cam"))
+        self.assertGreater(out["in_frame"]["A"]["first"], 0.5)
+        with open(os.path.join(self.tmp, "cam", "camera.json")) as f:
+            self.assertEqual(json.load(f)["lens_mm"], 35)
 
     def figure(self, name, colour=(0.2, 0.5, 0.5)):
         """A box 'figure': a 0.3 x 0.2 x 1.0 body with a 0.2 head block on top, face flat toward -Y."""

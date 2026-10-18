@@ -73,24 +73,42 @@ role in the prompt rather than by its blockout colour.
   the depth pass then carries the set too.
 - Cavalry, siege engines, arrows: not built in; add them as objects in the saved `.blend`.
 
-## Two fighters (previs, tested in Blender 2026-10-16)
+## Two fighters (`pw.py duel`)
 
 A duel needs the bodies, their facing and the blades in the control; a still Canny of the empty set holds only
-the room, and video takes then drift to both fighters facing the lens. The route that worked in Blender (no `pw.py`
-command yet; a proposed `pw.py duel` waits on the first video test):
+the room, and video takes then drift to both fighters facing the lens. `pw.py duel shot.json` builds the set,
+stands two crowd mannequins at their marks, poses them by two-bone IK to hand and foot targets (knee pole along
+the chest, elbow pole down and out) and renders through the shot's camera. Start from
+[../examples/duel.json](../examples/duel.json) (with its room script [../examples/duel_room.py](../examples/duel_room.py)).
 
-1. Rebuild the set from its own blockout script, and use the shot's own camera.
-2. Two of the crowd mannequins at the fighters' marks, posed by two-bone IK to hand and foot targets (knee pole
-   along the chest, elbow pole down and out). Poses are named JSON keyed in seconds, smoothstep between keys,
-   each a base pose plus overrides.
-3. A blade is a rigid box on the wrist pointing along a direction in the figure's frame. For depth, render a
-   second pass with blades 2.8 times as thick: at a 4 m two-shot the real 1.6 cm blade is a broken line, the thick one a
-   solid bar. A thrown cloak or a knocked-away blade is a matrix lerp and slerp from its held pose to a mark on
-   the floor.
-4. Passes per frame: inverse depth (Cycles, CPU), thick-blade depth, clay in Workbench (Canny it), COCO joints
-   with hidden face points left out (see L-005). 107 frames at 864x480 took about 36 s.
+- **Room**: `{"blend": "set.blend"}`, or `{"script": "room.py", "call": "build"}` (run inside Blender; it reads
+  the duel file as `DUEL` and builds geometry only), or nothing for a plain floor. Reuse the set's own blockout
+  script so the figures stand in the room the other controls already use.
+- **Camera**: `{"pos", "aim", "lens"}` or `{"object": "Name"}` made by the room. `origin` [x, y] is added to every
+  mark and landing point, so a set plan's coordinates paste in.
+- **Fighters**: `mark`, `facing` (compass degrees, 0 = +Y, 90 = +X, or the other fighter's name), `scale`,
+  `tint`, `weapons` {"right": m, "left": m}, `cloak`, and `keys` [[seconds, pose], ...]: held before the first
+  and after the last key, smoothstep between.
+- **Poses**: a `base` plus overrides in the fighter's frame (faces +X, left +Y): `root`, `yaw`, `pelvis_z`,
+  `spine`, `chest`, hands from the shoulder, blade directions (null drops the blade), feet. Built in: stand,
+  guard, guard_low, kneel.
+- **Thrown props** (`fly`): blades, guards, a hood and cloak go from where they were at `t0` to a floor mark by
+  `t1`, arcing and spinning.
 
-Check every key pose on a sheet before rendering video. A box mannequin reads well standing, kneeling and
+Output per shot: `clay/` (Workbench at twice the size, for a start frame), `canny/` (OpenCV's Canny steps in
+numpy, thresholds 12/40; it matched OpenCV within one pixel on 97 to 100 percent of edge pixels), `depth/`,
+`depth_thick/` (blades `thick_blade_m`, 4.5 cm, square: at a 4 m two-shot the real 1.6 cm blade is a broken
+line), `pose/` (COCO-18, nose and eyes left out once turned from the lens, see L-005), `<name>_<pass>.mp4`,
+`joints.json`, `camera.json` and `sheet.png` at frame 1, each `check_s` second and the last frame. The result
+warns when a fighter has under half its joints in frame at either end. 73 frames at 864x480 take about 30 s.
+
+What each control held on MiniMax H3 with Fun ControlNet Union 2.0 at 0.6 strength ending at 0.4 (field test,
+2026-10-17): Canny of the clay with the figures removed a duplicated fighter and held a floor shot's start and
+end states, but a standing two-shot still drew both outlines facing the lens; thick-blade depth held the near
+fighter's back to the camera through the action, then he turned to the lens. Next to try: key the near fighter's
+back to the camera through the last frame, and depth at 0.8 ending at 0.6.
+
+Check every key pose on the sheet before rendering video. A box mannequin reads well standing, kneeling and
 kicking, and badly on the floor (a man on his back is a crumpled block); use a rigged figure for falls and rolls.
 Check also that each end state is inside the shot's own frame (L-005).
 

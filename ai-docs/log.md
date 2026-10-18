@@ -74,3 +74,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 
 - Wiki updated for 0.2.1 (wiki commit 8363f76; live: 11 pages, 0 failures): the terrain regression entry is now "fixed in 0.2.1", printable runs without `--hollow`, new reference pages listed on The-Skills; verify output saved over the 2026-10-17 one ([notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md)).
 - Action and outcome evals, three runs each on 0.2.1: 42/42 graded, crowd 3/3 by hand ($16.16); outcome baselines without polywright 20/21 ($5.26), so the outcome cases do not discriminate (owed).
+
+## 2026-10-17: pw.py duel
+
+- `pw.py duel` (owner's go-ahead, "plan then PR"): two posed fighters in a set through the shot's camera, clay, Canny, depth, thick-blade depth and pose controls from one JSON file, generalised from a film's previs prototype; example run end to end in 35 s; plan and result in [plans/2026-10-17-pw-duel.md](plans/2026-10-17-pw-duel.md).

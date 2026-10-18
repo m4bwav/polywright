@@ -82,22 +82,24 @@ poster), take the composition from the picture and the shape from the model:
    picture's own. A whole-picture edit redraws everything (HDR colour, a bigger prop).
 5. Check at full size; keep two or more seeds.
 
-Worked example and the reasons: a storyboard method kept in the owner's notes. Reference sheets of the prop
-come from the model too (polywright-references, Step 2b).
+Reference sheets of the prop come from the model too (polywright-references, Step 2b).
 
 ## Crowd and battle blockouts (AI video)
 
 Video models break on crowds; Blender does not. Let Blender place the army and the video model paint the look:
 
-1. `pw.py crowd --out work/crowd --action clash --preview` (or march, advance, charge, hold; `--ranks`,
-   `--cols`, `--view side|behind|high`, `--lens`, `--move`), then read `work/crowd/sheet.png`.
-2. Drop `--preview` for the full shot: `depth.mp4` (main control), `pose.mp4` (front ranks), `mask.mp4` (side A
-   red, side B blue), `clay.mp4`, `camera.json`; 832x480, 81 frames at 16 fps by default (Wan's 4n+1 and /16).
+1. `pw.py crowd --out work/crowd --action clash --preview` (or march, advance, charge, hold; `--view`, `--lens`,
+   `--move`), then read `work/crowd/sheet.png`.
+2. Drop `--preview` for the full shot: `depth.mp4` (main control), `pose.mp4` (front ranks), `mask.mp4`,
+   `clay.mp4`, `camera.json`; 832x480, 81 frames at 16 fps by default (Wan).
 3. Repaint clay frame 1 into an approved start still; drive Wan VACE or Wan 2.2 Fun Control with the depth video
    and that still. Prompt costume, colour per side, light and haze, not the head count.
 
-Depth convention, views, screen direction, your own soldier, two-fighter previs and what is untested:
-[references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
+Details and what is untested: [references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
+
+Two fighters: `pw.py duel shot.json --preview` poses two mannequins at their marks in the set, through the
+shot's camera (`examples/duel.json`); read `sheet.png`, then drop `--preview` for each control's mp4.
+More: crowd-blockouts.md, "Two fighters".
 
 A small cast of real figures or toys (sides swapped, an extra figure, markings lost): mesh each from photos, fix
 colour and painted markings with `pw.py mark`, give the video model `pw.py turnaround` pictures as references and a
