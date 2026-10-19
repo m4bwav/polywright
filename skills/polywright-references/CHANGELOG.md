@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261018-1 · 2026-10-18 · Start from a history research pack's refs/index.json
+- because: user request (historywright's end-to-end test found polywright-references had no step that reads a research pack's reference index; the per-image dates, licences and the anachronism checklist were left for the modeller to find)
+- files: SKILL.md Step 1 (after the table)
+- When the asset folder is a historywright pack, use its references, filter by object date, keep non-commercial images out of commercial work, and check generated views against anachronism.md.
+
 ### C-20261017-3 · 2026-10-17 · Private names generalised
 - because: user request (public repository: no private project names, no person's name but the author credit, no machine paths; AGENTS.md)
 - files: LEARNINGS.md L-002; CHANGELOG.md C-20261012-1; TESTS.md
