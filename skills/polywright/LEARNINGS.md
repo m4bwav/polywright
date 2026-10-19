@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-007 · 2026-10-17 · The crowd command's default side view frames a 30-wide march as a thin band, and --aim needs --cam
+- Trigger: `pw.py crowd --action march --kit spear,shield,helmet --preview` with default settings put 360 figures in a band about 60 px tall at 832x480 (camera 6 m high, 50 mm, 39 m back), with half the frame empty ground. On the re-run, `--aim 0,8,1.6` was ignored: the result still reported aim z 0.8.
+- Hypothesis: `crowd_camera` sets the distance from the armies' reach, but the 6 m height and the 0.8 m aim make it look down onto the ground. It only reads `aim` when `cam` is also given (pw_bpy.py, `crowd_camera`).
+- Rule: for a march, start from `--gap 20 --cam-height 2.2 --lens 35`. That gives figures about 70 px tall with both sides in frame from frame 1. To aim the camera, pass `--cam X,Y,Z` together with `--aim`. Fix to consider: honour `--aim` without `--cam`, or have the help text say it needs `--cam`.
+- Evidence: the 2026-10-17 preview in pw-eval-3vogrrzt/crowdtest (the README there has the commands and the review). Second run the same day (pw-eval-ko45dthm/crowdtest): the gap is the main lever. `--cam-height 2.5 --lens 35` with the 30 m default gap made the band thinner and pushed both armies to the frame edges; `--gap 16` alone (default 6 m, 50 mm) gave figures about 100 px tall, both sides on screen and about 1 m apart at frame 81 (march covers 13 m in 81 frames at 16 fps). Also: `sheet.png` tiles frames with no separator, so the gap between two armies can be misread as a frame boundary; open a single frame when in doubt.
+- Scope: skill (pw.py crowd defaults and help text)
+- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-17
+
 ### L-006 · 2026-10-16 · A small cast of real figures holds in video only when the meshes carry the markings and a lineup carries the sides
 - Trigger: a 15 s two-on-two toy fight rendered from photo crops swapped the teams' sides, drew one figure twice and showed a fifth figure for a moment; the figures' painted letter and numbers read small. Meshing each toy (TRELLIS.2) fixed the shapes, but the markings baked as smears and the colours drifted.
 - Hypothesis: a video model keeps who stands where and how many only when a picture or control says so; reference crops of figures lying on a table say neither. A generated mesh is only as good a reference as its texture.
