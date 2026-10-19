@@ -38,3 +38,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
 
+
+### L-005 · 2026-10-17 · The default base cut shaves models whose bottom is already flat
+- Trigger: two overlapping boxes made printable at 40 mm came out 26.07 mm tall instead of 26.67 mm; `steps` said "flat base: clamped below 0.60 mm" although the bottom was a flat box face
+- Hypothesis: `--base-cut-mm 0.6` always removes 0.6 mm from the lowest point, whether or not the base needs flattening
+- Rule: for code-CAD or box-like inputs with a flat underside, pass `--base-cut-mm 0`; candidate fix: skip the clamp when the lowest 0.6 mm already holds a flat face covering most of the footprint
+- Evidence: rerun with `--base-cut-mm 0` gave 26.667 mm and 22.518 cm3, the exact union volume (9.5 units3 x 13.33^3)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-17
