@@ -26,6 +26,12 @@ Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Prompt templa
 
 Always add a **scale reference**: a known dimension, a 1.8 m human silhouette, a height bar on the sheet.
 
+**A history research pack** (a folder holding `answer.md`, `refs/index.json` and `anachronism.md`, made by the
+historywright plugin) is already a valid asset folder: start from it, do not search again. Read
+`refs/index.json`: each reference has the object's own date, place, institution, accession number and licence.
+Use only references whose `object_date` fits the brief's period. Keep a reference with `nc: true` out of a
+commercial model. Check every generated view against `anachronism.md` before it is meshed.
+
 ## Step 2: generate the views (rules that matter)
 
 Ask the image tool for: one object, centred, filling about two thirds of the frame; plain white or light grey
