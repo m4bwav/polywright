@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-008 · 2026-10-19 · A duel's depth or Canny passes hold where the fighters stand and which way they face, but not a low pose
+- Trigger: a film's batch rendered `pw.py duel` passes as the video model's control (thick-blade depth 0.8/0.6 on close two-shots, the clay's Canny 0.6/0.4 on a high wide). Over-the-shoulder two-shots that had drifted to face the lens held their framing and a sword's length on both takes. But a fighter posed kneeling came out standing in both takes, a dagger posed in the back came out held upright in front of the chest, and two mannequins lying one across the other came out as two men standing in one take and one standing in the other. A guide still with the two bodies lying gave exactly two lying bodies on both seeds (field lesson 146).
+- Hypothesis: the passes' silhouettes say where a body is, how big and which way it faces; the prompt and the full-length character references decide its pose, and a standing figure fits a low silhouette.
+- Rule: use `duel` passes for placement, facing and distance on standing two-shots. For kneeling, grappling on the floor or bodies lying, pin the pose with a guide still at frame 0 and no control, and use the duel's clay only to count and place the figures for that still.
+- Evidence: the 2026-10-19 review of the batch (21 takes; the takes, strips and full-size frames are in the owner's private film notes); field lessons 128, 144, 145, 146.
+- Scope: skill (pw.py duel; hub "army blockouts with depth and pose passes for AI video")
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-19
+
 ### L-007 · 2026-10-17 · The crowd command's default side view frames a 30-wide march as a thin band, and --aim needs --cam
 - Trigger: `pw.py crowd --action march --kit spear,shield,helmet --preview` with default settings put 360 figures in a band about 60 px tall at 832x480 (camera 6 m high, 50 mm, 39 m back), with half the frame empty ground. On the re-run, `--aim 0,8,1.6` was ignored: the result still reported aim z 0.8.
 - Hypothesis: `crowd_camera` sets the distance from the armies' reach, but the 6 m height and the 0.8 m aim make it look down onto the ground. It only reads `aim` when `cam` is also given (pw_bpy.py, `crowd_camera`).
