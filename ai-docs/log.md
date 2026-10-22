@@ -78,3 +78,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-17: pw.py duel
 
 - `pw.py duel` (owner's go-ahead, "plan then PR"): two posed fighters in a set through the shot's camera, clay, Canny, depth, thick-blade depth and pose controls from one JSON file, generalised from a film's previs prototype; example run end to end in 35 s; plan and result in [plans/2026-10-17-pw-duel.md](plans/2026-10-17-pw-duel.md).
+
+## 2026-10-22: 0.3.0 release PR merged
+
+- PR #23 had no conflict with main; its structure checks failed because `pw.py` VERSION was still 0.2.1 while plugin.json said 0.3.0. Bumped VERSION, all checks green, merged (1c08f96). Not tagged or published yet: that waits for the owner.
