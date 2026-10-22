@@ -71,3 +71,4 @@ Rules for both sides:
 | a Unity project (unity-agent) | game-unity | GLB (glTFast) or FBX with baked axes, LODs, a collision proxy |
 | a printer or slicer skill | print-fdm, print-resin | watertight STL in mm plus a 3MF when one can be built |
 | an image or ComfyUI skill | (input side) | asks it for reference images (polywright-references says which) |
+| an art judge (artwright) | (review side) | concept art before image-to-3D and turnaround renders: with artwright installed, `artwright-judge` picks the candidate, checks it against the brief and writes `artwright/verdict.json` ([contract](https://github.com/m4bwav/artwright/blob/main/skills/artwright-judge/references/verdict-contract.md)) |

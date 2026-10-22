@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261022-1 · 2026-10-22 · Hand-off to artwright-judge for concept art and turnarounds
+- because: user request (artwright's fork 3, answered 2026-10-21: one-line hand-offs from the owner's image skill and polywright)
+- files: references/contract.md "Which plugin takes what" (one row)
+- Concept art before image-to-3D and turnaround renders can go to `artwright-judge`, which writes `artwright/verdict.json`; the row links its public contract. The description is unchanged, so the trigger evals were not re-run.
+
 ### C-20261019-1 · 2026-10-19 · Lesson L-008: duel passes hold placement, not low poses
 - because: L-008 (field use of `pw.py duel` passes as video control)
 - files: LEARNINGS.md "Active"

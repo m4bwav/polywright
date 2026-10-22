@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## Unreleased
+
+- `references/contract.md`: concept art before image-to-3D and turnaround renders can go to artwright's judge, which writes `artwright/verdict.json` (one row in "Which plugin takes what").
+
 ## 0.3.0 (2026-10-18)
 
 - `pw.py duel`: a two-fighter previs for AI video controls. A JSON file names the set (a `.blend`, a room script or a floor), the shot's camera, two fighters with marks, facing and poses keyed in seconds (a built-in pose library plus your own, base plus overrides), blades on the wrists and thrown props. Each frame it renders clay, a Canny of the clay, inverse depth with real and with thick blades, and COCO-18 skeletons with face points turned from the lens left out, then one `<name>_<pass>.mp4` per pass and a sheet at chosen seconds; it warns when a fighter's end state is out of frame. `--check` validates a file without Blender. Shared with `crowd`: the mannequin, the depth material, the skeleton drawer (now capped in width, and hidden ankles no longer skew it), the video encoder and the sheet (now labelled). Example `skills/polywright/examples/duel.json`.
