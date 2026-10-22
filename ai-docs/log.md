@@ -82,3 +82,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-22: 0.3.0 release PR merged
 
 - PR #23 had no conflict with main; its structure checks failed because `pw.py` VERSION was still 0.2.1 while plugin.json said 0.3.0. Bumped VERSION, all checks green, merged (1c08f96). Not tagged or published yet: that waits for the owner.
+
+## 2026-10-22: artwright-judge hand-off PR merged
+
+- PR #24 conflicted with main in skills/polywright/CHANGELOG.md (its C-20261022-1 and main's C-20261019-1 both sat on top); kept both, newest first. The auto-merged root CHANGELOG had put the contract.md line into the released 0.3.0 section, so it moved to a new "Unreleased" heading. Checks green, merged (b55b985).
