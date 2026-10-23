@@ -2212,10 +2212,23 @@ def draw_pose_frames(joints_path, out_dir, max_width=None):
 
 
 def encode_passes(out, passes, fps, prefix=""):
-    """One H.264 video per pass, `<prefix><pass>.mp4` (what ComfyUI's video loaders take), when ffmpeg is on PATH."""
+    """One H.264 video per pass, `<prefix><pass>.mp4` (what ComfyUI's video loaders take): ffmpeg when it is on
+    PATH, else Blender's own FFmpeg through the sequencer."""
     ff = shutil.which("ffmpeg")
     if not ff:
-        return {"skipped": "ffmpeg not found; load the PNG folders with an image-sequence loader"}
+        jobs = [{"src": os.path.join(out, n), "dst": os.path.join(out, prefix + n + ".mp4")} for n in passes
+                if os.path.isdir(os.path.join(out, n)) and any(f.endswith(".png") for f in os.listdir(os.path.join(out, n)))]
+        if not jobs:
+            return {}
+        if not backend():
+            return {"skipped": "no ffmpeg and no Blender; load the PNG folders with an image-sequence loader"}
+        res = bpy_action("encode", {"jobs": jobs, "fps": fps})
+        if not res.get("ok"):
+            return {"error": res.get("error")}
+        vids = {"encoder": "blender (no ffmpeg on PATH)"}
+        for j in jobs:
+            vids[os.path.basename(j["dst"])[len(prefix):-4]] = j["dst"] if j["dst"] in res["videos"] else {"error": "not written"}
+        return vids
     vids = {}
     for name in passes:
         src = os.path.join(out, name)

@@ -2500,7 +2500,40 @@ def act_lineup(p):
     return res
 
 
-ACTIONS = {"inspect": act_inspect, "render": act_render, "match": act_match, "convert": act_convert,
+def act_encode(p):
+    """PNG sequences to H.264 MP4 through Blender's own FFmpeg (the sequencer), for machines without ffmpeg.
+    p["jobs"]: [{"src": folder of 0001.png..., "dst": out.mp4}], p["fps"]. Values pass through unchanged
+    (Standard view transform), so depth and masks keep their levels."""
+    done = {}
+    for job in p["jobs"]:
+        reset()
+        sc = bpy.context.scene
+        names = sorted(n for n in os.listdir(job["src"]) if n.lower().endswith(".png"))
+        first = bpy.data.images.load(os.path.join(job["src"], names[0]))
+        sc.render.resolution_x, sc.render.resolution_y = first.size
+        sc.render.resolution_percentage = 100
+        sc.render.fps, sc.frame_start, sc.frame_end = int(p.get("fps", 16)), 1, len(names)
+        sc.view_settings.view_transform = "Standard"
+        ed = sc.sequence_editor_create()
+        strip = ed.strips.new_image("frames", os.path.join(job["src"], names[0]), channel=1, frame_start=1)
+        for n in names[1:]:
+            strip.elements.append(n)
+        im = sc.render.image_settings
+        im.media_type = "VIDEO"  # before the file format, or FFMPEG is not offered
+        im.file_format = "FFMPEG"
+        ff = sc.render.ffmpeg
+        ff.format, ff.codec, ff.constant_rate_factor = "MPEG4", "H264", "PERC_LOSSLESS"
+        stem = os.path.join(os.path.dirname(os.path.abspath(job["dst"])), "_pw_encode_")
+        sc.render.filepath = stem
+        bpy.ops.render.render(animation=True)
+        made = [f for f in os.listdir(os.path.dirname(stem)) if f.startswith("_pw_encode_") and f.endswith(".mp4")]
+        if made:
+            os.replace(os.path.join(os.path.dirname(stem), made[0]), os.path.abspath(job["dst"]))
+            done[job["dst"]] = len(names)
+    return {"videos": done}
+
+
+ACTIONS = {"inspect": act_inspect, "encode": act_encode, "render": act_render, "match": act_match, "convert": act_convert,
            "printable": act_printable, "union": act_union, "crowd": act_crowd, "duel": act_duel, "turnaround": act_turnaround,
            "mark": act_mark, "lineup": act_lineup}
 

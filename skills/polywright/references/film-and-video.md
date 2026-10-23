@@ -53,11 +53,16 @@ Back to [../SKILL.md](../SKILL.md). Target: `video-blockout` in [targets.json](t
 
 - **Clay** (grey, Workbench or Eevee, one light, cavity on): run Canny on it for an edge control, or repaint
   frame 1 into a start still. Grey, not textured: texture in a control fights the references and gets copied.
-- **Depth**: inverse depth (near white), one range for the whole shot, or the video pulses.
+- **Depth**: inverse depth (near white), one range for the whole shot, or the video pulses. Blender's Mist pass
+  is anti-aliased and normalised but maps plain distance, not 1/z, so the near ranks get fewer tones; for
+  inverse depth from a hand-built scene use a shader AOV (recipe `passes-one-render` in polywright-blender).
+  Whether Mist does as well on a video model is untested.
 - **Pose**: COCO-18 joints for figures taller than about 40 px; leave out the nose and eyes when a head faces
   away from the camera, or the model turns the person to the lens.
 - **Masks**: one colour per side or team, for per-side prompts and inpainting.
-- **Camera**: `camera.json` per frame, for camera-control models and for matching plates later.
+- **Camera**: `camera.json` per frame, for camera-control models and for matching plates later. Keep depth of
+  field and motion blur off in every control pass; write lens, f-stop and focus distance into the camera record
+  and let the prompt name them.
 - Render every pass at the shot's exact frame count and fps. Read a contact sheet of the first, middle and last
   frame of each pass before handing over.
 
@@ -66,6 +71,10 @@ Back to [../SKILL.md](../SKILL.md). Target: `video-blockout` in [targets.json](t
 - Hero dressing (the throne, the desk, the car) is placed at the caller's plan positions, to the centimetre,
   and named by role (`throne`, `door_east`), never by colour.
 - Background dressing is a few repeated pieces with jitter in yaw and scale; the model fills in the rest.
+  A Geometry Nodes scatter places them with a minimum gap (recipe `gn-scatter`; `pw.py crowd --scatter` for
+  figures).
+- No two faces on the same plane overlapping (kitbashed walls, a floor laid twice): they flicker in clay, depth
+  and edge passes.
 - No text or signage in the blockout: the model copies it as garble. Signs are added in finishing.
 - Keep each set in its own `.blend` with its cameras, so a later shot reuses the room and its lens.
 

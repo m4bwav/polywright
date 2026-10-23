@@ -8,8 +8,10 @@ description: "Use whenever Blender is scripted, automated or debugged, before wr
 Blender is the workhorse: free, every OS, scriptable to the last button. An agent drives it best headless, on
 copies, with short text reports, not through screenshots of a live session.
 Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md).
-Depth: [references/bpy-api-traps.md](references/bpy-api-traps.md), [references/bpy-recipes.md](references/bpy-recipes.md)
-(each recipe is run by the test suite), [references/mcp-bridges.md](references/mcp-bridges.md),
+Depth: [references/bpy-api-traps.md](references/bpy-api-traps.md), [references/bpy-recipes.md](references/bpy-recipes.md),
+[references/bpy-recipes-scenes.md](references/bpy-recipes-scenes.md) and [references/bpy-recipes-physics.md](references/bpy-recipes-physics.md)
+(each recipe is run by the test suite),
+[references/mcp-bridges.md](references/mcp-bridges.md),
 [references/tools-by-os.md](references/tools-by-os.md).
 
 ## Step 1: which Blender
@@ -44,6 +46,8 @@ Script rules:
 - Write every output path absolute (`os.path.abspath`) and print whether the file exists afterwards: a
   relative `render.filepath` reported success and wrote nothing visible (L-004).
 - Save a numbered `.blend` per milestone in `work/`; restart from it rather than carrying a long live session.
+- Bake simulations before rendering, with the cache folder next to the `.blend` (the default is temporary and
+  lost on exit). Bake progress floods stdout and `pw.py bpy` cuts the middle: write results to a JSON file.
 - Two retries on a traceback; then look up the API (traps file, introspection, the official MCP's docs
   search) instead of guessing a third time.
 
@@ -59,6 +63,8 @@ Script rules:
 | `mod["Socket_2"] = x` on Geometry Nodes | `mod.properties.inputs.Socket_2.value = x` |
 | `import_image.to_plane` | `image.import_as_mesh_planes` |
 | Workbench `shading.show_shadow` | `shading.show_shadows` |
+| `obj.select = True`, `scene.objects.active`, `mesh.use_auto_smooth`, `scene.node_tree` (2.7x books) | `select_set`, `view_layer.objects.active`, `shade_auto_smooth` or `set_sharp_from_angle`, `scene.compositing_node_group` |
+| `transform_apply(scale=True)` alone | also applies location and rotation: pass `location=False, rotation=False` |
 
 ## Step 4: common jobs
 
@@ -66,7 +72,11 @@ Script rules:
 [references/bpy-recipes.md](references/bpy-recipes.md): reference images at scale, modifiers and apply, Boolean
 with the Manifold solver and an EXACT fallback, voxel remesh, QuadriFlow, Smart UV and lightmap UVs, normal and
 AO bake from high to low, materials with 5.x sockets, turntable stills, depth and normal passes for video,
-exports per engine, and a designed prop from a written description (lathe, sweep, mirror; L-003). Sheets of
+exports per engine, and a designed prop from a written description (lathe, sweep, mirror; L-003). Scenes:
+[references/bpy-recipes-scenes.md](references/bpy-recipes-scenes.md): Geometry Nodes scatter, inverse depth,
+masks, Mist and normals from one render, clay by material override, Line Art, MP4 through Blender's own FFmpeg.
+Physics and rigs: [references/bpy-recipes-physics.md](references/bpy-recipes-physics.md): rigid-body and cloth
+bakes, why a Rigify rig is not a game skeleton, volume remesh. Sheets of
 a model with mirror-image parts: raise the side camera 10 to 15 degrees, or one part hides the other (L-005).
 
 ## Step 5: live sessions (MCP)

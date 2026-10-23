@@ -685,6 +685,23 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(10 <= out["scatter"]["b"] <= 60, out["scatter"])
         self.assertGreater(blue(d), blue(os.path.join(self.tmp, "plain")) * 1.2)
 
+    def test_videos_through_blender_when_ffmpeg_is_missing(self):
+        out = os.path.join(self.tmp, "enc")
+        os.makedirs(os.path.join(out, "depth"))
+        for i in range(5):
+            with open(os.path.join(out, "depth", "%04d.png" % (i + 1)), "wb") as f:
+                f.write(make_png(64, 48, [[40 * i, 40 * i, 40 * i] * 64] * 48))
+        real = shutil.which
+        pw.shutil.which = lambda n, *a, **k: None if n == "ffmpeg" else real(n, *a, **k)
+        try:
+            vids = pw.encode_passes(out, ["depth", "mask"], 16)
+        finally:
+            pw.shutil.which = real
+        self.assertIn("blender", vids.get("encoder", ""), vids)
+        self.assertTrue(os.path.getsize(os.path.join(out, "depth.mp4")) > 1000, vids)
+        self.assertNotIn("mask", vids)  # no frames, no video
+        self.assertFalse([n for n in os.listdir(out) if n.startswith("_pw_encode_")])
+
     def test_crowd_rejects_sizes_wan_cannot_take(self):
         code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
         self.assertEqual(code, 2)
