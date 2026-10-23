@@ -53,3 +53,19 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: 2026-10-12 film session: the spear's build, render and camera-match scripts and sheets v1 to v5c, kept in the owner's private notes; Blender 5.2.1 stderr.
 - Scope: skill (traps table at the next refresh)
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-12
+
+### L-007 · 2026-10-22 · transform_apply(scale=True) also applies location and rotation
+- Trigger: the rigid-body recipe's box fell to z -2.75 instead of resting at 0.25.
+- Hypothesis: all three options default to True, so the origin (a rigid body's centre of mass) moved to the world origin, inside the floor.
+- Rule: to apply scale alone, pass `location=False, rotation=False`.
+- Evidence: C-20261022-1; the box rests at 0.25 with the fix; the mutation that drops it fails the recipe.
+- Scope: global
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-008 · 2026-10-22 · Check shading changes by (position, normal) corners, not vertex counts
+- Trigger: a cylinder re-imported with 130 vertices whether or not its Smooth by Angle survived export.
+- Hypothesis: importers split and merge vertices their own way; what a renderer draws is one vertex per position and normal pair.
+- Rule: count distinct (position, normal) pairs: 192 flat, 64 smooth, 128 by angle on a 32-sided cylinder.
+- Evidence: C-20261022-1; unapplied Smooth by Angle gave 64 in glTF, FBX and OBJ.
+- Scope: global
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22

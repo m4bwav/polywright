@@ -1,9 +1,10 @@
-"""Runs every `# recipe:` block in skills/polywright-blender/references/bpy-recipes.md in Blender.
+"""Runs every `# recipe:` block in skills/polywright-blender/references/bpy-recipes*.md in Blender.
 
 Run from the repository root: python tests/test_recipes.py
 Skips when no Blender is found (pw.py doctor). A recipe passes when Blender exits cleanly and the script printed
 a line starting with "[pw] ok".
 """
+import glob
 import json
 import os
 import re
@@ -17,8 +18,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "skills", "polywright", "scripts"))
 import pw  # noqa: E402
 
-DOC = os.path.join(ROOT, "skills", "polywright-blender", "references", "bpy-recipes.md")
-BLOCKS = re.findall(r"```python\n(# recipe: ([\w-]+)\n.*?)```", open(DOC, encoding="utf-8").read(), re.S)
+DOCS = sorted(glob.glob(os.path.join(ROOT, "skills", "polywright-blender", "references", "bpy-recipes*.md")))
+BLOCKS = [b for d in DOCS for b in re.findall(r"```python\n(# recipe: ([\w-]+)\n.*?)```", open(d, encoding="utf-8").read(), re.S)]
 
 
 @unittest.skipUnless(pw.backend(), "Blender not found")
@@ -48,5 +49,6 @@ for code, name in BLOCKS:
 
 
 if __name__ == "__main__":
-    print("%d recipes in %s" % (len(BLOCKS), os.path.relpath(DOC, ROOT)))
+    print("%d recipes in %s" % (len(BLOCKS), ", ".join(os.path.relpath(d, ROOT) for d in DOCS)))
+    assert len({n for _, n in BLOCKS}) == len(BLOCKS), "two recipes share a name"
     unittest.main(verbosity=2)

@@ -4,6 +4,10 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+- `pw.py crowd --scatter N`: standing reserves behind each side's last rank, scattered by Geometry Nodes (instances, no added render time); `--scatter-gap`, `--scatter-depth`.
+- `pw.py inspect --topology`: face sides, poles, flipped faces (winding mismatches), stacked faces, loose parts and UV texel spread, on welded positions. `pw.py check` warns on them for the game, web and AR targets. `pw.py convert --fix-winding` flips faces that wind against their neighbours, keeping vertices and UVs.
+- `crowd` and `duel` videos: with no ffmpeg on PATH they are encoded through Blender's own FFmpeg.
+- polywright-blender: 2.7x-era API traps (sixteen rows, among them `transform_apply`'s defaults), and two new recipe files (scenes: Geometry Nodes scatter, inverse depth and masks from one render, clay override, Line Art, MP4; physics: rigid-body and cloth bakes, Rigify export, volume remesh). polywright-finish: references/topology.md, Rigify and Smooth by Angle export rules. From the Blender books, checked on Blender 5.2.1.
 - `references/contract.md`: concept art before image-to-3D and turnaround renders can go to artwright's judge, which writes `artwright/verdict.json` (one row in "Which plugin takes what").
 
 ## 0.3.0 (2026-10-18)

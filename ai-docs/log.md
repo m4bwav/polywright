@@ -86,3 +86,12 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## 2026-10-22: artwright-judge hand-off PR merged
 
 - PR #24 conflicted with main in skills/polywright/CHANGELOG.md (its C-20261022-1 and main's C-20261019-1 both sat on top); kept both, newest first. The auto-merged root CHANGELOG had put the contract.md line into the released 0.3.0 section, so it moved to a new "Unreleased" heading. Checks green, merged (b55b985).
+
+## 2026-10-22: books track 7 (Blender books)
+
+- From the book-learnings build (Ai/books/plugin-learnings, track 7, notes `blender-polywright.md`). Built: `pw.py inspect --topology` and topology warnings in `check` for game, web and AR targets; `convert --fix-winding`; `crowd --scatter`; MP4 through Blender when ffmpeg is missing; sixteen 2.7x-era trap rows; nine recipes in two new files; polywright-finish references/topology.md. Rulings J1-J9 in [decisions/2026-10-22-books-track7.md](decisions/2026-10-22-books-track7.md).
+- Real data: 22 meshes (13 image-to-3D outputs, a downloaded car, a house, a web template model, Blender primitives). Flipped faces in 9 of 13 AI meshes, all cleared by recalculating normals and by `--fix-winding`; the car has 479,007 of 971,730 faces stacked on another; UV spread over 2.5 on 3 of 10 UV-mapped meshes. Every real game or AI mesh was triangles, so the pole rule is not a target rule.
+- Found on the way: `transform_apply(scale=True)` applies location and rotation too (blender L-007); Smooth by Angle unapplied comes out all smooth, measured by (position, normal) corners, not vertices (blender L-008); `pw.py bpy` cuts the middle of long bake output, so probes write JSON.
+- Not built (J1, J7, J8): one-render passes inside `crowd`/`duel`/`lineup`, the animation principles in `duel`, Boids, headless tracking, a `--lines` pass.
+- Checks: check_skills ok; test_pw 56 OK; test_recipes 20 OK; budget YELLOW as before (installed skills folder 668 KB of 800; largest reference still bpy-recipes.md). Evals T-20261022-1: action-scatter 3/3 (baseline also 1/1, the copy holds the repo), action-topology 2/3 (one correct hand fix).
+## [2026-10-22] index | rebuilt (7 entries)

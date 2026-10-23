@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261022-4 · 2026-10-22 · crowd --scatter, inspect --topology, convert --fix-winding, MP4 through Blender
+- because: books track 7 (Packt *Procedural 3D Modeling Using Geometry Nodes*; Packt *Squeaky Clean Topology in Blender*; Conlan, *The Blender Python API*, ch. 4; Brito, *Blender for Video Production*); L-010, L-011; T-20261022-1
+- files: scripts/pw.py, scripts/pw_bpy.py (topology_report, fix_winding, scatter_tree, crowd_scatter, act_encode), references/targets.json (topology rules for game, web and AR targets), references/cli.md, references/crowd-blockouts.md ("What pw.py crowd makes", "Extending it", "Open"), references/film-and-video.md ("Passes the video model reads", "Set dressing"), evals/evals.json (action-scatter)
+- `crowd --scatter N` puts standing reserves behind each side's last rank as Geometry Nodes instances (no render time added; none behind a camera standing in that side's rear). `inspect --topology` reports face sides, poles, flipped and stacked faces, loose parts and UV texel spread on welded positions; `check` warns on them for game, web and AR targets (rates on 22 real meshes in targets.json); `convert --fix-winding` flips faces back without merging vertices. With no ffmpeg on PATH, `crowd` and `duel` encode their videos through Blender's own FFmpeg (mean error 0.44 grey levels against ffmpeg's 0.38). Animation principles for `duel` are listed as untested proposals, not built.
+
 ### C-20261022-1 · 2026-10-22 · Hand-off to artwright-judge for concept art and turnarounds
 - because: user request (artwright's fork 3, answered 2026-10-21: one-line hand-offs from the owner's image skill and polywright)
 - files: references/contract.md "Which plugin takes what" (one row)

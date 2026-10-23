@@ -80,6 +80,35 @@ between versions: introspect `bpy.types` rather than recall.
   headless with an active object.
 - mathutils `Vector` is float32: compare its components to float64 bounds with a tolerance.
 
+## Code from 2.7x-era books and tutorials
+
+Calls that books written for Blender 2.78 (Conlan's *The Blender Python API*, 2017, among them) teach, and
+models still copy. Each row probed on 5.2.1, 2026-10-22.
+
+| Old | 5.2 |
+|---|---|
+| `obj.select = True` | `obj.select_set(True)`; the attribute is gone |
+| `scene.objects.active = obj` | `bpy.context.view_layer.objects.active = obj` |
+| `primitive_cube_add(radius=1)` | `size=` (radius raises TypeError) |
+| `modifier_apply(apply_as="DATA", modifier=m)` | `modifier_apply(modifier=m)` (apply_as raises TypeError) |
+| `mesh.uv_textures` | `mesh.uv_layers` |
+| `scene.update()` | `view_layer.update()` |
+| `bpy.app.handlers.scene_update_post` | `depsgraph_update_post` (`frame_change_post` still exists) |
+| `mesh.use_auto_smooth`, `auto_smooth_angle` | gone since 4.1: `object.shade_auto_smooth(angle=...)` adds a Smooth by Angle Geometry Nodes modifier (export with `export_apply=True` / `use_mesh_modifiers=True`, or apply it), or `mesh.set_sharp_from_angle(angle=...)` writes sharp edges into the mesh (64 on a 32-sided cylinder at 30 degrees) |
+| `scene.use_nodes = True`, `scene.node_tree` (compositor) | `scene.node_tree` is gone: `bpy.data.node_groups.new(name, "CompositorNodeTree")`, then `scene.compositing_node_group = it`. No Composite node: the render itself is the final image |
+| File Output node `file_slots` / `layer_slots` | `node.file_output_items.new("FLOAT" or "RGBA", name)`, `node.directory`, `node.file_name` (unset, files come out as `Unsaved<pass>`), `node.format.media_type` before `format.file_format` |
+| `scene.sequence_editor.sequences` | `.strips` (and `.strips_all`) |
+| `image_settings.file_format = "FFMPEG"` | set `image_settings.media_type = "VIDEO"` first (media types IMAGE, MULTI_LAYER_IMAGE, VIDEO) |
+| Grease Pencil `GPENCIL` objects and the v2 data API | object type `GREASEPENCIL`; Line Art through `object.grease_pencil_add(type="LINEART_SCENE")`; strokes at `layer.current_frame().drawing.strokes` on the evaluated object |
+| `GeometryNodeGeometryProximity` | `GeometryNodeProximity` |
+| Random Value node `outputs[1]` / `outputs[2]` (one socket per type in 3.x) | one output whose type follows `data_type`; take `next(s for s in n.outputs if s.enabled)`, never an index |
+| `transform_apply(scale=True)` "to apply the scale" | location and rotation default to True as well: the origin jumps to the world origin. Pass `location=False, rotation=False` (a rigid body's origin is its centre of mass; the recipe's box fell through the floor until this was fixed) |
+
+Two rules from the same books that still hold: never select by index in a script others will run (indices
+change between versions and after edits; select by position or attribute), and call
+`bm.verts.ensure_lookup_table()` before indexing a bmesh. Leftover `name.001` datablocks from repeated runs go
+with `bpy.data.orphans_purge(do_recursive=True)`.
+
 ## Extensions
 
 `blender --command extension list|sync|install <id>`; `bpy.app.online_access` is False by default, so a sync

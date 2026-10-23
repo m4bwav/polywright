@@ -9,12 +9,14 @@ A mesh is finished when it passes its target's check, looks right in a render, a
 orientation. Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Engine details:
 [references/engines.md](references/engines.md). Making and finishing for one engine, step by step:
 [references/roblox.md](references/roblox.md), [references/unity.md](references/unity.md), [references/web-threejs.md](references/web-threejs.md).
+Meshes that bend, shade and texture well: [references/topology.md](references/topology.md).
 
 ## Step 1: measure, then decide
 
 `pw.py inspect <file>` and `pw.py check <file> --target <t> --real-size-m X`. The failures say what to do:
-too many triangles, no UVs, too many materials, wrong size, open edges. Render before and after every
-destructive step (`pw.py render`).
+too many triangles, no UVs, too many materials, wrong size, open edges, and for game, web and AR targets flipped
+or stacked faces and uneven UV density (`inspect --topology`; flipped faces: `convert --fix-winding`). Render
+before and after every destructive step (`pw.py render`).
 
 ## Step 2: scale, orientation, pivot
 
@@ -30,6 +32,7 @@ destructive step (`pw.py render`).
 | Need | Do |
 |---|---|
 | Fewer triangles, static prop | `pw.py convert --max-tris N` (collapse decimation keeps the silhouette); LODs with `pw.py lods` (about half per level) |
+| Fewer triangles, mesh that bends | not decimation: merge loops where nothing bends, keep the loops around joints ([references/topology.md](references/topology.md)) |
 | Clean quads for deformation or sculpting | voxel remesh first (closes it), then QuadriFlow (recipe in polywright-blender), Instant Meshes, Quad Remesher (paid), or a hosted quad remesh; characters: by hand |
 | Generated mesh (dense, lumpy, soft edges) | static prop: decimate and re-bake; hero or animated: retopology and re-bake; or regenerate with better references |
 | Many parts that should be one | `--join`; for a solid, `pw.py union` |
@@ -51,7 +54,8 @@ destructive step (`pw.py render`).
 A-pose input, clean manifold mesh. UniRig (MIT, local, 8 GB) or hosted Tripo, Meshy, AccuRIG (cleanest
 humanoid weights), Mixamo (humanoid, best retarget docs). A 2026 comparison found Meshy's hip pivot 5 to 15 cm
 off (feet slide) and AccuRIG importing once at 0.01 scale: check scale and pivot after rigging. Roblox: at most
-4 bone influences per vertex, root at the origin.
+4 bone influences per vertex, root at the origin. A Rigify rig exports far more bones than its deform set (278 of
+706 with deform-only on): for games build a deform-only skeleton or use the routes above.
 
 ## Step 6: export and verify
 
@@ -67,7 +71,8 @@ off (feet slide) and AccuRIG importing once at 0.01 scale: check scale and pivot
 | video-blockout | GLB or .blend at real scale, plus turntables and depth/normal passes (recipes) | hand to the video plugin (cinewright) |
 | commerce-gltf | GLB, real size, origin bottom centre, triangles only | `check --target commerce-gltf` |
 
-Record each output: `pw.py manifest <dir> --add-output out/<file> --target <t> --inspect`.
+Smooth by Angle is a Geometry Nodes modifier in Blender 4.1 and later: export with modifiers applied, or the
+hard edges come out smoothed over (glTF, FBX and OBJ alike, checked on 5.2.1). Record each output: `pw.py manifest <dir> --add-output out/<file> --target <t> --inspect`.
 
 ## Maintenance
 

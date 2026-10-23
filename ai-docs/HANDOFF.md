@@ -12,6 +12,11 @@ Last updated 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell
 - Topic pages (2026-10-17, unreleased): finish web-threejs.md, roblox.md, unity.md; hub film-and-video.md; references images-for-3d.md; print supports-and-slicing.md. check_skills.py guards drive paths and private names.
 - Siblings now point at polywright's folder contract (one line each, merged 2026-10-17): threewright #9 (threewright-assets), cinewright #48 (cinewright-sets, target `video-blockout`), roblox-agent #14 (roblox-agent-workflow), unity-agent #12 (unity-agent-workflow), and a private image-generation skill.
 
+## Books track 7 (2026-10-22)
+
+- Unreleased on main after the track-7 PR: `crowd --scatter`, `inspect --topology`, `convert --fix-winding`, MP4 through Blender, two recipe files, topology.md. Release (0.4.0) waits for the owner.
+- Open from it: does Mist depth do as well as inverse depth on H3; does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
+
 ## Owed
 
 1. Evals: every case has run three times (2026-10-17: triggers 80/87 then fixes 24/24; actions and outcomes 42/42 graded plus crowd 3/3 by hand). Owed: outcome cases that discriminate (baselines without polywright pass 20/21), polywright-specific questions or commands.

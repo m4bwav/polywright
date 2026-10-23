@@ -73,6 +73,21 @@
         "WebFetch"
       ],
       "max_turns": 12
+    },
+    {
+      "id": "action-topology",
+      "kind": "action",
+      "prompt": "My crate model tests/fixtures/flipped.glb shows a hole in my three.js page from some angles, but looks fine in Blender. Find out why and save a fixed copy as fixed.glb in the current folder.",
+      "runs": 3,
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py\"?\\s+.*(--topology|--fix-winding)"
+      },
+      "expectations": [
+        "the agent measures the flipped face (pw.py inspect --topology or check --target web-threejs) before fixing",
+        "fixed.glb has no winding mismatch and still 12 triangles (checked after the run with pw.py inspect --topology)"
+      ]
     }
   ]
 }

@@ -26,6 +26,15 @@ Figures are low-poly soldiers (torso, head, limbs, optional spear, shield, helme
 Every figure gets its own step phase, pace (0.9 to 1.1), height (0.94 to 1.06), placement jitter and a small yaw,
 so no two move in sync: the clone look comes from synchronised motion as much as from identical faces.
 
+**Reserves behind the lines** (`--scatter N`): about N standing figures per side, Poisson-scattered behind the
+last rank with at least `--scatter-gap` (1.2 m) between them over `--scatter-depth` (25 m), drawn from three
+variants (heights 0.95 to 1.05, one without a helmet, one without a shield) with random yaw and scale. They are
+Geometry Nodes instances, so they cost no render time (a 3-frame preview took 2.0 s with 160 of them and
+without), carry their side's colour in mask and clay, and sit inside the depth range. They hold still and get no
+skeletons. Poisson spacing drops some points: 200 asked gave 113 to 160. With `--view behind` the camera stands
+in side A's rear, so only side B gets reserves (`scatter_skipped` says so); in the default side and high views
+the reserves fall outside the frame unless the camera is widened (`--cam-dist`, `--lens`).
+
 ## Defaults that matter
 
 - **Sizes and length**: 832x480 or 1280x720, 4n+1 frames (49, 65, 81) at 16 fps for Wan; for MiniMax H3
@@ -72,6 +81,10 @@ role in the prompt rather than by its blockout colour.
 - A real or generated set (terrain from `pw.py place`, a splat, a castle) goes in the `.blend` before rendering;
   the depth pass then carries the set too.
 - Cavalry, siege engines, arrows: not built in; add them as objects in the saved `.blend`.
+- Debris, a falling wall, banners and cloaks: bake rigid bodies and cloth headless in the saved `.blend`, then
+  render the passes (recipes `rigidbody-bake`, `cloth-bake` in polywright-blender). Birds or a routed crowd: a
+  Boids particle system follows a stack of rules (goal, avoid, separate, flock, follow the leader); the rule
+  names exist in 5.2, the behaviour is untested here.
 
 ## Two fighters (`pw.py duel`)
 
@@ -113,6 +126,14 @@ kicking, and badly on the floor (a man on his back is a crumpled block); use a r
 Check also that each end state is inside the shot's own frame (L-005).
 
 ## Open
+
+- Animation principles not yet tried on a video model (after Hess, *Tradigital Blender*, in our words; `duel`
+  smoothsteps between held keys today): a wind-up key 2 to 6 frames before each strike, since a pose change with
+  no anticipation can read as a jump cut; hands and feet starting one or two frames apart instead of together; a
+  small drift (1 to 2 cm, 1 to 2 degrees) through a hold, since a frozen mannequin may freeze the person; hand
+  paths bent through an arc instead of a straight line; cloak and blade tip lagging the hand by 2 to 4 frames on
+  fast moves; quick light blades, longer settles after heavy blows, a sharp contact key with an ease out after.
+  Test one at a time against the same take.
 
 - Control strength (H3, 2026-10-13): 0.8 released at 60% of the steps gave the exact formation with uniform,
   slightly clone-like soldiers; 0.6 released at 40% kept the layout and timing with more varied figures, and a

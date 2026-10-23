@@ -13,3 +13,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261011-1, confirmed 2026-10-11
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-11
+
+### L-002 · 2026-10-22 · A tiny broken fixture can be fixed by hand, so it tests the outcome, not the skill
+- Trigger: one of three runs of action-topology never loaded polywright-finish: it parsed the 12-triangle GLB in Python and swapped the flipped triangle itself, correctly.
+- Hypothesis: a fault small enough to read in the raw buffer invites a hand fix.
+- Rule: grade such a case on the fixed file; use a real-size mesh when the case must prove the command is used.
+- Evidence: T-20261022-1
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22

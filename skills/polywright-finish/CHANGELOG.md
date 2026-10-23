@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261022-1 · 2026-10-22 · topology.md, topology checks, Rigify and Smooth by Angle export rules
+- because: books track 7 (Packt *Squeaky Clean Topology in Blender*; Conlan ch. 4; *Blender 3D By Example*); L-002; T-20261022-1
+- files: references/topology.md (new), SKILL.md (links, Step 1, Step 3 row for meshes that bend, Step 5 Rigify, Step 6 Smooth by Angle), evals/evals.json (action-topology), tests/fixtures/flipped.glb
+- Topology rules for meshes that bend, shade and texture well, with the `inspect --topology` fields and their fixes; decimation only for static props; a Rigify rig exports 278 of 706 bones even deform-only; unapplied Smooth by Angle comes out all smooth in glTF, FBX and OBJ.
+
 ### C-20261017-3 · 2026-10-17 · references/unity.md: making and finishing models for Unity
 - because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); R-20261017-3
 - files: references/unity.md (new); SKILL.md intro (pointer to the three engine pages); references/engines.md Unity (link, LOD siblings in one FBX)

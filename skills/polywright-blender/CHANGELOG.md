@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261022-1 · 2026-10-22 · 2.7x-era traps, two recipe files, bake and output rules
+- because: books track 7 (Conlan, *The Blender Python API*; Packt Geometry Nodes; Pearson, *Learn Blender Simulations the Right Way*; van Gumster, *Blender All-in-One For Dummies*; Simonds, *Blender Master Class*; *Blender 3D By Example*; Brito); L-007, L-008
+- files: references/bpy-api-traps.md (new section "Code from 2.7x-era books and tutorials"), references/bpy-recipes-scenes.md (new: gn-scatter, passes-one-render, clay-override, line-art, encode-mp4), references/bpy-recipes-physics.md (new: rigidbody-bake, cloth-bake, rigify-export, volume-remesh), SKILL.md (Depth links, Step 2 bake rule, Step 3 two rows, Step 4), tests/test_recipes.py (reads every bpy-recipes*.md)
+- Sixteen trap rows probed on 5.2.1, among them `transform_apply(scale=True)` also applying location (the rigid-body recipe's box fell through the floor until it was fixed). Nine new recipes, each asserting its own result; three mutation-checked. 20 recipes pass. The recipes were split in two files so neither crosses the 3,500-token reference line.
+
 ### C-20261017-2 · 2026-10-17 · Private names and machine paths generalised
 - because: user request (public repository: no private project names, no person's name but the author credit, no machine paths; AGENTS.md)
 - files: LEARNINGS.md L-003 to L-006; CHANGELOG.md C-20261012-1; TESTS.md
