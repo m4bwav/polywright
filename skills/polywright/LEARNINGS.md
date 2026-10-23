@@ -101,3 +101,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261022-4; blue mask pixels 13,710 to 24,587 behind, red unchanged after the skip.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-012 · 2026-10-23 · crowd.blend holds only the last frame's pose: render extra passes inside the frame loop
+- Trigger: a Mist pass rendered afterwards from `crowd --save-blend` came out as 73 copies of the last frame. `crowd` poses every figure from Python frame by frame; nothing is keyframed, and the saved file keeps the final pose and the default 250-frame range.
+- Hypothesis: the crowd's motion lives in pw_bpy's loop, not in the .blend.
+- Rule: for a pass `crowd` does not write (Mist), run the crowd action with that pass added inside the per-frame render: a wrapper that replaces `pw_bpy.render_depth` with one that also enables the Mist pass and a File Output node at the shot's near and far, renames `m_Mist.png` to the frame's name after each render, then calls `pw_bpy.main()`. The depth frames stayed identical byte for byte. A built-in `--passes mist` is the cleaner fix.
+- Evidence: depth test 2026-10-23 (73 frames, 608x352, Blender 5.2.1, 29 s for depth and Mist together)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
