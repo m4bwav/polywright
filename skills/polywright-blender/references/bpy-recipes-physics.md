@@ -64,24 +64,28 @@ build one from the DEF bones, or start from the plain metarig, Mixamo or AccuRIG
 
 ```python
 # recipe: rigify-export
-import addon_utils, bpy, os, tempfile
+import bpy, importlib.util, os, tempfile
 OUT = os.environ.get("PW_OUT", tempfile.gettempdir())
-bpy.ops.wm.read_factory_settings(use_empty=True)
-addon_utils.enable("rigify", default_set=True)
-bpy.ops.object.armature_human_metarig_add(); meta = bpy.context.active_object
-bpy.ops.pose.rigify_generate()
-rig = next(o for o in bpy.data.objects if o.type == "ARMATURE" and o is not meta)
-deform, total = sum(1 for b in rig.data.bones if b.use_deform), len(rig.data.bones)
-for o in bpy.context.scene.objects:
-    o.select_set(o is rig)
-bpy.context.view_layer.objects.active = rig
-path = os.path.join(OUT, "rig.fbx")
-bpy.ops.export_scene.fbx(filepath=path, use_selection=True, object_types={"ARMATURE"}, use_armature_deform_only=True,
-                         add_leaf_bones=False)
-bpy.ops.wm.read_factory_settings(use_empty=True); bpy.ops.import_scene.fbx(filepath=path)
-back = sum(len(o.data.bones) for o in bpy.data.objects if o.type == "ARMATURE")
-assert back > deform, (back, deform)                              # the caveat: more than the deform set
-print("[pw] ok rigify", total, "bones,", deform, "deform,", back, "after a deform-only FBX export")
+if importlib.util.find_spec("addon_utils") is None:               # the bpy module from PyPI ships no add-ons
+    print("[pw] ok rigify skipped: needs the Blender app (bundled Rigify add-on)")
+else:
+    import addon_utils
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    addon_utils.enable("rigify", default_set=True)
+    bpy.ops.object.armature_human_metarig_add(); meta = bpy.context.active_object
+    bpy.ops.pose.rigify_generate()
+    rig = next(o for o in bpy.data.objects if o.type == "ARMATURE" and o is not meta)
+    deform, total = sum(1 for b in rig.data.bones if b.use_deform), len(rig.data.bones)
+    for o in bpy.context.scene.objects:
+        o.select_set(o is rig)
+    bpy.context.view_layer.objects.active = rig
+    path = os.path.join(OUT, "rig.fbx")
+    bpy.ops.export_scene.fbx(filepath=path, use_selection=True, object_types={"ARMATURE"},
+                             use_armature_deform_only=True, add_leaf_bones=False)
+    bpy.ops.wm.read_factory_settings(use_empty=True); bpy.ops.import_scene.fbx(filepath=path)
+    back = sum(len(o.data.bones) for o in bpy.data.objects if o.type == "ARMATURE")
+    assert back > deform, (back, deform)                          # the caveat: more than the deform set
+    print("[pw] ok rigify", total, "bones,", deform, "deform,", back, "after a deform-only FBX export")
 ```
 
 ## Volume remesh and smooth merge (prints)
