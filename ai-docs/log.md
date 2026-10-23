@@ -95,3 +95,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - Not built (J1, J7, J8): one-render passes inside `crowd`/`duel`/`lineup`, the animation principles in `duel`, Boids, headless tracking, a `--lines` pass.
 - Checks: check_skills ok; test_pw 56 OK; test_recipes 20 OK; budget YELLOW as before (installed skills folder 668 KB of 800; largest reference still bpy-recipes.md). Evals T-20261022-1: action-scatter 3/3 (baseline also 1/1, the copy holds the repo), action-topology 2/3 (one correct hand fix).
 ## [2026-10-22] index | rebuilt (7 entries)
+
+## [2026-10-23] test | Mist against inverse depth on H3
+- `crowd` (608x352, 73 frames, clash, push) rendered depth; a wrapper added a real Mist pass to the same per-frame Cycles render (depth unchanged byte for byte). Through H3 (0.6/0.4, seeds 11 and 23) the owner picked the Mist render blind both times. film-and-video.md updated; L-012 (crowd.blend holds only the last pose). Owed: `crowd --passes mist` built in.
+## [2026-10-23] index | rebuilt (7 entries)

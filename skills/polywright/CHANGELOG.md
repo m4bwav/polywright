@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261023-1 · 2026-10-23 · Mist against inverse depth tested once on a video model; crowd.blend is the last frame
+- because: L-012; a blind H3 test (cinewright-sets L-007)
+- files: references/film-and-video.md ("Passes the video model reads")
+- The depth line said Mist was untested on a video model. One crowd shot through H3 picked Mist over inverse depth on two seeds. L-012 records that `crowd --save-blend` keeps only the last pose, and how to render Mist inside the frame loop until `crowd` has a Mist pass.
+
 ### C-20261022-4 · 2026-10-22 · crowd --scatter, inspect --topology, convert --fix-winding, MP4 through Blender
 - because: books track 7 (Packt *Procedural 3D Modeling Using Geometry Nodes*; Packt *Squeaky Clean Topology in Blender*; Conlan, *The Blender Python API*, ch. 4; Brito, *Blender for Video Production*); L-010, L-011; T-20261022-1
 - files: scripts/pw.py, scripts/pw_bpy.py (topology_report, fix_winding, scatter_tree, crowd_scatter, act_encode), references/targets.json (topology rules for game, web and AR targets), references/cli.md, references/crowd-blockouts.md ("What pw.py crowd makes", "Extending it", "Open"), references/film-and-video.md ("Passes the video model reads", "Set dressing"), evals/evals.json (action-scatter)
