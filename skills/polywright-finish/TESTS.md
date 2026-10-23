@@ -8,6 +8,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261022-1 · 2026-10-22 · tests/run_evals.py · Windows 11 dev machine · 2/3
+- action-topology · edge case · r1 loaded no skill and fixed the fixture by hand (correct file, no `pw.py` call); r2, r3 pass. Baseline 0/1. Details in the hub's TESTS.md T-20261022-1.
+- led to: L-002
+
 ### T-20261017-2 · 2026-10-17 · tests/run_evals.py, action and outcome cases three runs each, installed 0.2.1 loaded from the checkout; outcome baselines without polywright · Windows 11 dev machine, Blender 5.2.1 · 6/6
 - action-1 3/3, outcome-1 3/3 (trace and answer evidence).
 - Baseline without the skill: outcome-1 3/3. The outcome cases do not discriminate: the model answers them from general knowledge. Sharper outcome cases (polywright-specific facts or commands) are owed.

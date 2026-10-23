@@ -8,6 +8,13 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261022-1 · 2026-10-22 · tests/run_evals.py, action cases three runs each with the checkout loaded, one baseline each without polywright · Windows 11 dev machine, Blender 5.2.1
+- action-scatter (new) 3/3: every run called `pw.py crowd ... --scatter` and read the sheet. Baseline 1/1 too: the throwaway copy holds the repository, and the baseline found `--scatter` in cli.md. Does not discriminate (the known caveat of this harness).
+- polywright-finish action-topology (new) 2/3: r2 and r3 ran `inspect --topology` and `convert --fix-winding`; r1 loaded no skill and fixed the 12-triangle fixture by hand, correctly (finish L-002). Baseline 0/1.
+- Unit suite: test_pw 56 (7 new), test_recipes 20 (9 new); every new check mutation-tested (12 mutations, all caught).
+- Cost $3.73 with the skill, $1.25 baselines.
+- led to: C-20261022-4, polywright-finish L-002
+
 ### T-20261017-2 · 2026-10-17 · tests/run_evals.py, action and outcome cases three runs each, installed 0.2.1 loaded from the checkout; outcome baselines without polywright · Windows 11 dev machine, Blender 5.2.1 · 9/9
 - action-crowd 3/3 by hand (every run called `pw.py crowd --preview` and read sheet.png); action-1 3/3, outcome-1 3/3 (trace and answer evidence).
 - Baseline without the skill: outcome-1 2/3. The outcome cases do not discriminate: the model answers them from general knowledge. Sharper outcome cases (polywright-specific facts or commands) are owed.

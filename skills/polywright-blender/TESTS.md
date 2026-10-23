@@ -8,6 +8,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261022-1 · 2026-10-22 · tests/test_recipes.py · Windows 11, Blender 5.2.1 · 20/20
+- Nine new recipes in bpy-recipes-scenes.md and bpy-recipes-physics.md pass; mutations of three (reversed depth range, unlinked scatter gap, applying location with scale) each fail their recipe.
+- led to: C-20261022-1, L-007
+
 ### T-20261017-2 · 2026-10-17 · tests/run_evals.py, action and outcome cases three runs each, installed 0.2.1 loaded from the checkout; outcome baselines without polywright · Windows 11 dev machine, Blender 5.2.1 · 6/6
 - action-1 3/3, outcome-1 3/3 (trace and answer evidence).
 - Baseline without the skill: outcome-1 3/3. The outcome cases do not discriminate: the model answers them from general knowledge. Sharper outcome cases (polywright-specific facts or commands) are owed.

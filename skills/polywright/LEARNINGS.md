@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-009 · 2026-10-22 · From behind, the default camera merges the enemy line and its reserves into one band; raise it and aim past the enemy
+- Trigger: `pw.py crowd --view behind --action hold --scatter 450 --preview` put the camera 6 m high and 43 m back (30 m default gap). Side A filled the lower half of the frame, and side B with its 221 reserves was a strip about 60 px tall where the scattered reserves could not be told from the formed ranks. `--cam-height 12 --lens 45 --gap 20` separated them, but tilted so far down that the reserves touched the top edge and there was no horizon.
+- Hypothesis: the behind view aims at the battle line (x 0, z 1), so the depth behind the enemy, where `--scatter` puts the reserves, shrinks to a few rows of pixels. Height opens up that depth; aiming beyond the enemy brings the horizon back.
+- Rule: for a shot from behind one army toward enemy reserves, start from `--gap 20 --cam=-32,16.5,9 --aim=14,16.5,0 --lens 40` (y = the frontage centre the command reports). That gives a horizon near the top, your own ranks across the bottom, then the enemy's formed line and the loose reserves behind it, separated by the gap. `--scatter` yields about 40 percent of what you ask: 450 gave 221, 650 gave 259.
+- Evidence: the 2026-10-22 preview in pw-eval-mr7nfrh6/reserves (the README there has the commands and the review). Second run the same day (pw-eval-l64xbjxo/reserves): a lower, closer framing also works when your own ranks should loom large, `--gap 16 --cam=-21,16.5,4.5 --aim 14,16.5,0 --lens 45` (horizon at about a quarter from the top, enemy line across the full width). But there the reserves sit flush on the last rank and read as a deeper formation; 6.5 m high from 22 m back showed only helmets and almost black enemy depth. 450 asked gave 240. A `--scatter-offset` (space between the last rank and the reserves) is worth adding. Third run (pw-eval-ybkwc8ep/reserves, same day): `--gap 18 --cam=-24,16.5,6.5 --aim=16,16.5,-1 --lens 35 --far 60` put helmeted backs across the bottom third and the loose reserves visibly behind the enemy's formed line in clay; aiming below the ground (z -1) is what brought our ranks back in. Enemy and reserves still sit at grey 30 to 50 of 255 in depth: inverse depth spends the range on the near ranks. 450 asked gave 221.
+- Scope: skill (pw.py crowd behind view and --scatter)
+- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-22
+
 ### L-008 · 2026-10-19 · A duel's depth or Canny passes hold where the fighters stand and which way they face, but not a low pose
 - Trigger: a film's batch rendered `pw.py duel` passes as the video model's control (thick-blade depth 0.8/0.6 on close two-shots, the clay's Canny 0.6/0.4 on a high wide). Over-the-shoulder two-shots that had drifted to face the lens held their framing and a sword's length on both takes. But a fighter posed kneeling came out standing in both takes, a dagger posed in the back came out held upright in front of the chest, and two mannequins lying one across the other came out as two men standing in one take and one standing in the other. A guide still with the two bodies lying gave exactly two lying bodies on both seeds (field lesson 146).
 - Hypothesis: the passes' silhouettes say where a body is, how big and which way it faces; the prompt and the full-length character references decide its pose, and a standing figure fits a low silhouette.
@@ -77,3 +85,19 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: 2026-10-12 film session: the spear's build, render and camera-match scripts and sheets v1 to v5c, kept in the owner's private notes; pw.py match reproduced the hand-rolled solve exactly (aim 720,404; yaw 31.9, pitch 5.88).
 - Scope: skill (pw.py, hub)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-12
+
+### L-010 · 2026-10-22 · Recalculating normals fixes AI meshes' flipped faces, but only on welded topology
+- Trigger: `inspect --topology` found winding mismatches in 9 of 13 image-to-3D meshes; Blender's recalculation cleared them only after merging split vertices, which loses UV seams and split normals.
+- Hypothesis: glTF splits vertices per face, so a face has no neighbours to agree with until positions are welded.
+- Rule: orient faces on welded positions and flip the minority per connected part, keeping the vertices (`convert --fix-winding`).
+- Evidence: C-20261022-4; 288 and 1,030 faces flipped on two real meshes, mismatches to 0, UV spread unchanged.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-011 · 2026-10-22 · A scatter behind the far side shows only in some framings
+- Trigger: `crowd --scatter 200` changed no mask pixels in the side and high views; in the behind view side A's reserves crowded the lens.
+- Hypothesis: the default cameras frame the armies tightly; the behind camera stands inside side A's rear.
+- Rule: reserves read from the behind view (the enemy's) or a widened camera; skip a side whose rear holds the camera.
+- Evidence: C-20261022-4; blue mask pixels 13,710 to 24,587 behind, red unchanged after the skip.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
