@@ -51,8 +51,9 @@ judged until these pass.
 
 - Smooth shading across a 90 degree corner shades wrong. Bevel the edge, mark it sharp, or smooth by angle. In
   Blender 4.1 and later, Smooth by Angle is a Geometry Nodes modifier: export with modifiers applied
-  (`export_apply=True` for glTF, `use_mesh_modifiers=True` for FBX) or write the sharp edges into the mesh with
-  `mesh.set_sharp_from_angle(angle=...)`.
+  (`export_apply=True` for glTF, `use_mesh_modifiers=True` for FBX, `apply_modifiers=True` for OBJ) or write the
+  sharp edges into the mesh with `mesh.set_sharp_from_angle(angle=...)`. Unapplied, the exporters drop it and the
+  whole mesh comes out smooth: a 32-sided cylinder left 64 distinct corners instead of 128 (5.2.1, 2026-10-22).
 - On flat panels, loops that carry no shape only cost triangles: remove them.
 - No coplanar overlapping faces in a kitbashed set or a blockout: they flicker in renders and in clay, depth and
   edge passes. Nudge one surface, delete the hidden one, or build without the overlap.

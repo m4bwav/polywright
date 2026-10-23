@@ -71,8 +71,8 @@ off (feet slide) and AccuRIG importing once at 0.01 scale: check scale and pivot
 | video-blockout | GLB or .blend at real scale, plus turntables and depth/normal passes (recipes) | hand to the video plugin (cinewright) |
 | commerce-gltf | GLB, real size, origin bottom centre, triangles only | `check --target commerce-gltf` |
 
-Smooth by Angle is a Geometry Nodes modifier in Blender 4.1 and later: export with modifiers applied or the
-shading goes faceted. Record each output: `pw.py manifest <dir> --add-output out/<file> --target <t> --inspect`.
+Smooth by Angle is a Geometry Nodes modifier in Blender 4.1 and later: export with modifiers applied, or the
+hard edges come out smoothed over (glTF, FBX and OBJ alike, checked on 5.2.1). Record each output: `pw.py manifest <dir> --add-output out/<file> --target <t> --inspect`.
 
 ## Maintenance
 
