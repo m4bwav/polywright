@@ -157,6 +157,196 @@ def mesh_stats(obj, me, deep=True):
     return st
 
 
+def topology_report(me):
+    """Face sides, poles, winding, stacked faces, loose parts and UV texel spread, on welded positions (glTF and
+    STL split vertices per face). A winding mismatch is an edge two faces walk the same way: a flipped face,
+    which a game or web renderer culls into a hole. Poles count interior vertices with other than four edges;
+    they matter on quad meshes that bend (Squeaky Clean Topology: five edges at most near joints)."""
+    nf = len(me.polygons)
+    if not nf:
+        return {}
+    co = np.empty(len(me.vertices) * 3, dtype=np.float64)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    span = float(np.ptp(co, axis=0).max()) if len(co) else 1.0
+    _, w = np.unique(np.round(co / max(span * 1e-6, 1e-12)).astype(np.int64), axis=0, return_inverse=True)
+    w = w.reshape(-1)
+    nv = int(w.max()) + 1
+    lt = np.empty(nf, dtype=np.int64)
+    ls = np.empty(nf, dtype=np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    me.polygons.foreach_get("loop_start", ls)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    lw = w[lv]
+    nxt = np.arange(len(lw)) + 1
+    nxt[ls + lt - 1] = ls
+    a, b = lw, lw[nxt]
+    a, b = a[a != b], b[a != b]
+    uk, inv, cnt = np.unique(np.minimum(a, b) * nv + np.maximum(a, b), return_inverse=True, return_counts=True)
+    fwd = np.bincount(inv.reshape(-1), weights=(a < b).astype(np.float64), minlength=len(uk))
+    two = cnt == 2
+    e0, e1 = uk // nv, uk % nv
+    val = np.bincount(e0, minlength=nv) + np.bincount(e1, minlength=nv)
+    border = np.zeros(nv, bool)
+    border[e0[~two]] = border[e1[~two]] = True
+    used = np.zeros(nv, bool)
+    used[lw] = True
+    inner = used & ~border
+    vals, vc = np.unique(val[inner], return_counts=True)
+    # faces with the same corners: double-sided copies or stacked faces, which z-fight
+    small = lt <= 4
+    pad = np.full((nf, 4), -1, dtype=np.int64)
+    for k in range(4):
+        m = small & (lt > k)
+        pad[m, k] = lw[ls[m] + k]
+    keys = np.sort(pad[small], axis=1)
+    dup = len(keys) - len(np.unique(keys, axis=0)) if len(keys) else 0
+    seen = set()
+    for i in np.nonzero(~small)[0].tolist():
+        s = tuple(sorted(lw[ls[i]:ls[i] + lt[i]].tolist()))
+        dup += s in seen
+        seen.add(s)
+    me.calc_loop_triangles()
+    nt = len(me.loop_triangles)
+    tv = np.empty(nt * 3, dtype=np.int64)
+    tp = np.empty(nt, dtype=np.int64)
+    me.loop_triangles.foreach_get("vertices", tv)
+    me.loop_triangles.foreach_get("polygon_index", tp)
+    P = co[tv.reshape(-1, 3)]
+    farea = np.bincount(tp, weights=0.5 * np.linalg.norm(np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]), axis=1), minlength=nf)
+    el = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("edge_index", el)
+    ev = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", ev)
+    rep = {"tris": int((lt == 3).sum()), "quads": int((lt == 4).sum()), "ngons": int((lt > 4).sum()),
+           "quad_share": round(float((lt == 4).mean()), 3),
+           "poles": {str(int(k)): int(c) for k, c in zip(vals, vc) if k != 4},
+           "max_pole_valence": int(val[inner].max()) if inner.any() else 0,
+           "winding_mismatch": int((two & ((fwd == 0) | (fwd == 2))).sum()),
+           "duplicate_faces": int(dup), "zero_area_faces": int((farea <= span * span * 1e-12).sum()),
+           "loose_edges": int(len(me.edges) - len(np.unique(el))),
+           "loose_verts": int(len(me.vertices) - len(np.unique(ev)))}
+    if me.uv_layers.active and nt:
+        uv = np.empty(len(me.loops) * 2, dtype=np.float64)
+        me.uv_layers.active.data.foreach_get("uv", uv)
+        tl = np.empty(nt * 3, dtype=np.int64)
+        me.loop_triangles.foreach_get("loops", tl)
+        U = uv.reshape(-1, 2)[tl.reshape(-1, 3)]
+        d1, d2 = U[:, 1] - U[:, 0], U[:, 2] - U[:, 0]
+        fuv = np.bincount(tp, weights=0.5 * np.abs(d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0]), minlength=nf)
+        ok = (farea > 0) & (fuv > 0)
+        rep["uv_area"] = round(float(fuv.sum()), 4)
+        rep["uv_zero_faces"] = int((fuv <= 0).sum())
+        if ok.any():
+            # texel density per face against the mesh's mean (1.0 = even); percentiles weighted by surface area,
+            # so seam slivers do not decide
+            ratio = (fuv[ok] / fuv[ok].sum()) / (farea[ok] / farea[ok].sum())
+            order = np.argsort(ratio)
+            cw = np.cumsum(farea[ok][order])
+            cw /= cw[-1]
+            pick = lambda q: float(ratio[order][min(int(np.searchsorted(cw, q)), len(ratio) - 1)])
+            p5, p95 = pick(0.05), pick(0.95)
+            rep.update(uv_texel_p5=round(p5, 3), uv_texel_p95=round(p95, 3), uv_spread=round(p95 / p5, 2) if p5 > 0 else None)
+    rep["area"] = float(farea.sum())
+    return rep
+
+
+def fix_winding(obj):
+    """Flip the faces that wind against their neighbours, on welded positions, without merging vertices (so UVs
+    and split normals stay). Per connected part the larger surface keeps its winding. Returns faces flipped."""
+    me = obj.data
+    nf = len(me.polygons)
+    if not nf:
+        return 0
+    co = np.empty(len(me.vertices) * 3, dtype=np.float64)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    span = float(np.ptp(co, axis=0).max()) if len(co) else 1.0
+    _, w = np.unique(np.round(co / max(span * 1e-6, 1e-12)).astype(np.int64), axis=0, return_inverse=True)
+    w = w.reshape(-1)
+    nv = int(w.max()) + 1
+    lt = np.empty(nf, dtype=np.int64)
+    ls = np.empty(nf, dtype=np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    me.polygons.foreach_get("loop_start", ls)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    lw = w[lv]
+    nxt = np.arange(len(lw)) + 1
+    nxt[ls + lt - 1] = ls
+    fl = np.repeat(np.arange(nf), lt)
+    a, b = lw, lw[nxt]
+    keep = a != b
+    a, b, fl = a[keep], b[keep], fl[keep]
+    _, inv, cnt = np.unique(np.minimum(a, b) * nv + np.maximum(a, b), return_inverse=True, return_counts=True)
+    inv = inv.reshape(-1)
+    order = np.argsort(inv, kind="stable")
+    start = np.concatenate([[0], np.cumsum(cnt)[:-1]])[cnt == 2]
+    f1, f2 = fl[order][start], fl[order][start + 1]
+    d = (a < b)[order]
+    same = (d[start] == d[start + 1]).astype(np.int8)  # same walk: the two faces disagree
+    adj = [[] for _ in range(nf)]
+    for x, y, s in zip(f1.tolist(), f2.tolist(), same.tolist()):
+        if x != y:
+            adj[x].append((y, s))
+            adj[y].append((x, s))
+    me.calc_loop_triangles()
+    tv = np.empty(len(me.loop_triangles) * 3, dtype=np.int64)
+    tp = np.empty(len(me.loop_triangles), dtype=np.int64)
+    me.loop_triangles.foreach_get("vertices", tv)
+    me.loop_triangles.foreach_get("polygon_index", tp)
+    P = co[tv.reshape(-1, 3)]
+    area = np.bincount(tp, weights=np.linalg.norm(np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]), axis=1), minlength=nf).tolist()
+    flip = [-1] * nf
+    out = []
+    for seed in range(nf):
+        if flip[seed] >= 0:
+            continue
+        flip[seed] = 0
+        part, stack = [seed], [seed]
+        while stack:
+            f = stack.pop()
+            for g, s in adj[f]:
+                if flip[g] < 0:
+                    flip[g] = flip[f] ^ s
+                    part.append(g)
+                    stack.append(g)
+        a1 = sum(area[f] for f in part if flip[f])
+        if a1 * 2 > sum(area[f] for f in part):
+            out += [f for f in part if not flip[f]]
+        else:
+            out += [f for f in part if flip[f]]
+    for f in out:
+        me.polygons[f].flip()
+    me.update()
+    return len(out)
+
+
+def topology_total(reps):
+    """One report for the file: counts summed, poles merged, UV spread of the worst object that holds at least
+    2% of the surface (each object has its own UV space)."""
+    reps = [r for r in reps if r]
+    if not reps:
+        return {}
+    tot = {k: sum(r[k] for r in reps) for k in ("tris", "quads", "ngons", "winding_mismatch", "duplicate_faces",
+                                                 "zero_area_faces", "loose_edges", "loose_verts")}
+    faces = tot["tris"] + tot["quads"] + tot["ngons"]
+    tot["quad_share"] = round(tot["quads"] / float(faces), 3) if faces else 0.0
+    poles = {}
+    for r in reps:
+        for k, c in r["poles"].items():
+            poles[k] = poles.get(k, 0) + c
+    tot["poles"] = dict(sorted(poles.items(), key=lambda kv: int(kv[0])))
+    tot["max_pole_valence"] = max(r["max_pole_valence"] for r in reps)
+    area = sum(r["area"] for r in reps) or 1.0
+    uv = [r for r in reps if r.get("uv_spread") and r["area"] >= 0.02 * area]
+    if uv:
+        worst = max(uv, key=lambda r: r["uv_spread"])
+        tot.update(uv_spread=worst["uv_spread"], uv_texel_p5=worst["uv_texel_p5"], uv_texel_p95=worst["uv_texel_p95"])
+    return tot
+
+
 def select_only(objs, active=None):
     for o in bpy.context.scene.objects:
         o.select_set(False)
@@ -255,11 +445,15 @@ def act_inspect(p):
     objs = load(p["file"])
     deep = p.get("deep", True)
     dg = bpy.context.evaluated_depsgraph_get()
-    rows = []
+    rows, topo = [], []
     for o in objs:
         oe = o.evaluated_get(dg)
         me = oe.to_mesh()
         rows.append(mesh_stats(o, me, deep))
+        if p.get("topology"):
+            t = topology_report(me)
+            topo.append(t)
+            rows[-1]["topology"] = {k: v for k, v in t.items() if k != "area"}
         oe.to_mesh_clear()
     lo, hi = bounds(objs)
     dims = [hi[i] - lo[i] for i in range(3)]
@@ -292,6 +486,8 @@ def act_inspect(p):
             res["volume"] = round(sum(r.get("volume", 0) for r in rows), 6)
             res["inside_out"] = [r["name"] for r in rows if r.get("inside_out")]
     res["object_rows"] = rows[: p.get("max_rows", 25)]
+    if p.get("topology"):
+        res["topology"] = topology_total(topo)
     if p.get("thickness_min"):
         res["thickness"] = wall_thickness(objs, float(p["thickness_min"]), int(p.get("thickness_samples", 20000)))
     return res
@@ -710,7 +906,7 @@ def act_convert(p):
         else:
             notes.append("not levelled: %s" % info.get("error"))
         p["_level"] = info
-    if p.get("apply") or p.get("join") or p.get("uv") or p.get("size_m") or p.get("ground") or p.get("center") or p.get("max_tris") or p.get("ratio"):
+    if p.get("apply") or p.get("join") or p.get("uv") or p.get("size_m") or p.get("ground") or p.get("center") or p.get("max_tris") or p.get("ratio") or p.get("fix_winding"):
         objs = flatten_hierarchy()
         notes.append("hierarchy flattened, transforms applied, non-mesh objects removed")
     if p.get("join") and len(objs) > 1:
@@ -738,6 +934,10 @@ def act_convert(p):
             n = len(o.data.loop_triangles)
             target = int(n * float(p["ratio"])) if p.get("ratio") else int(n * min(1.0, float(p["max_tris"]) / max(total, 1)))
             decimate_to(o, max(target, 4))
+    if p.get("fix_winding"):
+        n = sum(fix_winding(o) for o in objs)
+        notes.append("%d face(s) flipped to agree with their neighbours" % n)
+        p["_flipped"] = n
     if p.get("uv"):
         for o in objs:
             select_only([o], o)
@@ -755,6 +955,8 @@ def act_convert(p):
     res.update({"tris": tris, "dims": [round(hi[i] - lo[i], 6) for i in range(3)], "notes": notes})
     if "_level" in p:
         res["level"] = p["_level"]
+    if "_flipped" in p:
+        res["faces_flipped"] = p["_flipped"]
     return res
 
 

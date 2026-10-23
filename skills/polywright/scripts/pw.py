@@ -5,10 +5,11 @@ Standard library only (Python 3.9+), Windows, macOS and Linux. Blender does the 
 commands that need it say so in the JSON when Blender is missing instead of crashing.
 
   python pw.py doctor                                  what is installed: Blender, Python libs, CLIs, ComfyUI hosts
-  python pw.py inspect FILE [--fast]                   tris, objects, size, materials, images, UVs, watertight, parts
+  python pw.py inspect FILE [--fast] [--topology]      tris, objects, size, materials, images, UVs, watertight, parts
+                                                       (--topology: quads, poles, flipped faces, stacked faces, UV spread)
   python pw.py render FILE --out DIR [--views ..] [--color clay|material|texture] [--size 640]
                                                        orthographic views + contact sheet for a vision model to judge
-  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--level | --tilt-deg D] [--join] [--max-tris N] [--draco]
+  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--level | --tilt-deg D] [--join] [--max-tris N] [--fix-winding] [--draco]
   python pw.py lods IN --out DIR [--ratios 1,0.5,0.25,0.1] [--format glb]
   python pw.py printable IN OUT.stl --size-mm 100 [--wall-mm 1] [--voxel-mm V] [--base-cut-mm 0.6] [--drop a,b] [--seal-mm 1] [--hollow]
   python pw.py union IN OUT.stl                        boolean-union closed parts into one solid
@@ -326,12 +327,12 @@ def trimesh_inspect(path):
     return res
 
 
-def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000):
+def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000, topology=False):
     if not os.path.isfile(path):
         return {"ok": False, "error": "file not found: %s" % path}
     ext = os.path.splitext(path)[1].lower()
     if backend() and ext != ".3mf":
-        params = {"file": os.path.abspath(path), "deep": not fast}
+        params = {"file": os.path.abspath(path), "deep": not fast, "topology": topology}
         if thickness_min:
             params.update(thickness_min=thickness_min, thickness_samples=thickness_samples)
         res = bpy_action("inspect", params)
@@ -352,12 +353,15 @@ def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000):
                 return {"ok": False, "error": str(e)}
         except Exception as e:
             return {"ok": False, "error": "trimesh failed: %s" % e}
+        if topology:
+            res["topology"] = None
+            res["topology_note"] = "the topology report needs Blender (pw.py doctor)"
     res["file_bytes"] = os.path.getsize(path)
     return res
 
 
 def cmd_inspect(a):
-    res = inspect_file(a.file, a.fast)
+    res = inspect_file(a.file, a.fast, topology=a.topology)
     return emit(res, 0 if res.get("ok") else 1)
 
 
@@ -501,7 +505,7 @@ def cmd_convert(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "scale": a.scale, "size_m": a.size_m,
               "ground": a.ground, "center": a.center, "join": a.join, "max_tris": a.max_tris, "ratio": a.ratio,
               "apply": a.apply, "uv": a.uv, "draco": a.draco, "export_scale": a.export_scale, "fbx_bake_axes": a.fbx_bake_axes,
-              "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg}
+              "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg, "fix_winding": a.fix_winding}
     res = bpy_action("convert", params)
     return emit(res, 0 if res.get("ok") else 1)
 
@@ -569,6 +573,35 @@ def load_targets():
         return json.load(f)
 
 
+TOPOLOGY_RULES = ("max_winding_mismatch", "max_duplicate_faces", "max_ngons", "max_pole_valence", "max_uv_spread")
+
+
+def topology_rule(name, limit, t):
+    """(passed, detail) for one topology rule of a target. All are warnings: the fix is a modelling call."""
+    if name == "max_winding_mismatch":
+        n = t.get("winding_mismatch", 0)
+        return n <= limit, ("%d edges where two faces wind against each other (flipped faces: a renderer that culls back "
+                            "faces shows holes there); pw.py convert --fix-winding flips them back" % n)
+    if name == "max_duplicate_faces":
+        n = t.get("duplicate_faces", 0)
+        return n <= limit, "%d faces share all corners with another face (double-sided copies or stacked faces: they z-fight and cost twice)" % n
+    if name == "max_ngons":
+        n = t.get("ngons", 0)
+        return n <= limit, "%d faces with more than four sides (importers triangulate them their own way)" % n
+    if name == "max_pole_valence":
+        if t.get("quad_share", 0) < 0.5:
+            return "pass", "not judged: %.0f%% quads; poles matter on quad meshes that bend" % (100 * t.get("quad_share", 0))
+        v = t.get("max_pole_valence", 0)
+        return v <= limit, "largest pole %d edges (limit %d near joints of a mesh that bends); poles %s" % (v, limit, t.get("poles"))
+    if name == "max_uv_spread":
+        s = t.get("uv_spread")
+        if s is None:
+            return "pass", "no UVs to judge"
+        return s <= limit, ("texel density p95/p5 = %.2f (limit %s, uncalibrated: 3 of 10 real UV-mapped meshes went over 2.5); "
+                            "uneven density blurs some parts and wastes texture on others" % (s, limit))
+    return "unchecked", "unknown rule"
+
+
 def cmd_check(a):
     targets = load_targets()
     if a.list or not a.target:
@@ -577,8 +610,9 @@ def cmd_check(a):
         return emit({"ok": False, "error": "unknown target %s" % a.target, "known": list(targets["targets"])}, 2)
     t = targets["targets"][a.target]
     rules = t.get("rules", {})
+    topo_rules = [k for k in TOPOLOGY_RULES if k in rules]
     info = inspect_file(a.file, thickness_min=rules.get("min_feature") if not a.no_thickness else None,
-                        thickness_samples=a.thickness_samples)
+                        thickness_samples=a.thickness_samples, topology=bool(topo_rules))
     if not info.get("ok"):
         return emit(info, 1)
     unit = t.get("units", "m")
@@ -622,6 +656,13 @@ def cmd_check(a):
                  "%.1f%% of the surface is thinner than %s %s (thinnest %s, 5th percentile %s; %d sample points)%s" % (
                      100 * th["thin_fraction"], rules["min_feature"], unit, th.get("thinnest"), th.get("p05"), th["samples"],
                      ": " + spots if spots else ""), "warn")
+    topo = info.get("topology")
+    if topo_rules and not topo:
+        rule("topology", "unchecked", info.get("topology_note") or "no faces to check", "info")
+    elif topo_rules:
+        for k in topo_rules:
+            passed, detail = topology_rule(k, rules[k], topo)
+            rule(k, passed, detail, "warn")
     if "max_file_mb" in rules:
         mb = info.get("file_bytes", 0) / 1048576.0
         rule("max_file_mb", mb <= rules["max_file_mb"], "%.2f MB (limit %s MB)" % (mb, rules["max_file_mb"]), "warn")
@@ -632,7 +673,7 @@ def cmd_check(a):
         rule("real_scale", 0.9 <= ratio <= 1.1, "longest side %.4g %s vs expected %.4g %s (x%.3g)" % (longest, unit, want, unit, ratio))
     status = "fail" if any(r["status"] == "fail" for r in results) else "warn" if any(r["status"] == "warn" for r in results) else "pass"
     return emit({"ok": status != "fail", "target": a.target, "status": status, "results": results, "advice": t.get("advice", []),
-                 "inspect": {k: info.get(k) for k in ("tris", "objects", "dims", "watertight", "parts", "materials", "max_image_px", "backend", "blender", "thickness")}},
+                 "inspect": {k: info.get(k) for k in ("tris", "objects", "dims", "watertight", "parts", "materials", "max_image_px", "backend", "blender", "thickness", "topology") if k in info}},
                 0 if status != "fail" else 1)
 
 
@@ -2474,6 +2515,7 @@ def main(argv=None):
     p = sub.add_parser("inspect", help="report on a model file")
     p.add_argument("file")
     p.add_argument("--fast", action="store_true", help="skip topology checks (edges, parts, volume)")
+    p.add_argument("--topology", action="store_true", help="also report quads, poles, flipped and stacked faces, loose parts, UV texel spread (Blender)")
     p.set_defaults(fn=cmd_inspect)
 
     p = sub.add_parser("render", help="orthographic views and a contact sheet")
@@ -2525,6 +2567,7 @@ def main(argv=None):
     p.add_argument("--max-tris", type=int)
     p.add_argument("--ratio", type=float, help="decimate ratio 0..1")
     p.add_argument("--uv", action="store_true", help="Smart UV Project every mesh (generated meshes have no UVs)")
+    p.add_argument("--fix-winding", action="store_true", help="flip faces that wind against their neighbours (the flipped faces inspect --topology counts), keeping UVs")
     p.add_argument("--draco", action="store_true")
     p.add_argument("--export-scale", type=float, default=1.0, help="global scale for OBJ/STL/PLY export (1000 for metres to mm)")
     p.add_argument("--fbx-bake-axes", action="store_true", help="FBX: bake the axis change into the mesh (Unity likes this)")

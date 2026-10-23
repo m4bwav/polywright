@@ -411,6 +411,28 @@ class Duel(unittest.TestCase):
         self.assertEqual(code, 2)
 
 
+class TopologyRules(unittest.TestCase):
+    def test_pole_rule_only_judges_quad_meshes(self):
+        tri = {"quad_share": 0.0, "max_pole_valence": 12, "poles": {"12": 1}}
+        quad = {"quad_share": 0.9, "max_pole_valence": 6, "poles": {"6": 3}}
+        self.assertEqual(pw.topology_rule("max_pole_valence", 5, tri)[0], "pass")
+        self.assertFalse(pw.topology_rule("max_pole_valence", 5, quad)[0])
+        self.assertTrue(pw.topology_rule("max_pole_valence", 6, quad)[0])
+
+    def test_uv_spread_and_winding_rules(self):
+        self.assertFalse(pw.topology_rule("max_uv_spread", 2.5, {"uv_spread": 3.4})[0])
+        self.assertTrue(pw.topology_rule("max_uv_spread", 2.5, {"uv_spread": 1.2})[0])
+        self.assertEqual(pw.topology_rule("max_uv_spread", 2.5, {})[0], "pass")
+        self.assertFalse(pw.topology_rule("max_winding_mismatch", 0, {"winding_mismatch": 3})[0])
+        self.assertTrue(pw.topology_rule("max_winding_mismatch", 0, {"winding_mismatch": 0})[0])
+
+    def test_game_and_web_targets_carry_topology_rules(self):
+        t = pw.load_targets()["targets"]
+        for k in ("game-roblox", "game-unity", "game-unreal", "web-threejs", "ar-usdz", "commerce-gltf"):
+            self.assertEqual(t[k]["rules"].get("max_winding_mismatch"), 0, k)
+        self.assertNotIn("max_winding_mismatch", t["print-fdm"]["rules"])
+
+
 @unittest.skipUnless(pw.backend(), "Blender not found")
 class WithBlender(unittest.TestCase):
     @classmethod
@@ -448,6 +470,58 @@ class WithBlender(unittest.TestCase):
         for k in ("out", "paste", "mask"):
             self.assertTrue(os.path.isfile(res[k]), k)
         self.assertGreaterEqual(res["mask_bbox"][0], 95 - 10)  # the hidden box stays out of the mask
+
+    def write_obj(self, name, verts, faces, uvs=None):
+        path = os.path.join(self.tmp, name)
+        with open(path, "w") as f:
+            for v in verts:
+                f.write("v %g %g %g\n" % v)
+            for t in uvs or []:
+                f.write("vt %g %g\n" % t)
+            for face in faces:
+                f.write("f " + " ".join(("%d/%d" % (i + 1, i + 1)) if uvs else str(i + 1) for i in face) + "\n")
+        return path
+
+    def test_topology_finds_a_flipped_face_and_convert_fixes_it(self):
+        m = pw.Mesh("box", (1, 1, 1))
+        m.v, m.f = pw.prism([(0, 0), (1, 0), (1, 1), (0, 1)], 0, 1)
+        good = os.path.join(self.tmp, "good.glb")
+        pw.write_glb(good, [m])
+        m.f[3] = tuple(reversed(m.f[3]))
+        bad = os.path.join(self.tmp, "flipped.glb")
+        pw.write_glb(bad, [m])
+        code, out = run("inspect", good, "--topology")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["topology"]["winding_mismatch"], 0)
+        self.assertEqual(out["topology"]["tris"], 12)
+        code, out = run("inspect", bad, "--topology")
+        self.assertEqual(out["topology"]["winding_mismatch"], 3)  # the flipped triangle's three edges
+        code, chk = run("check", bad, "--target", "web-threejs")
+        self.assertEqual({r["rule"]: r["status"] for r in chk["results"]}["max_winding_mismatch"], "warn")
+        fixed = os.path.join(self.tmp, "fixed.glb")
+        code, out = run("convert", bad, fixed, "--fix-winding")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["faces_flipped"], 1)
+        code, out = run("inspect", fixed, "--topology")
+        self.assertEqual(out["topology"]["winding_mismatch"], 0)
+        self.assertFalse(out.get("inside_out"))
+
+    def test_topology_counts_stacked_faces_ngons_and_uv_spread(self):
+        quads = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (2, 0, 0), (2, 1, 0)]
+        even = [(0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5), (1, 0), (1, 0.5)]
+        uneven = [(0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5), (0.55, 0), (0.55, 0.5)]  # second quad gets a tenth of the texels
+        faces = [(0, 1, 2, 3), (1, 4, 5, 2)]
+        code, out = run("inspect", self.write_obj("even.obj", quads, faces, even), "--topology")
+        self.assertEqual(code, 0, out)
+        t = out["topology"]
+        self.assertEqual((t["quads"], t["ngons"], t["duplicate_faces"]), (2, 0, 0))
+        self.assertAlmostEqual(t["uv_spread"], 1.0, places=2)
+        code, out = run("inspect", self.write_obj("uneven.obj", quads, faces, uneven), "--topology")
+        self.assertGreater(out["topology"]["uv_spread"], 5)
+        pent = [(0, 0, 0), (1, 0, 0), (1.5, 0.8, 0), (0.5, 1.4, 0), (-0.5, 0.8, 0)]
+        # a double-sided copy: its own vertices on the same spots, wound the other way (the importer drops exact repeats)
+        code, out = run("inspect", self.write_obj("ngon.obj", pent + pent, [(0, 1, 2, 3, 4), (9, 8, 7, 6, 5)]), "--topology")
+        self.assertEqual((out["topology"]["ngons"], out["topology"]["duplicate_faces"]), (2, 1))
 
     def test_inspect(self):
         code, out = run("inspect", self.glb)

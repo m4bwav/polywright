@@ -5,64 +5,76 @@
     "game-roblox": {
       "about": "Roblox MeshPart through the 3D Importer (FBX, OBJ or glTF)",
       "units": "m",
-      "rules": {"max_tris_per_object": 20000, "max_tris": 20000, "max_tris_severity": "warn", "max_materials": 1, "max_image_px": 1024, "require_uvs": true, "forbid_unapplied_scale": true},
+      "rules": {"max_tris_per_object": 20000, "max_tris": 20000, "max_tris_severity": "warn", "max_materials": 1, "max_image_px": 1024, "require_uvs": true, "forbid_unapplied_scale": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_ngons": 0, "max_uv_spread": 2.5},
       "advice": [
         "20,000 triangles per mesh (create.roblox.com specifications, checked 2026-10-11; vendors quote 21,000, test the importer). Split bigger models into several MeshParts.",
         "One material per mesh; SurfaceAppearance takes colour, normal (OpenGL, Y+), roughness, metalness and an optional emissive mask (create.roblox.com surface-appearance, checked 2026-10-17).",
         "Textures upload up to 4096 px, but Roblox's budget tops out at 1024 px per map (about 256 px per 2x2x2 studs); rigid-accessory non-colour maps at most 256 px (create.roblox.com texture-specifications and rigid-accessory specifications, checked 2026-10-17).",
         "1 stud = 0.28 m: a 1.8 m person is about 6.4 studs. Model in studs (Blender Unit System None) or set the Importer's Scale Unit to the file's unit; FBX: Apply Scalings = FBX Unit Scale, Add Leaf Bones off (create.roblox.com blender and importer pages, checked 2026-10-17).",
-        "At most 4 bone influences per vertex, root joint at the origin, no zero-thickness surfaces. CollisionFidelity Box or Hull for props."
+        "At most 4 bone influences per vertex, root joint at the origin, no zero-thickness surfaces. CollisionFidelity Box or Hull for props.",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one. N-gons: engine importers triangulate them each their own way, so triangulate or quad them before export.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "game-unity": {
       "about": "Unity prop or character (GLB through glTFast or FBX)",
       "units": "m",
-      "rules": {"max_tris": 50000, "max_tris_severity": "warn", "max_materials": 4, "max_image_px": 4096, "require_uvs": true, "forbid_unapplied_scale": true},
+      "rules": {"max_tris": 50000, "max_tris_severity": "warn", "max_materials": 4, "max_image_px": 4096, "require_uvs": true, "forbid_unapplied_scale": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_ngons": 0, "max_uv_spread": 2.5},
       "advice": [
         "Y-up, metres. FBX: `pw.py convert` writes Apply Scalings 'FBX Units Scale' and `--fbx-bake-axes` bakes the axis change so the root is not rotated -90 on X; a 1 m cube import test decides (scale 1, rotation 0, 1 m bounds). GLB needs nothing (polywright's own exporter; no Unity page settles FBX All against FBX Units Scale).",
         "Normal maps OpenGL (Y+). URP/HDRP mask maps pack differently from glTF ORM.",
         "LODs: Unity builds an LOD Group automatically only from <name>_LOD0, _LOD1 ... siblings in one FBX; `pw.py lods` writes separate _LODn files, so join them before export, or rely on Unity's import-time Mesh LOD for dense organic static meshes (256 triangles minimum) (Unity 6.6 manual: importing-lod-meshes, mesh-lod-introduction, checked 2026-10-17).",
         "Collision: a simple box, capsule or convex hull, never the render mesh for moving objects; convex MeshCollider hulls at most 255 triangles (Unity manual class-MeshCollider, checked 2026-10-17).",
         "glTFast's editor import uses its own shaders and reads two UV sets: send FBX when the prop needs the project's Lit material or a lightmap UV1 (glTFast 6.14 manual, checked 2026-10-17).",
-        "The prop budget is a project choice: 50k is a generous hero-prop ceiling for desktop; mobile props are often 1k to 10k."
+        "The prop budget is a project choice: 50k is a generous hero-prop ceiling for desktop; mobile props are often 1k to 10k.",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one. N-gons: engine importers triangulate them each their own way, so triangulate or quad them before export.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "game-unreal": {
       "about": "Unreal Engine 5 static mesh (FBX, glTF or USD)",
       "units": "m",
-      "rules": {"max_image_px": 8192, "require_uvs": true, "forbid_unapplied_scale": true},
+      "rules": {"max_image_px": 8192, "require_uvs": true, "forbid_unapplied_scale": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_ngons": 0, "max_uv_spread": 2.5},
       "advice": [
         "Unreal is Z-up and centimetres; the importer converts from metres. Check scale on import.",
         "Nanite (UE 5.8 docs) takes dense opaque and masked static and skeletal meshes, no manual LODs. Not for translucent materials or morph targets: those still need a budget and LODs.",
-        "Normal maps DirectX (Y-): flip the green channel or tick Flip Green Channel. Collision pieces prefixed UCX_."
+        "Normal maps DirectX (Y-): flip the green channel or tick Flip Green Channel. Collision pieces prefixed UCX_.",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one. N-gons: engine importers triangulate them each their own way, so triangulate or quad them before export.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "web-threejs": {
       "about": "three.js, model-viewer or Babylon page (GLB)",
       "units": "m",
-      "rules": {"max_tris": 150000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 10, "require_uvs": true},
+      "rules": {"max_tris": 150000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 10, "require_uvs": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_uv_spread": 2.5},
       "advice": [
         "GLB with meshopt or Draco geometry and KTX2 textures: `gltf-transform optimize in.glb out.glb --compress meshopt --texture-compress ktx2 --join-named false`, then gltf_validator. optimize joins named meshes and flattens the scene by default, which merges the parts code needs (gltf-transform 4.5.1 `optimize -h`: --join-named and --flatten default true, checked 2026-10-17).",
         "1 unit = 1 m, +Y up, front faces +Z (glTF spec). Origin at the bottom centre for product models.",
-        "The 10 MB and 150k triangle figures are a page-weight choice, not a spec; the threewright plugin checks the page itself."
+        "The 10 MB and 150k triangle figures are a page-weight choice, not a spec; the threewright plugin checks the page itself.",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "ar-usdz": {
       "about": "Apple AR Quick Look (USDZ)",
       "units": "m",
-      "rules": {"max_tris": 100000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 25, "require_uvs": true},
+      "rules": {"max_tris": 100000, "max_tris_severity": "warn", "max_image_px": 2048, "max_file_mb": 25, "require_uvs": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_uv_spread": 2.5},
       "advice": [
         "Blender `wm.usd_export` to .usdz with a preview surface and downscaled textures; check with `usdchecker --arkit`.",
-        "About 100k polygons and one set of 2048 px textures is Apple's long-standing guidance (secondary source, 2021); real size, origin on the floor."
+        "About 100k polygons and one set of 2048 px textures is Apple's long-standing guidance (secondary source, 2021); real size, origin on the floor.",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "commerce-gltf": {
       "about": "Product model for e-commerce viewers (Khronos 3D Commerce guidelines)",
       "units": "m",
-      "rules": {"max_image_px": 2048, "max_file_mb": 5, "require_uvs": true, "forbid_unapplied_scale": true},
+      "rules": {"max_image_px": 2048, "max_file_mb": 5, "require_uvs": true, "forbid_unapplied_scale": true, "max_winding_mismatch": 0, "max_duplicate_faces": 0, "max_uv_spread": 2.5},
       "advice": [
         "Real size, 1 unit = 1 m, origin at the bottom centre, triangles only, metalness 0 or 1 (Khronos 3D Commerce, checked 2026-10-11).",
-        "The current guideline text gives no numeric triangle or size presets; 5 MB is the commonly quoted v1.0 figure (secondary)."
+        "The current guideline text gives no numeric triangle or size presets; 5 MB is the commonly quoted v1.0 figure (secondary).",
+        "Topology warnings (pw.py inspect --topology, added 2026-10-22): flipped faces (edges two faces wind the same way) show as holes where the renderer culls back faces (Conlan, The Blender Python API, ch. 4); faces with identical corners z-fight (Procedural 3D Modeling Using Geometry Nodes, troubleshooting); on 22 real meshes, flipped faces were in 9 of 13 AI-generated ones and recalculating normals cleared every one.",
+        "UV texel spread: p95/p5 of each face's texel density against the mesh mean, area-weighted; even density unless a part deliberately gets more (Squeaky Clean Topology in Blender, UV chapter). The 2.5 line is uncalibrated: 3 of 10 real UV-mapped meshes went over it (a UV sphere's poles, Suzanne, one car part)."
       ]
     },
     "print-fdm": {
