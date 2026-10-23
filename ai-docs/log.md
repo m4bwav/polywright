@@ -99,3 +99,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 ## [2026-10-23] test | Mist against inverse depth on H3
 - `crowd` (608x352, 73 frames, clash, push) rendered depth; a wrapper added a real Mist pass to the same per-frame Cycles render (depth unchanged byte for byte). Through H3 (0.6/0.4, seeds 11 and 23) the owner picked the Mist render blind both times. film-and-video.md updated; L-012 (crowd.blend holds only the last pose). Owed: `crowd --passes mist` built in.
 ## [2026-10-23] index | rebuilt (7 entries)
+
+## [2026-10-23] build | crowd --passes mist
+- `mist` is a crowd pass now (mist_output in pw_bpy: Mist pass over the shot's range, 1 - mist, File Output 16-bit grey, set as the compositor only for the Cycles frame, renamed per frame). A 17-frame crowd before and after: depth, mask, clay and pose pixel-identical; file hashes differ even between two runs of the old code (Blender's eXIf chunk, L-013). Contact sheet clipped 16-bit frames to white; fixed. Test `test_crowd_mist_pass_beside_unchanged_depth` (fails when the inversion is removed).
+## [2026-10-23] index | rebuilt (7 entries)

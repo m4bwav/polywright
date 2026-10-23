@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell fill, convert --level, roofs, sibling pointers).
+Last updated 2026-10-23 (crowd --passes mist); before that 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell fill, convert --level, roofs, sibling pointers).
 
 ## State
 
@@ -14,8 +14,9 @@ Last updated 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell
 
 ## Books track 7 (2026-10-22)
 
+- 2026-10-23: `crowd --passes depth,mist` built (L-012 applied, L-013 on comparing PNGs); unreleased.
 - Unreleased on main after the track-7 PR: `crowd --scatter`, `inspect --topology`, `convert --fix-winding`, MP4 through Blender, two recipe files, topology.md. Release (0.4.0) waits for the owner.
-- Open from it: does Mist depth do as well as inverse depth on H3; does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
+- Open from it: Mist on a second shot type (one crowd push-in preferred it on H3); does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
 
 ## Owed
 

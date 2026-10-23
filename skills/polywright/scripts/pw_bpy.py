@@ -1570,9 +1570,32 @@ def render_depth(path, mat, p):
     bpy.context.view_layer.material_override = None
 
 
+def mist_output(out, near, far):
+    """Blender's Mist pass over the shot's one depth range, inverted to near white like the depth pass, written
+    by a File Output node as a 16-bit grey PNG (`m_Mist.png`) after each Cycles render. Returns the node group;
+    set it as the scene's compositor only for the Cycles render."""
+    sc = bpy.context.scene
+    ms = sc.world.mist_settings
+    ms.start, ms.depth, ms.falloff = near, far - near, "LINEAR"
+    sc.view_layers[0].use_pass_mist = True
+    ng = bpy.data.node_groups.new("pw_mist", "CompositorNodeTree")
+    rl, inv = ng.nodes.new("CompositorNodeRLayers"), ng.nodes.new("ShaderNodeMath")
+    inv.operation = "SUBTRACT"
+    inv.inputs[0].default_value = 1.0
+    fo = ng.nodes.new("CompositorNodeOutputFile")
+    fo.directory, fo.file_name = out, "m_"
+    fo.format.media_type, fo.format.file_format = "IMAGE", "PNG"
+    fo.format.color_mode, fo.format.color_depth = "BW", "16"
+    fo.file_output_items.new("FLOAT", "Mist")
+    ng.links.new(rl.outputs["Mist"], inv.inputs[1])
+    ng.links.new(inv.outputs[0], fo.inputs["Mist"])
+    return ng
+
+
 def act_crowd(p):
     """An army blockout and its control passes for a video model, one PNG per frame and pass: depth (inverse
-    depth, near white, one range for the whole shot), mask (side A red, side B blue, all else black), clay (a
+    depth, near white, one range for the whole shot), mist (Blender's Mist pass over the same range, inverted to
+    near white, 16-bit, from the same Cycles render), mask (side A red, side B blue, all else black), clay (a
     lit grey render to repaint as a start frame), and 2D OpenPose joints in joints.json for pw.py to draw."""
     from bpy_extras.object_utils import world_to_camera_view
     reset()
@@ -1663,6 +1686,7 @@ def act_crowd(p):
     for d in passes:
         if d != "pose":
             os.makedirs(os.path.join(out, d), exist_ok=True)
+    mist_ng = mist_output(os.path.join(out, "mist"), near, far) if "mist" in passes else None
     keys = sorted({0, frames // 2, frames - 1}) if p.get("preview") else list(range(frames))
     pose_min = float(p.get("pose_min_px", 40))
     joints_out = []
@@ -1690,8 +1714,14 @@ def act_crowd(p):
             people.sort(key=lambda q: -q[0])  # far first, so near skeletons draw on top
             joints_out.append({"frame": k + 1, "people": people})
         name = "%04d.png" % (k + 1)
-        if "depth" in passes:
-            render_depth(os.path.join(out, "depth", name), depth_mat, p)
+        if "mist" in passes:  # inside this loop: the .blend keeps only the last pose (L-012)
+            sc.compositing_node_group = mist_ng
+        if "depth" in passes or "mist" in passes:
+            dpath = os.path.join(out, "depth" if "depth" in passes else "mist", name)
+            render_depth(dpath, depth_mat, p)
+        if "mist" in passes:
+            sc.compositing_node_group = None
+            os.replace(os.path.join(out, "mist", "m_Mist.png"), os.path.join(out, "mist", name))
         for pas in ("mask", "clay"):
             if pas not in passes:
                 continue

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261023-2 · 2026-10-23 · crowd --passes mist
+- because: L-012 (the Mist verdict on H3), L-013
+- files: scripts/pw.py (cmd_crowd, crowd_sheet, crowd parser), scripts/pw_bpy.py (mist_output, act_crowd), references/film-and-video.md ("Passes the video model reads"), references/cli.md, references/crowd-blockouts.md (outputs table)
+- `mist` joins the crowd passes: Blender's Mist pass over the shot's one depth range, inverted to near white, written as 16-bit grey PNGs by a File Output node inside the per-frame Cycles render, then `mist.mp4`. Depth, mask, clay and pose frames are pixel-identical with or without it; `--passes mist` alone renders the Cycles frame without keeping depth. The sheet scales 16-bit frames instead of clipping them.
+
 ### C-20261023-1 · 2026-10-23 · Mist against inverse depth tested once on a video model; crowd.blend is the last frame
 - because: L-012; a blind H3 test (cinewright-sets L-007)
 - files: references/film-and-video.md ("Passes the video model reads")

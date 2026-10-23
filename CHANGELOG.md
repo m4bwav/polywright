@@ -4,6 +4,7 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+- `pw.py crowd --passes depth,mist`: Blender's Mist pass from the same render as the depth frames, near white, 16-bit, `mist.mp4` beside `depth.mp4`; the depth frames do not change.
 - `pw.py crowd --scatter N`: standing reserves behind each side's last rank, scattered by Geometry Nodes (instances, no added render time); `--scatter-gap`, `--scatter-depth`.
 - `pw.py inspect --topology`: face sides, poles, flipped faces (winding mismatches), stacked faces, loose parts and UV texel spread, on welded positions. `pw.py check` warns on them for the game, web and AR targets. `pw.py convert --fix-winding` flips faces that wind against their neighbours, keeping vertices and UVs.
 - `crowd` and `duel` videos: with no ffmpeg on PATH they are encoded through Blender's own FFmpeg.
