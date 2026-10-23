@@ -1414,6 +1414,101 @@ def crowd_layout(p):
     return figs
 
 
+def scatter_tree(name, bank, gap, density, seed):
+    """Geometry Nodes: Poisson points on the carrier's faces (at least `gap` apart), one child of `bank` per
+    point picked at random, random yaw and scale. Instances stay instances: cheap to render; realize them only
+    for one printable or measurable mesh. The carrier's own faces are not output."""
+    ng = bpy.data.node_groups.new(name, "GeometryNodeTree")
+    ng.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+    ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    N, L = ng.nodes, ng.links
+    gi, go = N.new("NodeGroupInput"), N.new("NodeGroupOutput")
+    pts = N.new("GeometryNodeDistributePointsOnFaces")
+    pts.distribute_method = "POISSON"
+    pts.inputs["Distance Min"].default_value = gap
+    pts.inputs["Density Max"].default_value = density
+    pts.inputs["Seed"].default_value = seed
+    info = N.new("GeometryNodeCollectionInfo")
+    info.inputs["Collection"].default_value = bank
+    info.inputs["Separate Children"].default_value = True
+    info.inputs["Reset Children"].default_value = True
+    inst = N.new("GeometryNodeInstanceOnPoints")
+    inst.inputs["Pick Instance"].default_value = True
+
+    def rnd(kind, lo, hi, s):
+        n = N.new("FunctionNodeRandomValue")
+        n.data_type = kind
+        for sock in n.inputs:
+            if sock.enabled and sock.name in ("Min", "Max", "Seed"):
+                sock.default_value = {"Min": lo, "Max": hi, "Seed": s}[sock.name]
+        return next(o for o in n.outputs if o.enabled)  # the output follows data_type; never index it
+
+    yaw = N.new("ShaderNodeCombineXYZ")
+    L.new(gi.outputs["Geometry"], pts.inputs["Mesh"])
+    L.new(pts.outputs["Points"], inst.inputs["Points"])
+    L.new(info.outputs[0], inst.inputs["Instance"])
+    L.new(rnd("INT", 0, len(bank.objects) - 1, seed + 1), inst.inputs["Instance Index"])
+    L.new(rnd("FLOAT", -0.26, 0.26, seed + 2), yaw.inputs["Z"])
+    L.new(yaw.outputs[0], inst.inputs["Rotation"])
+    L.new(rnd("FLOAT", 0.94, 1.06, seed + 3), inst.inputs["Scale"])
+    L.new(inst.outputs[0], go.inputs["Geometry"])
+    return ng
+
+
+def crowd_scatter(p, meshes, kit):
+    """Background figures behind each side's last rank: a few standing variants per side, joined into one mesh
+    each and scattered by Geometry Nodes (Poisson, a minimum gap). They hold still and draw no skeletons.
+    A side whose rear the camera stands in (the behind view) gets none: its figures would block the lens.
+    Returns ({side: (carrier object, variant objects)}, [skipped sides])."""
+    n = int(p.get("scatter", 0))
+    gap, deep = float(p.get("scatter_gap", 1.2)), float(p.get("scatter_depth", 25.0))
+    front = crowd_gap(p) / 2 + int(p.get("ranks", 6)) * float(p.get("rank_spacing", 1.4)) + 2.0
+    width = int(p.get("cols", 30)) * float(p.get("spacing", 1.1)) + 4.0
+    out, skipped = {}, []
+    cam_x = crowd_camera(p)[0].x
+    for side, sgn in (("a", -1), ("b", 1))[:int(p.get("sides", 2))]:
+        if sgn * cam_x > front - 5.0:
+            skipped.append(side)
+            continue
+        bank = bpy.data.collections.new("pw_scatter_bank_" + side)  # not linked to the scene: instanced only
+        variants = []
+        for v, (scale, drop) in enumerate(((0.95, ""), (1.0, "helmet"), (1.05, "shield"))):
+            fk = set(kit) - {drop}
+            f = {"side": side, "action": "hold", "kit": fk, "rank": 0, "stop": None, "pos": (0, 0, 0),
+                 "yaw": 0.0 if side == "a" else math.pi, "phase": 1.3 * v, "speed": 1.0, "scale": scale, "delay": 0.0}
+            parts, _ = crowd_pose(f, 0.0)
+            bm = bmesh.new()
+            for part, M in parts.items():
+                k = len(bm.verts)
+                bm.from_mesh(meshes[part[1:]] if part[0] in "rl" else meshes[part])
+                bm.verts.ensure_lookup_table()
+                bmesh.ops.transform(bm, matrix=M, verts=bm.verts[k:])
+            me = bpy.data.meshes.new("pw_bg_%s%d" % (side, v))
+            bm.to_mesh(me)
+            bm.free()
+            o = bpy.data.objects.new(me.name, me)
+            bank.objects.link(o)
+            variants.append(o)
+        carrier = bpy.data.objects.new("pw_scatter_" + side, bpy.data.meshes.new("pw_scatter_" + side))
+        bm = bmesh.new()
+        bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.5)
+        bmesh.ops.scale(bm, vec=(deep, width, 1), verts=bm.verts)
+        bmesh.ops.translate(bm, vec=(sgn * (front + deep / 2), width / 2 - 2.0, 0), verts=bm.verts)
+        bm.to_mesh(carrier.data)
+        bm.free()
+        bpy.context.scene.collection.objects.link(carrier)
+        mod = carrier.modifiers.new("scatter", "NODES")
+        mod.node_group = scatter_tree("pw_scatter_" + side, bank, gap, n / (deep * width), int(p.get("seed", 1)) * 7 + len(out))
+        out[side] = (carrier, variants)
+    return out, skipped
+
+
+def count_instances(objs):
+    dg = bpy.context.evaluated_depsgraph_get()
+    names = {o.name for o in objs}
+    return sum(1 for i in dg.object_instances if i.is_instance and i.parent and i.parent.original.name in names)
+
+
 def crowd_camera(p):
     frontage = int(p.get("cols", 30)) * float(p.get("spacing", 1.1))
     reach = crowd_gap(p) / 2 + int(p.get("ranks", 6)) * float(p.get("rank_spacing", 1.4))
@@ -1502,6 +1597,7 @@ def act_crowd(p):
     bm.to_mesh(ground.data)
     bm.free()
     sc.collection.objects.link(ground)
+    scat, scat_skipped = crowd_scatter(p, meshes, kit) if int(p.get("scatter", 0)) > 0 else ({}, [])
 
     cam_data = bpy.data.cameras.new("pw_cam")
     cam_data.lens, cam_data.sensor_width, cam_data.sensor_fit = float(p.get("lens", 50)), 36.0, "HORIZONTAL"
@@ -1549,6 +1645,12 @@ def act_crowd(p):
             d = (neck - loc).dot(fwd)
             if d > 0:
                 near, far = min(near, d - 1.0), max(far, d)
+        for carrier, _ in scat.values():  # the far edge of each scatter, so its figures do not clip to black
+            lo_c, hi_c = bounds([carrier])
+            for x in (lo_c[0], hi_c[0]):
+                d = (Vector((x, (lo_c[1] + hi_c[1]) / 2, 1.5)) - loc).dot(fwd)
+                if d > 0:
+                    far = max(far, d)
     near = max(0.3, near if near < math.inf else 1.0)
     far = float(p.get("far") or max(far, near + 1) * 1.3)
 
@@ -1605,6 +1707,9 @@ def act_crowd(p):
             sc.display.light_direction = (0.45, -0.35, 0.82)
             for i, n, o in objs:
                 o.color = (side_rgb if flat else clay_rgb)[figs[i]["side"]]
+            for s, (carrier, variants) in scat.items():
+                for o in [carrier] + variants:
+                    o.color = (side_rgb if flat else clay_rgb)[s]
             ground.color = (0, 0, 0, 1) if flat else (0.48, 0.45, 0.38, 1)
             sc.world.color = (0, 0, 0) if flat else (0.62, 0.66, 0.72)
             sc.render.filepath = os.path.join(out, pas, name)
@@ -1625,7 +1730,9 @@ def act_crowd(p):
     return {"out": out, "figures": {s: sum(1 for f in figs if f["side"] == s) for s in ("a", "b")},
             "objects": len(objs), "frames_rendered": len(keys), "frames": frames, "fps": fps, "size": [W, H],
             "near_m": round(near, 2), "far_m": round(far, 2), "camera": [round(v, 2) for v in loc0],
-            "aim": [round(v, 2) for v in aim], "passes": passes, "render_seconds": round(time.time() - t0, 1)}
+            "aim": [round(v, 2) for v in aim], "passes": passes, "render_seconds": round(time.time() - t0, 1),
+            **({"scatter": {s: count_instances([c]) for s, (c, _) in scat.items()}} if scat else {}),
+            **({"scatter_skipped": "side %s: the camera stands in its rear" % ",".join(scat_skipped)} if scat_skipped else {})}
 
 
 # ------------------------------------------------------------------------------------------ duel

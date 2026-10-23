@@ -668,6 +668,23 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(people)
         self.assertTrue(all(p[0] == [-1, -1] for p in people), "a nose drawn on a figure marching away")
 
+    def test_crowd_scatter_adds_reserves_behind_the_far_side(self):
+        def blue(d):
+            with open(os.path.join(d, "mask", "0001.png"), "rb") as f:
+                w, h, ch, px = pw.png_decode(f.read())
+            return sum(1 for i in range(0, len(px), ch) if px[i + 2] > 200 and px[i] < 50)
+        args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "6", "--view", "behind",
+                "--preview", "--passes", "mask"]
+        code, plain = run("crowd", "--out", os.path.join(self.tmp, "plain"), *args)
+        self.assertEqual(code, 0, plain)
+        d = os.path.join(self.tmp, "scatter")
+        code, out = run("crowd", "--out", d, "--scatter", "60", *args)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("a", out["scatter"])  # the camera stands in side A's rear
+        self.assertIn("a", out["scatter_skipped"])
+        self.assertTrue(10 <= out["scatter"]["b"] <= 60, out["scatter"])
+        self.assertGreater(blue(d), blue(os.path.join(self.tmp, "plain")) * 1.2)
+
     def test_crowd_rejects_sizes_wan_cannot_take(self):
         code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
         self.assertEqual(code, 2)

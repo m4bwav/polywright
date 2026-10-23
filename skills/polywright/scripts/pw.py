@@ -2274,7 +2274,8 @@ def cmd_crowd(a):
               "view": a.view, "lens": a.lens, "cam_dist": a.cam_dist, "cam_height": a.cam_height,
               "cam": pt(a.cam), "aim": pt(a.aim), "move": a.move, "seed": a.seed, "passes": passes,
               "pose_min_px": a.pose_min_px, "samples": a.samples, "gpu": a.gpu, "far": a.far,
-              "preview": a.preview, "save_blend": a.save_blend}
+              "preview": a.preview, "save_blend": a.save_blend, "scatter": a.scatter, "scatter_gap": a.scatter_gap,
+              "scatter_depth": a.scatter_depth}
     res = bpy_action("crowd", params, timeout=a.timeout)
     if not res.get("ok"):
         return emit(res, 1)
@@ -2775,6 +2776,9 @@ def main(argv=None):
     p.add_argument("--move", choices=["static", "push", "crane", "truck"], default="static")
     p.add_argument("--passes", default="depth,mask,clay,pose")
     p.add_argument("--pose-min-px", type=float, default=40, help="skip skeletons of figures shorter than this on screen")
+    p.add_argument("--scatter", type=int, default=0, help="about this many standing background figures per side, scattered behind the last rank (Geometry Nodes instances; no skeletons)")
+    p.add_argument("--scatter-gap", type=float, default=1.2, help="metres between scattered figures at least")
+    p.add_argument("--scatter-depth", type=float, default=25.0, help="metres deep behind the last rank")
     p.add_argument("--far", type=float, help="metres where depth reaches black (default: past the farthest figure)")
     p.add_argument("--samples", type=int, default=4, help="Cycles samples for the depth pass")
     p.add_argument("--gpu", action="store_true", help="Cycles on the GPU (default CPU: the GPU is often busy)")
