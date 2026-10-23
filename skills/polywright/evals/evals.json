@@ -96,6 +96,21 @@
         "pw.py crowd is run, not a hand-written bpy script",
         "the agent reads sheet.png before reporting"
       ]
+    },
+    {
+      "id": "action-scatter",
+      "kind": "action",
+      "prompt": "Make a preview blockout for an AI video shot from behind one army's ranks, looking at the enemy line, with a few hundred reserves standing behind the enemy, in ./reserves.",
+      "runs": 3,
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash|PowerShell",
+        "input_match": "pw\\.py\"?\\s+crowd.*--scatter"
+      },
+      "expectations": [
+        "pw.py crowd is run with --scatter and --view behind, not a hand-written bpy script",
+        "the agent reads sheet.png before reporting"
+      ]
     }
   ]
 }
