@@ -108,4 +108,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Rule: for a pass `crowd` does not write (Mist), run the crowd action with that pass added inside the per-frame render: a wrapper that replaces `pw_bpy.render_depth` with one that also enables the Mist pass and a File Output node at the shot's near and far, renames `m_Mist.png` to the frame's name after each render, then calls `pw_bpy.main()`. The depth frames stayed identical byte for byte. A built-in `--passes mist` is the cleaner fix.
 - Evidence: depth test 2026-10-23 (73 frames, 608x352, Blender 5.2.1, 29 s for depth and Mist together)
 - Scope: skill
+- Status: applied · `crowd --passes mist` (C-20261023-2) · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+
+### L-013 · 2026-10-23 · crowd PNGs differ byte for byte between identical runs: compare decoded pixels
+- Trigger: two runs of the same `crowd` command on the same build gave different SHA-256 for every depth, mask and clay frame; 30 bytes differed in the header chunks (Blender writes an eXIf chunk), while the decoded pixels were equal.
+- Rule: to prove a change leaves a pass untouched, compare decoded pixels (`png_decode` or Pillow `tobytes()`), not file hashes. A 16-bit pass (Mist) opens in Pillow as `I;16` and clips to white through `convert("RGB")`; scale by 1/257 first (`crowd_sheet` does).
+- Evidence: 17-frame crowd at 320x192, Blender 5.2.1, before and after the Mist pass: every pass pixel-identical, no file hash equal
+- Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23

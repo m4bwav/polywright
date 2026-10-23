@@ -2262,7 +2262,10 @@ def crowd_sheet(out, passes, frames=None, fps=None):
     draw = ImageDraw.Draw(sheet)
     for r, (name, row) in enumerate(rows):
         for c, n in enumerate(row):
-            sheet.paste(Image.open(os.path.join(out, name, n)).convert("RGB").resize((tw, th)), (c * tw, r * th))
+            im = Image.open(os.path.join(out, name, n))
+            if im.mode.startswith("I"):  # 16-bit grey (mist): RGB conversion would clip it to white
+                im = im.point(lambda v: v / 257).convert("L")
+            sheet.paste(im.convert("RGB").resize((tw, th)), (c * tw, r * th))
             k = int(n[:4])
             draw.text((c * tw + 6, r * th + 4), "%s %s" % (name, "%.2fs" % ((k - 1) / fps) if fps else "f%d" % k), fill=(0, 200, 255))
     path = os.path.join(out, "sheet.png")
@@ -2276,9 +2279,9 @@ def cmd_crowd(a):
     if problems and not a.any_size:
         return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips this check"}, 2)
     passes = [x.strip() for x in a.passes.split(",") if x.strip()]
-    bad = [x for x in passes if x not in ("depth", "mask", "clay", "pose")]
+    bad = [x for x in passes if x not in ("depth", "mist", "mask", "clay", "pose")]
     if bad:
-        return emit({"ok": False, "error": "unknown pass %s (depth, mask, clay, pose)" % ",".join(bad)}, 2)
+        return emit({"ok": False, "error": "unknown pass %s (depth, mist, mask, clay, pose)" % ",".join(bad)}, 2)
     pt = lambda t: [float(v) for v in t.split(",")] if t else None
     out = os.path.abspath(a.out)
     params = {"out": out, "size": [W, H], "frames": a.frames, "fps": a.fps, "sides": a.sides, "ranks": a.ranks,
@@ -2787,7 +2790,8 @@ def main(argv=None):
     p.add_argument("--cam", help="x,y,z camera position, overrides --view (battle line x=0, frontage along +y)")
     p.add_argument("--aim", help="x,y,z point the camera looks at")
     p.add_argument("--move", choices=["static", "push", "crane", "truck"], default="static")
-    p.add_argument("--passes", default="depth,mask,clay,pose")
+    p.add_argument("--passes", default="depth,mask,clay,pose",
+                   help="any of depth, mist, mask, clay, pose; mist is Blender's Mist pass, near white, 16-bit")
     p.add_argument("--pose-min-px", type=float, default=40, help="skip skeletons of figures shorter than this on screen")
     p.add_argument("--scatter", type=int, default=0, help="about this many standing background figures per side, scattered behind the last rank (Geometry Nodes instances; no skeletons)")
     p.add_argument("--scatter-gap", type=float, default=1.2, help="metres between scattered figures at least")

@@ -15,6 +15,7 @@ lines meet all followed the blockout (608x352, 56 frames, 27 to 36 s). Wan is un
 | Output | What it is | Feed it to |
 |---|---|---|
 | `depth/` `depth.mp4` | inverse depth, near white, far and sky black, one range for the whole shot | VACE or Fun Control depth input (the main control) |
+| `mist/` `mist.mp4` | with `--passes depth,mist`: Blender's Mist pass over the same range, near white, 16-bit grey, from the same render | the depth input instead; one blind H3 test preferred it (film-and-video.md) |
 | `pose/` `pose.mp4` | OpenPose COCO-18 skeletons, only figures taller than `--pose-min-px` (40) | pose input, for the front ranks; or blend over depth |
 | `mask/` `mask.mp4` | side A red, side B blue, all else black | per-side masks for VACE inpainting, per-side prompts, grading |
 | `clay/` `clay.mp4` | lit grey render, sides tinted | repaint frame 1 with an image model as the start frame |

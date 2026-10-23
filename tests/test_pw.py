@@ -657,6 +657,34 @@ class WithBlender(unittest.TestCase):
         with open(os.path.join(d, "camera.json")) as f:
             self.assertEqual(len(json.load(f)["matrix_world_rows"]), 17)
 
+    def test_crowd_mist_pass_beside_unchanged_depth(self):
+        args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--preview"]
+        code, plain = run("crowd", "--out", os.path.join(self.tmp, "nomist"), "--passes", "depth", *args)
+        self.assertEqual(code, 0, plain)
+        d = os.path.join(self.tmp, "mist")
+        code, out = run("crowd", "--out", d, "--passes", "depth,mist", *args)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sorted(os.listdir(os.path.join(d, "mist"))), ["0001.png", "0009.png", "0017.png"])
+        for n in ("0001.png", "0017.png"):  # the depth frames do not change when mist rides along
+            with open(os.path.join(d, "depth", n), "rb") as f, open(os.path.join(self.tmp, "nomist", "depth", n), "rb") as g:
+                self.assertEqual(pw.png_decode(f.read())[3], pw.png_decode(g.read())[3], n)
+        with open(os.path.join(d, "mist", "0001.png"), "rb") as f:
+            png = f.read()
+        self.assertEqual(png[24], 16)  # IHDR bit depth
+        self.assertEqual(png[25], 0)  # grey
+        try:
+            from PIL import Image
+            im = Image.open(os.path.join(d, "mist", "0001.png"))
+            w, h = im.size
+            row = lambda y: sum(im.getpixel((x, y)) for x in range(w)) / w
+            self.assertGreater(row(h - 1), row(0) + 20000)  # near ground white, far sky black
+        except ImportError:
+            pass
+        code, only = run("crowd", "--out", os.path.join(self.tmp, "mistonly"), "--passes", "mist", *args)
+        self.assertEqual(code, 0, only)
+        self.assertFalse(os.path.isdir(os.path.join(self.tmp, "mistonly", "depth")))
+        self.assertEqual(len(os.listdir(os.path.join(self.tmp, "mistonly", "mist"))), 3)
+
     def test_crowd_from_behind_hides_faces(self):
         d = os.path.join(self.tmp, "behind")
         code, out = run("crowd", "--out", d, "--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4",
