@@ -828,5 +828,123 @@ class WithBlender(unittest.TestCase):
         self.assertIn("traceback", out)
 
 
+def diamond(yaw_deg, elev_deg, s, tiles=2, front=(48.0, 90.0), jitter=0.0, seed=1):
+    """A ground diamond (front, left, right) projected from a known orthographic sprite camera."""
+    import random
+    rnd = random.Random(seed)
+    y, e = math.radians(yaw_deg), math.radians(elev_deg)
+    L = (-math.cos(y) * s * tiles, -math.sin(e) * math.sin(y) * s * tiles)
+    R = (math.sin(y) * s * tiles, -math.sin(e) * math.cos(y) * s * tiles)
+    j = lambda: rnd.uniform(-jitter, jitter)
+    return {"front": {"x": front[0], "y": front[1]},
+            "left": {"x": front[0] + L[0] + j(), "y": front[1] + L[1] + j()},
+            "right": {"x": front[0] + R[0] + j(), "y": front[1] + R[1] + j()}}
+
+
+class SpriteCamera(unittest.TestCase):
+    def test_fit_recovers_a_known_camera(self):
+        r = pw.fit_diamond(diamond(41.0, 31.0, 29.0), 2)
+        self.assertAlmostEqual(r["yaw_deg"], 41.0, delta=0.05)
+        self.assertAlmostEqual(r["elevation_deg"], 31.0, delta=0.05)
+        self.assertAlmostEqual(r["px_per_tile"], 29.0, delta=0.05)
+        self.assertLess(r["rms_px"], 0.05)
+
+    def test_spritecam_takes_the_median_of_a_registry_and_drops_misfits(self):
+        tmp = tempfile.mkdtemp(prefix="pwtest_sc_")
+        try:
+            blds = [{"buildingId": "b%d" % i, "size": {"x": 2, "y": 2},
+                     "groundBase": diamond(42.0 + (i % 3 - 1), 33.0 + (i % 5 - 2) * 0.5, 30.0, jitter=1.0, seed=i)}
+                    for i in range(9)]
+            blds.append({"buildingId": "big", "size": {"x": 3, "y": 3}, "groundBase": diamond(10, 70, 50)})
+            blds.append({"buildingId": "skewed", "size": {"x": 2, "y": 2},
+                         "groundBase": {"front": {"x": 50, "y": 90}, "left": {"x": 0, "y": 89},
+                                        "right": {"x": 60, "y": 20}}})
+            reg = os.path.join(tmp, "reg.json")
+            with open(reg, "w") as f:
+                json.dump({"buildings": blds}, f)
+            out = os.path.join(tmp, "camera.json")
+            code, res = run("spritecam", reg, "--out", out, "--like", "b0")
+            self.assertEqual(code, 0, res)
+            self.assertIn("9 of 10", res["source"])
+            self.assertAlmostEqual(res["yaw_deg"], 42.0, delta=1.0)
+            self.assertAlmostEqual(res["elevation_deg"], 33.0, delta=1.0)
+            self.assertAlmostEqual(res["px_per_tile"], 30.0, delta=1.0)
+            cam = json.load(open(out))
+            self.assertEqual(cam["projection"], "orthographic")
+            self.assertEqual(cam["canvas_px"], [96, 96])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+SPRITE_SCENE = """
+import bpy, bmesh, json, math, sys
+from mathutils import Matrix
+out = sys.argv[sys.argv.index("--") + 1]
+bpy.ops.wm.read_factory_settings(use_empty=True)
+sc = bpy.context.scene
+def box(name, lo, hi, parent=None, m=None):
+    bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1.0)
+    bmesh.ops.scale(bm, vec=[b - a for a, b in zip(lo, hi)], verts=bm.verts)
+    bmesh.ops.translate(bm, vec=[(a + b) / 2 for a, b in zip(lo, hi)], verts=bm.verts)
+    if m is not None:
+        bmesh.ops.transform(bm, matrix=m, verts=bm.verts)
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    ob = bpy.data.objects.new(name, me); sc.collection.objects.link(ob)
+    if parent: ob.parent = parent
+    return ob
+box("bldg_box", (2, 4, 0), (8, 9, 4))
+piv = bpy.data.objects.new("pivot_wheel", None); piv.location = (5, 2, 1.6); sc.collection.objects.link(piv)
+for k in range(6):
+    box("wheel_arm_%d" % k, (0, -0.3, -0.1), (1.5, 0.3, 0.1), piv, Matrix.Rotation(2 * math.pi * k / 6, 4, "Y"))
+sc["sprite_parts"] = json.dumps({"wheel": "wheel_", "building": "bldg_"})
+sc["footprint_m"] = json.dumps([10, 10])
+sc["rings"] = json.dumps({"wheel": {"centre": [5, 2, 1.6], "radius": 1.5, "axis": "Y", "arms": 6, "faces": [1.7, 2.3]}})
+sc["loop"] = json.dumps([{"object": "pivot_wheel", "rotate_axis": "Y", "degrees": 60}])
+bpy.ops.wm.save_as_mainfile(filepath=out)
+"""
+
+
+@unittest.skipUnless(pw.backend(), "Blender not found")
+class SpriteWithBlender(unittest.TestCase):
+    def test_sprite_renders_passes_frames_and_a_ground_base_the_camera_fit_recovers(self):
+        tmp = tempfile.mkdtemp(prefix="pwtest_sp_")
+        try:
+            script = os.path.join(tmp, "scene.py")
+            with open(script, "w") as f:
+                f.write(SPRITE_SCENE)
+            blend = os.path.join(tmp, "m.blend")
+            r = pw.run_blender_script(script, [blend])
+            self.assertTrue(os.path.isfile(blend), r.get("stderr", "")[-800:])
+            cam = {"projection": "orthographic", "yaw_deg": 40.0, "elevation_deg": 32.0, "px_per_tile": 30.0,
+                   "canvas_px": [96, 96], "render_scale": 2, "tile_m": 5.0, "footprint_tiles": [2, 2],
+                   "footprint_centre_px": [48, 66], "sun_dir": [-0.75, -0.35, 0.85]}
+            cpath = os.path.join(tmp, "camera.json")
+            with open(cpath, "w") as f:
+                json.dump(cam, f)
+            out = os.path.join(tmp, "r")
+            code, res = run("sprite", blend, "--camera", cpath, "--out", out, "--samples", "2",
+                            "--passes", "beauty,id,depth,normal,pos", "--frames", "2", "--frame-passes", "id,pos")
+            self.assertEqual(code, 0, res)
+            self.assertEqual(res["passes"], {"beauty": 1, "id": 3, "depth": 1, "normal": 1, "pos": 3})
+            for n in ("beauty.png", "id.png", "pos.tif", "frames/id_001.png", "frames/pos_001.tif", "sprite.json"):
+                self.assertTrue(os.path.isfile(os.path.join(out, n)), n)
+            with open(os.path.join(out, "pos.tif"), "rb") as f:
+                self.assertIn(f.read(2), (b"II", b"MM"))
+            meta = json.load(open(os.path.join(out, "sprite.json")))
+            back = pw.fit_diamond(meta["groundBase"], 2)
+            self.assertAlmostEqual(back["yaw_deg"], 40.0, delta=0.3)
+            self.assertAlmostEqual(back["elevation_deg"], 32.0, delta=0.3)
+            self.assertAlmostEqual(back["px_per_tile"], 30.0, delta=0.3)
+            gb = meta["groundBase"]
+            self.assertAlmostEqual((gb["left"]["x"] + gb["right"]["x"]) / 2, 48, delta=0.6)
+            self.assertAlmostEqual((gb["left"]["y"] + gb["right"]["y"]) / 2, 66, delta=0.6)
+            rim = meta["rings"]["wheel"]["rim_px"]
+            self.assertEqual(len(rim), 72)
+            xs = [p[0] for p in rim]
+            self.assertGreater(max(xs) - min(xs), 10)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

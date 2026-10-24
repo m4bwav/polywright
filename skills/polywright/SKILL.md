@@ -33,7 +33,7 @@ per target), `renders/` (review sheets), `brief.md`, `manifest.json`. Contract f
 | Situation | Route | Skill |
 |---|---|---|
 | A common object; licence allows reuse | **find**: Poly Haven, Kenney, Quaternius (CC0), Sketchfab and print sites (check each licence) | this skill, [references/routes.md](references/routes.md) |
-| Has dimensions, parts that fit, sharp edges (bracket, case, building, furniture) | **code**: bpy, build123d/CadQuery/OpenSCAD | polywright-generate, polywright-blender |
+| Has dimensions, parts that fit, sharp edges (bracket, case, building, furniture) | **code** (`--route procedural`): bpy, build123d/CadQuery/OpenSCAD | polywright-generate, polywright-blender |
 | A real place (park, street, campus, terrain) | **place**: OSM + elevation (`pw.py place`) | polywright-capture |
 | A real object you can photograph or scan | **capture**: photogrammetry, splats, scanner, or model from measurements | polywright-capture |
 | Imagined organic or one-off (statue, creature, prop) | **generate**: reference sheet, then image-to-3D | polywright-references, polywright-generate |
@@ -83,6 +83,21 @@ poster), take the composition from the picture and the shape from the model:
 5. Check at full size; keep two or more seeds.
 
 Reference sheets of the prop come from the model too (polywright-references, Step 2b).
+
+## Game sprites from a model
+
+When an image model keeps getting a mechanism wrong in a game sprite (a wheel that is not round, a blade on the
+roof), build the model, render it through the game's own camera and let the image model only paint:
+
+1. `pw.py spritecam <registry.json> --like <sprite> --out camera.json`: the orthographic camera fitted from the
+   game's ground diamonds (L-014). Set `tile_m` in it to the model's metres per tile.
+2. Build the model with a part prefix per object (`wheel_`, `roof_`...) in the scene property `sprite_parts`,
+   moving parts under a pivot empty built in the pivot's space, and the motion in the scene property `loop`.
+3. `pw.py sprite model.blend --camera camera.json --out renders/L1 --scale 10.6667` (1024 px for a 96 px sprite):
+   read `sheet`-style the passes and the beauty at 1x beside the game's sprites; `--frames N --frame-passes id,pos`
+   for an animated part, `--hide wheel_` for a plate without it.
+4. Paint the beauty with Canny of the clay as control (an image model with a ControlNet), cut it with the render's alpha so the
+   framing and `groundBase` stay exact, then check the painting against the ID and rim data in `sprite.json`.
 
 ## Crowd and battle blockouts (AI video)
 

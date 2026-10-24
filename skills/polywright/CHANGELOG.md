@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261023-3 · 2026-10-23 · Game sprite target: spritecam and sprite
+- because: L-014, L-015, user request (a model-first waterwheel sawmill sprite for Arvum Electrum)
+- files: scripts/pw.py (fit_diamond, cmd_spritecam, cmd_sprite, line_pass, parsers), scripts/pw_bpy.py (act_sprite), SKILL.md ("Game sprites from a model", route table), references/cli.md (commands), tests/test_pw.py (SpriteCamera, SpriteWithBlender)
+- A sprite camera is fitted from the game's own ground diamonds instead of guessed, and a model renders through it every pass a painter or a gate needs, with the loop frames and the exact `groundBase`. The route table's "code" now names the `--route procedural` value `pw.py new` accepts.
+
 ### C-20261023-2 · 2026-10-23 · crowd --passes mist
 - because: L-012 (the Mist verdict on H3), L-013
 - files: scripts/pw.py (cmd_crowd, crowd_sheet, crowd parser), scripts/pw_bpy.py (mist_output, act_crowd), references/film-and-video.md ("Passes the video model reads"), references/cli.md, references/crowd-blockouts.md (outputs table)
