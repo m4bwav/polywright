@@ -104,6 +104,22 @@ roof), build the model, render it through the game's own camera and let the imag
 4. Paint the beauty with Canny of the clay as control (an image model with a ControlNet), cut it with the render's alpha so the
    framing and `groundBase` stay exact, then check the painting against the ID and rim data in `sprite.json`.
 
+## Scene illustrations from a model
+
+A loading screen, a key art or a cover around a model that already exists (a building, a machine): build the
+scene in Blender and let the image model paint it, so the mechanism and the layout stay right.
+
+1. Build the scene around the model with a part prefix per object in the scene property `scene_parts`, wheels and
+   discs in `rings`, key points or paths in `scene_points`. Banks, dykes and walls along a path are one `sweep`
+   each (import it from `scripts/pw_scene.py` in a `pw.py bpy` script), not a row of boxes (L-020).
+2. `pw.py framecam problem.json --out cameras.json`: world points with screen boxes, points kept in frame and out
+   of the UI's text bands, a size measure to maximise; prints the best cameras as presets. Take the bands from the
+   real UI file (its padding and anchors), not a rule of thumb (L-018).
+3. `pw.py scene scene.blend --cameras cameras.json --camera framecam_1 --out renders/v1 --size 1280x720` (the
+   paint workflow's first-pass size): clay, beauty, depth, normal, id, line and `scene.json`. Read clay and depth
+   first; leave the depth range to the scene's own measurement unless a preset needs it fixed (L-019).
+4. Paint with control (depth or line), then gate the painting against `scene.json`: ring rims, points, id colours.
+
 ## Crowd and battle blockouts (AI video)
 
 Video models break on crowds; Blender does not. Let Blender place the army and the video model paint the look:

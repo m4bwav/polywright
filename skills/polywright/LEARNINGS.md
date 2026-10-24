@@ -6,6 +6,30 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-020 · 2026-10-24 · A bank or dyke along a path is one swept profile, not a row of boxes
+- Trigger: building the illustration's water path, the banks along the head race started as a row of boxes, one per path segment; the scene builder replaced them with one profile swept along the path (its comment: "one continuous bank, not a row of boxes").
+- Hypothesis: boxes meet at an angle on a bend and overlap or gap on the outside; at a low eye level the camera looks along the bank, so each joint can read as an edge in the clay, line and depth passes the painter follows.
+- Rule: build anything that follows a path (bank, dyke, kerb, wall, levee) as one 2D profile (sideways offset, height) swept along the resampled polyline, with smooth shading; a strip at a height (road, water surface) is a ribbon. `sweep` and `ribbon` in `scripts/pw_scene.py`.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/build_scene.py (`sweep`, `ribbon`; the head-race dykes as one sweep per side) and its renders under scene/renders, 2026-10-24.
+- Scope: skill (scene illustrations; any perspective blockout)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-019 · 2026-10-24 · An inverse-depth pass with a near limit below the nearest surface comes out flat
+- Trigger: the illustration's depth pass at a 1 m near limit was almost uniform grey: nothing in frame was nearer than about 8 m, so the white end of the range held no pixels.
+- Hypothesis: inverse depth spends most of its range just past the near limit (1/z falls fastest there); with an empty first few metres, every visible surface sits in the dark tail.
+- Rule: set the near limit just under the nearest visible surface and the far limit just past the farthest. `pw.py scene` measures both with a ray grid through the frame when the preset gives no `depth_near_m` or `depth_far_m`, and writes the range it used in `scene.json`; read the depth pass before painting with it as control.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/scene_render.py (near default raised to 6 m) and the depth passes under scene/renders, 2026-10-24.
+- Scope: skill (pw.py scene; crowd and duel depth passes take the same care, L-004)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-018 · 2026-10-24 · Take a UI's text bands from its layout file, not from a rule of thumb
+- Trigger: framing a loading-screen illustration, the first camera search kept the hero out of the "top third" as a rule of thumb. The game's loading UI only covers a centred band at the top (title and progress bar) and one at the bottom (hint), each about 15% deep; the rule of thumb cost half the hero's size on screen.
+- Hypothesis: a rule of thumb reserves space the UI never uses, and the search then shrinks the hero to fit what is left.
+- Rule: read the UI's own layout (USS, UXML, CSS: padding, anchors, the text's box) and pass those boxes as `bands` to `pw.py framecam`, with the hero's top and foot in `keep_out_of_bands`. Check the result over a screenshot of the real UI.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/cameras.json (`pick.why`: the bands taken from the game's loading stylesheet, centred top and bottom sections; the chosen framing puts the wheel about 340 px wide at 1920, its centre at x 0.70), 2026-10-24.
+- Scope: skill (pw.py framecam; any illustration under a UI)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
 ### L-017 · 2026-10-24 · At sprite size a thin beam crossing a cylinder's silhouette reads as going through it
 - Trigger: the sawmill's log ran level out of the log door while the two log-way rails sloped down to the ground beneath it; in the 3/4 render the far rail showed above the log and the near one below, and the reviewer read it as an optical illusion with the wood above and below the exit.
 - Hypothesis: an orthographic 3/4 view drops the depth cue that separates two crossing members; a level cylinder over sloping rails projects with the rails cutting its outline at two heights, which no painter can fix.

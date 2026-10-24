@@ -23,6 +23,8 @@ commands that need it say so in the JSON when Blender is missing instead of cras
   python pw.py place --bbox S,W,N,E --out DIR [--dem auto|usgs|terrarium|flat] [--res M] [--print-mm 200]
   python pw.py duel DUEL.json [--out DIR] [--preview] [--check]   two fighters' clay, Canny, depth and pose controls
   python pw.py texture IMG --out DIR [--seamless] [--strength 2]   quick normal/height/roughness maps
+  python pw.py framecam PROBLEM.json [--out cameras.json] [--top 3]  grid-search perspective cameras for screen rules
+  python pw.py scene FILE --cameras cameras.json --camera NAME --out DIR [--size 1280x720]   scene illustration passes
 
 Environment: POLYWRIGHT_BLENDER (path to blender), POLYWRIGHT_BPY_PYTHON (a Python with the bpy module),
 POLYWRIGHT_COMFYUI (comma-separated ComfyUI URLs, default http://127.0.0.1:8188).
@@ -48,9 +50,10 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
+SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
 REFS = os.path.join(os.path.dirname(HERE), "references")
 UA = "polywright/%s (+https://github.com/m4bwav/polywright)" % VERSION
 
@@ -178,12 +181,12 @@ def run_blender_script(script, script_args, blend=None, timeout=1800):
             "backend": kind, "blender": ver, "stdout": p.stdout, "stderr": p.stderr}
 
 
-def bpy_action(action, params, timeout=1800):
+def bpy_action(action, params, timeout=1800, script=BPY_SCRIPT):
     tmp = tempfile.mkdtemp(prefix="pw_")
     pp, rp = os.path.join(tmp, "params.json"), os.path.join(tmp, "result.json")
     with open(pp, "w", encoding="utf-8") as f:
         json.dump(params, f)
-    r = run_blender_script(BPY_SCRIPT, [action, pp, rp], timeout=timeout)
+    r = run_blender_script(script, [action, pp, rp], timeout=timeout)
     if os.path.isfile(rp):
         with open(rp, encoding="utf-8") as f:
             res = json.load(f)
@@ -358,6 +361,256 @@ def cmd_sprite(a):
         res["next"] = ("Read the passes at 1x and the beauty at canvas size beside the game's real sprites; paint "
                        "over beauty with Canny of clay as control (an image model with a ControlNet); sprite.json "
                        "carries groundBase, ring rims and ID colours for a geometry check of the painting")
+    return emit(res, 0 if res.get("ok") else 1)
+
+
+# ------------------------------------------------------------------------------------------ scene illustrations
+
+def pinhole(pos, target, lens_mm, size, sensor_mm=36.0):
+    """A perspective camera as Blender builds one from a position, an aim point and a lens (+Z up, sensor fit AUTO:
+    the sensor spans the longer image side). Returns project(point) -> (x, y, depth): x and y as fractions of the
+    image from its top-left corner, depth along the view axis in metres; x and y are None behind the camera.
+    Returns None when the aim is straight up or down."""
+    d = [target[i] - pos[i] for i in range(3)]
+    n = math.sqrt(sum(v * v for v in d))
+    rn = math.hypot(d[0], d[1])
+    if n == 0 or rn < 1e-9 * n:
+        return None
+    f = [v / n for v in d]
+    r = [d[1] / rn, -d[0] / rn, 0.0]  # forward x world up
+    u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]]
+    w, h = size
+    k = lens_mm / sensor_mm * max(w, h)
+
+    def project(p):
+        q = [p[i] - pos[i] for i in range(3)]
+        z = sum(q[i] * f[i] for i in range(3))
+        if z <= 1e-6:
+            return None, None, z
+        x = sum(q[i] * r[i] for i in range(3)) / z
+        y = sum(q[i] * u[i] for i in range(3)) / z
+        return 0.5 + k * x / w, 0.5 - k * y / h, z
+    return project
+
+
+def _axis(spec, what):
+    """A search axis: a number (fixed) or [low, high, step]."""
+    if isinstance(spec, (int, float)):
+        return [float(spec)]
+    lo, hi, step = (float(v) for v in spec)
+    if step <= 0 or hi < lo:
+        raise ValueError("%s: [low, high, step] needs low <= high and step > 0, got %s" % (what, spec))
+    return [lo + i * step for i in range(int(round((hi - lo) / step)) + 1)]
+
+
+def framecam(prob, top=3, max_evals=3_000_000):
+    """Grid-search perspective cameras for a scene illustration: every named point in `boxes` must land in its
+    screen box (x and y fraction ranges, y down), every `keep_in_frame` point inside the frame (less `margin`),
+    every `keep_out_of_bands` point outside every band (the UI's text areas), all in front of the camera. Among the
+    cameras that pass, the biggest `size_measure` wins (two points' screen distance in pixels). Returns
+    (cameras, stats) or raises ValueError with what blocked the search."""
+    pts = {k: [float(c) for c in v] for k, v in prob["points"].items()}
+    w, h = prob.get("size", [1920, 1080])
+    sensor = float(prob.get("sensor_mm", 36.0))
+    boxes = prob.get("boxes", {})
+    keep_in = prob.get("keep_in_frame", [])
+    bands = prob.get("bands", [])
+    keep_out = prob.get("keep_out_of_bands", [])
+    measure = prob.get("size_measure")
+    margin = float(prob.get("margin", 0.0))
+    names = set(boxes) | set(keep_in) | set(keep_out) | set(measure or [])
+    unknown = sorted(names - set(pts))
+    if unknown:
+        raise ValueError("unknown point names %s (points has %s)" % (unknown, sorted(pts)))
+    if not measure or len(measure) != 2:
+        raise ValueError("size_measure must name two points (their screen distance is maximised)")
+    s = prob["search"]
+    grid = {"pos": [_axis(v, "search.pos[%d]" % i) for i, v in enumerate(s["pos"])],
+            "target": [_axis(v, "search.target[%d]" % i) for i, v in enumerate(s["target"])],
+            "lens": _axis(s.get("lens_mm", 35), "search.lens_mm")}
+    count = 1
+    for ax in grid["pos"] + grid["target"] + [grid["lens"]]:
+        count *= len(ax)
+    if count > max_evals:
+        raise ValueError("search has %d cameras, over the %d limit: use coarser steps, then search again around "
+                         "the best" % (count, max_evals))
+    rules = (["front"] + ["box:" + n for n in boxes] + ["in_frame:" + n for n in keep_in]
+             + ["out_of_bands:" + n for n in keep_out])
+    alone = dict.fromkeys(rules, 0)
+    hits = []
+    for px in grid["pos"][0]:
+        for py in grid["pos"][1]:
+            for pz in grid["pos"][2]:
+                for tx in grid["target"][0]:
+                    for ty in grid["target"][1]:
+                        for tz in grid["target"][2]:
+                            pos, tgt = (px, py, pz), (tx, ty, tz)
+                            # the projection scales about the centre with the lens: project once at 36 mm
+                            proj = pinhole(pos, tgt, sensor, (w, h), sensor)
+                            if proj is None:
+                                continue
+                            base = {n: proj(pts[n]) for n in names}
+                            for lens in grid["lens"]:
+                                ok = _framecam_rules(base, lens / sensor, boxes, keep_in, bands, keep_out, margin, alone)
+                                if ok:
+                                    a, b = (base[m] for m in measure)
+                                    size = lens / sensor * math.hypot((a[0] - b[0]) * w, (a[1] - b[1]) * h)
+                                    hits.append((size, pos, tgt, lens))
+    stats = {"searched": count, "passed": len(hits), "passed_alone": alone}
+    if not hits:
+        never = [r for r in rules if alone[r] == 0]
+        rare = min(rules, key=lambda r: alone[r])
+        raise ValueError("no camera in the search meets every rule; %s (%d of %d cameras pass it alone); widen the "
+                         "search or relax the rule" % (("never met: " + ", ".join(never)) if never else
+                                                       "rarest: " + rare, alone[rare], count))
+    hits.sort(key=lambda t: -t[0])
+    steps = [ax[1] - ax[0] for ax in grid["pos"] if len(ax) > 1]
+    spread = 1.5 * max(steps) if steps else 0.0
+    chosen = []
+    for size, pos, tgt, lens in hits:
+        if spread == 0 or all(math.dist(pos, c[1]) > spread for c in chosen):
+            chosen.append((size, pos, tgt, lens))
+        if len(chosen) == top:
+            break
+    best = chosen[0]
+    values = list(best[1]) + list(best[2]) + [best[3]]
+    labels = ["pos.x", "pos.y", "pos.z", "target.x", "target.y", "target.z", "lens_mm"]
+    stats["best_at_search_edge"] = [lab for lab, ax, v in zip(labels, grid["pos"] + grid["target"] + [grid["lens"]], values)
+                                    if len(ax) > 1 and v in (ax[0], ax[-1])]
+    cams = []
+    for size, pos, tgt, lens in chosen:
+        proj = pinhole(pos, tgt, lens, (w, h), sensor)
+        cams.append({"pos": [round(v, 3) for v in pos], "target": [round(v, 3) for v in tgt], "lens_mm": round(lens, 2),
+                     "size_px": round(size, 1),
+                     "points_frac": {n: [round(v, 4) for v in proj(pts[n])[:2]] if proj(pts[n])[0] is not None else None
+                                     for n in sorted(names)}})
+    return cams, stats
+
+
+def _framecam_rules(base, zoom, boxes, keep_in, bands, keep_out, margin, alone):
+    """Check one camera; count each rule it passes in `alone` (to say which rule blocks a search)."""
+    def at(n):
+        x, y, z = base[n]
+        if x is None:
+            return None
+        return 0.5 + (x - 0.5) * zoom, 0.5 + (y - 0.5) * zoom
+    ok = all(base[n][0] is not None for n in base)
+    alone["front"] += ok
+    for n, b in boxes.items():
+        p = at(n)
+        good = p is not None and b["x"][0] <= p[0] <= b["x"][1] and b["y"][0] <= p[1] <= b["y"][1]
+        alone["box:" + n] += good
+        ok = ok and good
+    for n in keep_in:
+        p = at(n)
+        good = p is not None and margin <= p[0] <= 1 - margin and margin <= p[1] <= 1 - margin
+        alone["in_frame:" + n] += good
+        ok = ok and good
+    for n in keep_out:
+        p = at(n)
+        good = p is not None and not any(b["x"][0] <= p[0] <= b["x"][1] and b["y"][0] <= p[1] <= b["y"][1] for b in bands)
+        alone["out_of_bands:" + n] += good
+        ok = ok and good
+    return ok
+
+
+def cmd_framecam(a):
+    try:
+        with open(a.problem, encoding="utf-8") as f:
+            prob = json.load(f)
+        cams, stats = framecam(prob, top=a.top, max_evals=a.max_evals)
+    except (OSError, KeyError, ValueError, TypeError) as e:
+        return emit({"ok": False, "action": "framecam", "error": "%s%s" % ("missing key " if isinstance(e, KeyError) else "", e)}, 1)
+    presets = {"%s_%d" % (a.name, i + 1): c for i, c in enumerate(cams)}
+    if a.out:
+        doc = {}
+        if os.path.isfile(a.out):
+            with open(a.out, encoding="utf-8") as f:
+                doc = json.load(f)
+        doc.setdefault("cameras", {}).update(presets)
+        with open(a.out, "w", encoding="utf-8") as f:
+            json.dump(doc, f, indent=1)
+    return emit({"ok": True, "action": "framecam", "out": a.out, "cameras": presets, **stats,
+                 "hint": ("the best camera sits on the edge of the search in %s: widen it there"
+                          % ", ".join(stats["best_at_search_edge"])) if stats["best_at_search_edge"] else None,
+                 "next": "pw.py scene <scene.blend> --cameras %s --camera %s_1 --out <dir> --passes clay: read the clay "
+                         "of each before the full passes" % (a.out or "cameras.json", a.name)})
+
+
+SCENE_PASSES = ("clay", "beauty", "depth", "normal", "id")
+
+
+def sky_pass(out_dir, top, horizon):
+    """Repaint the sky of a scene's beauty with a vertical gradient (top colour overhead to horizon colour at the
+    lowest sky row) through the id pass's alpha, 1 px feather. Writes beauty_sky.png; needs numpy and Pillow."""
+    try:
+        import numpy as np
+        from PIL import Image, ImageFilter
+    except ImportError:
+        return None
+    paths = [os.path.join(out_dir, n + ".png") for n in ("beauty", "id")]
+    if not all(os.path.isfile(p) for p in paths):
+        return None
+    beauty = np.asarray(Image.open(paths[0]).convert("RGB")).astype(float)
+    ida = Image.open(paths[1]).convert("RGBA").split()[3]
+    sky = 1.0 - np.asarray(ida.filter(ImageFilter.GaussianBlur(1.0))).astype(float)[..., None] / 255.0
+    h = beauty.shape[0]
+    rows = np.flatnonzero((np.asarray(ida) == 0).mean(axis=1) > 0.02)
+    low = rows.max() + 1 if rows.size else h // 2
+    t = np.clip(np.arange(h) / max(1, low), 0, 1)[:, None, None] ** 1.6
+    grad = np.array(top, float) * (1 - t) + np.array(horizon, float) * t
+    out = beauty * (1 - sky) + np.broadcast_to(grad, beauty.shape) * sky
+    path = os.path.join(out_dir, "beauty_sky.png")
+    Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(path)
+    return path
+
+
+def cmd_scene(a):
+    split = lambda t: [v.strip() for v in (t or "").split(",") if v.strip()]
+    try:
+        with open(a.cameras, encoding="utf-8") as f:
+            cams = json.load(f)
+    except (OSError, ValueError) as e:
+        return emit({"ok": False, "action": "scene", "error": "cannot read %s: %s" % (a.cameras, e)}, 2)
+    presets = cams.get("cameras") or {}
+    if a.camera not in presets:
+        return emit({"ok": False, "action": "scene", "error": "no camera %r in %s" % (a.camera, a.cameras),
+                     "known": sorted(presets)}, 2)
+    preset = presets[a.camera]
+    problems = ["camera %s has no %s" % (a.camera, k) for k in ("pos", "target") if len(preset.get(k) or []) != 3]
+    try:
+        size = [int(v) for v in a.size.lower().split("x")]
+        if len(size) != 2 or min(size) < 8:
+            raise ValueError
+    except ValueError:
+        problems.append("--size must be WxH, such as 1280x720")
+        size = None
+    passes = split(a.passes)
+    bad = [p for p in passes if p not in SCENE_PASSES]
+    if bad or not passes:
+        problems.append("unknown pass %s (%s)" % (",".join(bad) or "none given", ", ".join(SCENE_PASSES)))
+    sky = None
+    if a.sky:
+        try:
+            sky = [floats(v, 3) for v in a.sky.split(":")]
+            if len(sky) != 2:
+                raise ValueError
+        except ValueError:
+            problems.append("--sky must be TOP:HORIZON as R,G,B:R,G,B (0-255)")
+    if problems:
+        return emit({"ok": False, "action": "scene", "error": "; ".join(problems)}, 2)
+    params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "camera_name": a.camera, "camera": preset,
+              "sun": cams.get("sun"), "world": cams.get("sky"), "size": size, "passes": passes, "samples": a.samples,
+              "hide": split(a.hide), "gpu": a.gpu, "keep_lights": a.keep_lights}
+    res = bpy_action("scene", params, timeout=a.timeout, script=SCENE_SCRIPT)
+    if res.get("ok") and not a.no_line:
+        res["line"] = line_pass(params["out"]) or "skipped (needs numpy, Pillow and the id, normal, depth passes)"
+    if res.get("ok") and sky:
+        res["sky"] = sky_pass(params["out"], *sky) or "skipped (needs numpy, Pillow and the beauty and id passes)"
+    if res.get("ok"):
+        res["next"] = ("Read clay and depth first: is the hero where framecam put it, does the depth pass have contrast "
+                       "near the hero? Then paint beauty (or clay) with depth or line as control at this size, and "
+                       "gate the painting against scene.json (ring rims, points, id colours)")
     return emit(res, 0 if res.get("ok") else 1)
 
 
@@ -2739,6 +2992,30 @@ def main(argv=None):
     p.add_argument("--gpu", action="store_true")
     p.add_argument("--timeout", type=int, default=1800)
     p.set_defaults(fn=cmd_sprite)
+
+    p = sub.add_parser("framecam", help="grid-search perspective cameras that put named points in screen boxes and keep text bands clear")
+    p.add_argument("problem", help="JSON: points, boxes, keep_in_frame, bands, keep_out_of_bands, size_measure, search (cli.md)")
+    p.add_argument("--out", help="cameras.json to write or merge the presets into")
+    p.add_argument("--name", default="framecam", help="preset name prefix (<name>_1 is the best)")
+    p.add_argument("--top", type=int, default=3, help="how many cameras to keep (at least 1.5 position steps apart)")
+    p.add_argument("--max-evals", type=int, default=3_000_000, help="refuse searches with more cameras than this")
+    p.set_defaults(fn=cmd_framecam)
+
+    p = sub.add_parser("scene", help="render a scene illustration's passes through a perspective camera preset: clay, beauty, depth, normal, id, line, scene.json")
+    p.add_argument("file", help="the scene (.blend keeps its scene properties scene_parts, rings, scene_points)")
+    p.add_argument("--cameras", required=True, help="cameras.json: {cameras: {NAME: {pos, target, lens_mm, depth_near_m, depth_far_m}}, sun, sky}")
+    p.add_argument("--camera", required=True, help="preset name in cameras.json")
+    p.add_argument("--out", required=True, help="output folder")
+    p.add_argument("--size", default="1280x720", help="WxH; the paint workflow's first-pass size")
+    p.add_argument("--passes", default=",".join(SCENE_PASSES), help="comma list: " + ", ".join(SCENE_PASSES))
+    p.add_argument("--samples", type=int, default=48, help="Cycles samples for beauty")
+    p.add_argument("--hide", default="", help="comma list of object-name prefixes left out (a plate without the hero)")
+    p.add_argument("--keep-lights", action="store_true", help="keep the file's lights and world instead of the preset sun and sky")
+    p.add_argument("--sky", help="TOP:HORIZON colours R,G,B:R,G,B (0-255): also write beauty_sky.png, the sky repainted through the id alpha")
+    p.add_argument("--no-line", action="store_true", help="skip the line-art pass")
+    p.add_argument("--gpu", action="store_true")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.set_defaults(fn=cmd_scene)
 
     p = sub.add_parser("match", help="render a model from an existing picture's camera (RGBA), paste it in, write a blend mask")
     p.add_argument("file", help="the model (.blend, .glb, ...), forward axis +X, up +Z")
