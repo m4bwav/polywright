@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-1 · 2026-10-24 · Game sprites: check size against the neighbours and keep beams off cylinders
+- because: L-016, L-017, user request (the sawmill read too small, and its log way read as an optical illusion)
+- files: SKILL.md ("Game sprites from a model", step 3)
+- After rendering, coverage is checked against same-class neighbours with artwright's coverage floor and fixed by massing, props, then zoom; supports are modelled level with what they carry.
+
 ### C-20261023-3 · 2026-10-23 · Game sprite target: spritecam and sprite
 - because: L-014, L-015, user request (a model-first waterwheel sawmill sprite for Arvum Electrum)
 - files: scripts/pw.py (fit_diamond, cmd_spritecam, cmd_sprite, line_pass, parsers), scripts/pw_bpy.py (act_sprite), SKILL.md ("Game sprites from a model", route table), references/cli.md (commands), tests/test_pw.py (SpriteCamera, SpriteWithBlender)

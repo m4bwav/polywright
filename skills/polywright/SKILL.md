@@ -96,6 +96,11 @@ roof), build the model, render it through the game's own camera and let the imag
 3. `pw.py sprite model.blend --camera camera.json --out renders/L1 --scale 10.6667` (1024 px for a 96 px sprite):
    read `sheet`-style the passes and the beauty at 1x beside the game's sprites; `--frames N --frame-passes id,pos`
    for an animated part, `--hide wheel_` for a plate without it.
+   Then check the size against the game's neighbours before painting: `aw.py sprite <beauty at 96> --refs <same-class
+   sprites>` fails a coverage under 0.9 of their median. The diamond fit sets the ground scale, not how big the
+   building reads: add massing and props first (taller walls, a lean-to, a yard), then raise `px_per_tile` and move
+   `footprint_centre_px` so the bounding box spans the canvas like the neighbours (L-016). Keep thin beams off a
+   cylinder's silhouette: a level log over sloping rails reads as passing above and below them (L-017).
 4. Paint the beauty with Canny of the clay as control (an image model with a ControlNet), cut it with the render's alpha so the
    framing and `groundBase` stay exact, then check the painting against the ID and rim data in `sprite.json`.
 
