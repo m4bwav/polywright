@@ -2,8 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
-## Unreleased
+## 0.4.0 (2026-10-23)
 
+- `pw.py spritecam`: fit a game's orthographic sprite camera (yaw, elevation, pixels per tile) from the ground diamonds (`groundBase` front, left and right corners) in any JSON, such as a building registry; median over the sprites that fit, misfits dropped, `--like` takes one sprite's footprint centre. Standard library only.
+- `pw.py sprite`: render a model through that camera at a sprite's canvas size times a scale: beauty, clay, depth, normal, a flat ID pass per part, a 16-bit object-position pass (TIFF), line art from the data passes, loop frames for the scene's pivots (a wheel turning one spoke interval, a saw moving on a cos wave), the footprint's projected `groundBase` and each ring's projected rim, all in `sprite.json`. Made for an Arvum Electrum waterwheel sawmill that image models kept drawing wrong.
 - `pw.py crowd --passes depth,mist`: Blender's Mist pass from the same render as the depth frames, near white, 16-bit, `mist.mp4` beside `depth.mp4`; the depth frames do not change.
 - `pw.py crowd --scatter N`: standing reserves behind each side's last rank, scattered by Geometry Nodes (instances, no added render time); `--scatter-gap`, `--scatter-depth`.
 - `pw.py inspect --topology`: face sides, poles, flipped faces (winding mismatches), stacked faces, loose parts and UV texel spread, on welded positions. `pw.py check` warns on them for the game, web and AR targets. `pw.py convert --fix-winding` flips faces that wind against their neighbours, keeping vertices and UVs.

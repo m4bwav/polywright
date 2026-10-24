@@ -2563,9 +2563,263 @@ def act_encode(p):
     return {"videos": done}
 
 
+# ------------------------------------------------------------------------------------------ sprite
+
+SPRITE_ID_COLOURS = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 0.5, 0), (0.5, 0, 1),
+                     (0.5, 0.5, 0.5), (0, 0.5, 0), (0.5, 0, 0), (0, 0, 0.5)]
+
+
+def _sprite_emission(name, build):
+    m = bpy.data.materials.new(name)
+    if not m.node_tree:
+        m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+    build(nt, em)
+    return m
+
+
+def act_sprite(p):
+    """Render a game sprite's passes through a fitted orthographic sprite camera (pw.py spritecam).
+
+    Passes: beauty (lit, sRGB Standard), clay, depth (near white), normal (camera space), id (flat part colours,
+    no anti-aliasing), pos (object-space coordinates of the visible surface, 16-bit TIFF: for parts built in their
+    pivot's space this is the point on the moving body, the same in every frame). Parts come from the scene's
+    "sprite_parts" property (name -> object-name prefix) or p["parts"]; the loop from the scene's "loop" property
+    (pivot rotations and cos-wave translations); rings (wheels, millstones) from "rings", projected to pixels."""
+    from bpy_extras.object_utils import world_to_camera_view
+    from mathutils import Matrix, Vector
+    f = p["file"]
+    if f.lower().endswith(".blend"):
+        bpy.ops.wm.open_mainfile(filepath=f)
+    else:
+        load(f)
+    sc = bpy.context.scene
+    C = p["camera"]
+    out = p["out"]
+    os.makedirs(out, exist_ok=True)
+    parts = p.get("parts") or json.loads(sc.get("sprite_parts", "{}"))
+    footprint = p.get("footprint_m") or json.loads(sc.get("footprint_m", "null")) or \
+        [C["footprint_tiles"][0] * C["tile_m"], C["footprint_tiles"][1] * C["tile_m"]]
+    loop = json.loads(sc.get("loop", "[]"))
+    rings = json.loads(sc.get("rings", "{}"))
+    for ob in sc.objects:
+        if any(ob.name.startswith(hh) for hh in p.get("hide", [])):
+            ob.hide_render = True
+    # camera: front footprint corner at the origin, footprint along +X (right corner) and +Y (left corner)
+    a, e = math.radians(C["yaw_deg"]), math.radians(C["elevation_deg"])
+    right = Vector((math.sin(a), -math.cos(a), 0.0))
+    fwd = Vector((math.cos(e) * math.cos(a), math.cos(e) * math.sin(a), -math.sin(e)))
+    up = (-fwd).cross(right)
+    w, h = C["canvas_px"]
+    k = float(p.get("scale") or C.get("render_scale", 8))
+    cd = bpy.data.cameras.new("sprite_cam")
+    cd.type = "ORTHO"
+    cd.ortho_scale = max(w, h) / C["px_per_tile"] * C["tile_m"]
+    cx, cy = C["footprint_centre_px"]
+    cd.shift_x = -(cx - w / 2) / max(w, h)
+    cd.shift_y = (cy - h / 2) / max(w, h)
+    cd.clip_start, cd.clip_end = 0.1, 1000.0
+    cam = bpy.data.objects.new("sprite_cam", cd)
+    sc.collection.objects.link(cam)
+    target = Vector((footprint[0] / 2, footprint[1] / 2, 0.0))
+    cam.matrix_world = Matrix.Translation(target - fwd * 200.0) @ Matrix((right, up, -fwd)).transposed().to_4x4()
+    sc.camera = cam
+    sc.render.resolution_x, sc.render.resolution_y = int(round(w * k)), int(round(h * k))
+    sc.render.resolution_percentage = 100
+    sc.render.film_transparent = True
+    sun = bpy.data.lights.new("sprite_sun", "SUN")
+    sun.energy = float(p.get("sun_energy", 3.2))
+    sun.angle = math.radians(25)
+    so = bpy.data.objects.new("sprite_sun", sun)
+    sc.collection.objects.link(so)
+    so.rotation_euler = Vector(C.get("sun_dir", (-0.75, -0.35, 0.85))).normalized().to_track_quat("Z", "Y").to_euler()
+    world = bpy.data.worlds.new("sprite_world")
+    if not world.node_tree:
+        world.use_nodes = True
+    bg = world.node_tree.nodes.get("Background")
+    bg.inputs["Color"].default_value = (0.62, 0.66, 0.72, 1.0)
+    bg.inputs["Strength"].default_value = float(p.get("ambient", 0.9))
+    sc.world = world
+    id_map = {name: SPRITE_ID_COLOURS[i % len(SPRITE_ID_COLOURS)] for i, name in enumerate(parts)}
+    for ob in sc.objects:
+        for name, prefix in parts.items():
+            if ob.name.startswith(prefix):
+                ob.color = (*id_map[name], 1.0)
+                break
+    vl = sc.view_layers[0]
+    zs = [(o.matrix_world @ Vector(c) - cam.matrix_world.translation).dot(fwd)
+          for o in sc.objects if o.type == "MESH" and not o.hide_render for c in o.bound_box]
+    near, far = (min(zs) - 0.5, max(zs) + 0.5) if zs else (0.1, 100.0)
+    ext = float(p.get("pos_extent", 2.5))
+
+    def depth_build(nt, em):
+        cdn = nt.nodes.new("ShaderNodeCameraData")
+        mr = nt.nodes.new("ShaderNodeMapRange")
+        mr.inputs["From Min"].default_value, mr.inputs["From Max"].default_value = near, far
+        mr.inputs["To Min"].default_value, mr.inputs["To Max"].default_value = 1.0, 0.0
+        nt.links.new(cdn.outputs["View Z Depth"], mr.inputs["Value"])
+        nt.links.new(mr.outputs["Result"], em.inputs["Color"])
+
+    def normal_build(nt, em):
+        geo = nt.nodes.new("ShaderNodeNewGeometry")
+        vt = nt.nodes.new("ShaderNodeVectorTransform")
+        vt.vector_type, vt.convert_from, vt.convert_to = "NORMAL", "WORLD", "CAMERA"
+        vm = nt.nodes.new("ShaderNodeVectorMath")
+        vm.operation = "MULTIPLY_ADD"
+        vm.inputs[1].default_value, vm.inputs[2].default_value = (0.5, 0.5, -0.5), (0.5, 0.5, 0.5)
+        nt.links.new(geo.outputs["Normal"], vt.inputs["Vector"])
+        nt.links.new(vt.outputs["Vector"], vm.inputs[0])
+        nt.links.new(vm.outputs["Vector"], em.inputs["Color"])
+
+    def pos_build(nt, em):
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        vm = nt.nodes.new("ShaderNodeVectorMath")
+        vm.operation = "MULTIPLY_ADD"
+        vm.inputs[1].default_value, vm.inputs[2].default_value = (0.5 / ext,) * 3, (0.5, 0.5, 0.5)
+        nt.links.new(tc.outputs["Object"], vm.inputs[0])
+        nt.links.new(vm.outputs["Vector"], em.inputs["Color"])
+
+    overrides = {}
+
+    def override(name):
+        if name not in overrides:
+            if name == "clay":
+                m = bpy.data.materials.new("pass_clay")
+                if not m.node_tree:
+                    m.use_nodes = True
+                b = m.node_tree.nodes.get("Principled BSDF")
+                b.inputs["Base Color"].default_value = (0.7, 0.7, 0.7, 1)
+                b.inputs["Roughness"].default_value = 0.9
+                overrides[name] = m
+            else:
+                builds = {"depth": depth_build, "normal": normal_build, "pos": pos_build}
+                overrides[name] = _sprite_emission("pass_" + name, builds[name])
+        return overrides[name]
+
+    def cycles(samples, denoise, width=1.5):
+        sc.render.engine = "CYCLES"
+        sc.cycles.device = "GPU" if p.get("gpu") else "CPU"
+        sc.cycles.samples = samples
+        sc.cycles.use_denoising = denoise
+        sc.cycles.filter_width = width
+
+    def view(t):
+        sc.view_settings.view_transform = t
+        sc.view_settings.look = "None"
+
+    written = {}
+
+    def render(name, path):
+        vl.material_override = None
+        samples = int(p.get("samples", 64))
+        if name == "beauty":
+            cycles(samples, True)
+            view("Standard")
+        elif name == "clay":
+            cycles(max(16, samples // 2), True)
+            view("Standard")
+            vl.material_override = override("clay")
+        elif name in ("depth", "normal"):
+            cycles(4, False)
+            view("Standard")
+            vl.material_override = override(name)
+        elif name == "pos":
+            cycles(1, False, 0.01)
+            view("Raw")
+            vl.material_override = override("pos")
+        elif name == "id":
+            sc.render.engine = "BLENDER_WORKBENCH"
+            view("Standard")
+            sh = sc.display.shading
+            sh.light, sh.color_type = "FLAT", "OBJECT"
+            sh.show_object_outline = sh.show_cavity = sh.show_shadows = sh.show_specular_highlight = False
+            sc.display.render_aa = "OFF"
+        else:
+            raise ValueError("unknown pass %s (beauty, clay, depth, normal, id, pos)" % name)
+        sixteen = name == "pos"
+        path = os.path.splitext(path)[0] + (".tif" if sixteen else ".png")
+        sc.render.filepath = path
+        # TIFF for 16-bit data: Pillow and imageio cut 16-bit RGBA PNG to 8 bits on read
+        sc.render.image_settings.file_format = "TIFF" if sixteen else "PNG"
+        sc.render.image_settings.color_mode = "RGBA"
+        sc.render.image_settings.color_depth = "16" if sixteen else "8"  # after file_format, which resets it
+        bpy.ops.render.render(write_still=True)
+        if not os.path.isfile(path):
+            raise RuntimeError("render wrote nothing: %s" % path)
+        written.setdefault(name, []).append(path)
+
+    base = {}
+    for it in loop:
+        ob = bpy.data.objects[it["object"]]
+        base[ob.name] = (tuple(ob.location), tuple(ob.rotation_euler))
+
+    def phase(t):
+        for it in loop:
+            ob = bpy.data.objects[it["object"]]
+            loc, rot = base[ob.name]
+            ob.location, ob.rotation_euler = loc, rot
+            if "rotate_axis" in it:
+                r = list(rot)
+                r["XYZ".index(it["rotate_axis"])] += math.radians(it["degrees"]) * t
+                ob.rotation_euler = r
+            if "translate" in it:
+                wv = math.cos(2 * math.pi * t * it.get("cycles", 1)) if it.get("wave") == "cos" else t
+                ob.location = Vector(loc) + Vector(it["translate"]) * wv
+
+    def px(q):
+        v = world_to_camera_view(sc, cam, Vector(q))
+        return [round(v.x * sc.render.resolution_x, 2), round((1 - v.y) * sc.render.resolution_y, 2)]
+
+    phase(0.0)
+    for name in p.get("passes", ["beauty", "clay", "depth", "normal", "id"]):
+        render(name, os.path.join(out, name + ".png"))
+    frames = int(p.get("frames", 0) or 0)
+    if frames:
+        fdir = os.path.join(out, "frames")
+        os.makedirs(fdir, exist_ok=True)
+        for i in range(frames):
+            phase(i / frames)
+            for name in p.get("frame_passes", ["beauty", "id"]):
+                render(name, os.path.join(fdir, "%s_%03d.png" % (name, i)))
+        phase(0.0)
+    fx, fy = footprint
+    gb = {}
+    for key, q in (("front", (0, 0, 0)), ("left", (0, fy, 0)), ("right", (fx, 0, 0)), ("back", (fx, fy, 0))):
+        v = world_to_camera_view(sc, cam, Vector(q))
+        gb[key] = {"x": round(v.x * w, 1), "y": round((1 - v.y) * h, 1)}
+    rg = {}
+    for name, r in rings.items():
+        ax = "XYZ".index(r["axis"])
+        u, v2 = [i for i in range(3) if i != ax]
+        face = sorted(r["faces"], key=lambda z: abs(z - cam.matrix_world.translation[ax]))[0]
+        rim = []
+        for j in range(72):
+            q = list(r["centre"])
+            q[ax] = face
+            q[u] += r["radius"] * math.cos(2 * math.pi * j / 72)
+            q[v2] += r["radius"] * math.sin(2 * math.pi * j / 72)
+            rim.append(px(q))
+        c = list(r["centre"])
+        c[ax] = face
+        rg[name] = {"rim_px": rim, "centre_px": px(c), "arms": r.get("arms", 0), "angles": 72}
+    meta = {"camera": C, "groundBase": gb, "rings": rg, "pos_extent": ext, "frames": frames, "loop": loop,
+            "id_colours": {k2: [round(c, 3) for c in v] for k2, v in id_map.items()},
+            "id_colour_space": "linear object colours; the id PNG is written through sRGB",
+            "render_px": [sc.render.resolution_x, sc.render.resolution_y]}
+    with open(os.path.join(out, "sprite.json"), "w", encoding="utf-8") as fh:
+        json.dump(meta, fh, indent=1)
+    return {"out": out, "groundBase": gb, "passes": {k2: len(v) for k2, v in written.items()},
+            "parts": list(parts), "rings": list(rg), "frames": frames}
+
+
 ACTIONS = {"inspect": act_inspect, "encode": act_encode, "render": act_render, "match": act_match, "convert": act_convert,
            "printable": act_printable, "union": act_union, "crowd": act_crowd, "duel": act_duel, "turnaround": act_turnaround,
-           "mark": act_mark, "lineup": act_lineup}
+           "mark": act_mark, "lineup": act_lineup, "sprite": act_sprite}
 
 
 def main():

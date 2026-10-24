@@ -6,6 +6,22 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-015 · 2026-10-23 · A 16-bit RGBA PNG from Blender reads back as 8 bits in Pillow and imageio; write data passes as TIFF
+- Trigger: the sawmill's object-position pass, written by Blender as a 16-bit RGBA PNG (header bit depth 16, colour type 6), came back from `PIL.Image.open` and `imageio.v3.imread` as uint8 with 256 levels, which made sub-centimetre body coordinates useless. Separately, setting `image_settings.file_format` after `color_depth` reset the depth to 8.
+- Hypothesis: Pillow has no 16-bit RGBA mode and imageio reads PNG through Pillow; OpenCV reads it but is not installed everywhere.
+- Rule: write 16-bit data passes (positions, precise depth) as TIFF and read them with tifffile; set `color_depth` after `file_format`. `pw.py sprite` does both for its `pos` pass.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/model/renders/L1_v04_1024_loop/frames/pos_003.tif (uint16, 43,096 distinct values in one channel) against the PNG of the same pass (255 levels), 2026-10-23.
+- Scope: skill (pw.py sprite, pos pass); polywright-blender
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+
+### L-014 · 2026-10-23 · A game's sprite camera is in its ground diamonds; fit it, do not guess an isometric angle
+- Trigger: matching Arvum Electrum's painted building sprites for a model-first sawmill. `pw.py match` solves a perspective camera from a photo and does not fit near-orthographic game art; a guessed 2:1 isometric angle would have been 26.6 degrees of elevation.
+- Hypothesis: each 2x2 sprite's `groundBase` (front, left, right corners, hand-checked in her registry) is the image of a square under one orthographic camera, so three corners fix scale, yaw and elevation per sprite, and the median over a game's sprites is its camera.
+- Rule: run `pw.py spritecam <registry.json> --like <the sprite being replaced>`; 38 of her 43 2x2 diamonds fit within 4 px and agree on yaw 42.5 and elevation 32.6 degrees (spread 30 to 52 and 24 to 39: the art is AI-made), and the sawmill fit itself at 0.1 px. Render with `pw.py sprite`; its `groundBase` lands on the old sprite's diamond, so the registry entry can take it as is.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/camera/fit.json (per sprite) and camera.json; renders/geared_L1_v08_1024/sprite.json groundBase front (49.5, 90.1), left (0.9, 66.1), right (94.1, 63.9) against her Sawmill's (42, 90), (1, 65), (89, 68), 2026-10-23.
+- Scope: skill (pw.py spritecam, sprite)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+
 ### L-009 · 2026-10-22 · From behind, the default camera merges the enemy line and its reserves into one band; raise it and aim past the enemy
 - Trigger: `pw.py crowd --view behind --action hold --scatter 450 --preview` put the camera 6 m high and 43 m back (30 m default gap). Side A filled the lower half of the frame, and side B with its 221 reserves was a strip about 60 px tall where the scattered reserves could not be told from the formed ranks. `--cam-height 12 --lens 45 --gap 20` separated them, but tilted so far down that the reserves touched the top edge and there was no horizon.
 - Hypothesis: the behind view aims at the battle line (x 0, z 1), so the depth behind the enemy, where `--scatter` puts the reserves, shrinks to a few rows of pixels. Height opens up that depth; aiming beyond the enemy brings the horizon back.

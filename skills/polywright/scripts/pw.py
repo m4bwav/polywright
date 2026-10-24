@@ -48,7 +48,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 REFS = os.path.join(os.path.dirname(HERE), "references")
@@ -192,6 +192,173 @@ def bpy_action(action, params, timeout=1800):
                "log": condense((r.get("stdout") or "") + "\n" + (r.get("stderr") or ""))}
     shutil.rmtree(tmp, ignore_errors=True)
     return res
+
+
+# ------------------------------------------------------------------------------------------ sprite camera and passes
+
+def _diamond_residual(base, tiles, s, yaw, elev):
+    # front->left edge projects to s*tiles*(-cos yaw, -sin(elev) sin yaw); front->right to s*tiles*(sin yaw, -sin(elev) cos yaw)
+    f = base["front"]
+    se = math.sin(elev)
+    pl = (base["left"]["x"] - f["x"], base["left"]["y"] - f["y"])
+    pr = (base["right"]["x"] - f["x"], base["right"]["y"] - f["y"])
+    el = (-math.cos(yaw), -se * math.sin(yaw))
+    er = (math.sin(yaw), -se * math.cos(yaw))
+    return pl, pr, el, er
+
+
+def fit_diamond(base, tiles):
+    """Orthographic sprite camera from one ground diamond (front, left, right corners in image pixels, y down) of a
+    square footprint of `tiles` tiles: scale (px per tile), yaw and elevation. Coarse-to-fine search over the two
+    angles with the scale solved in closed form; stdlib only."""
+    best = None
+
+    def score(yaw, elev):
+        pl, pr, el, er = _diamond_residual(base, tiles, 0, yaw, elev)
+        num = (pl[0] * el[0] + pl[1] * el[1] + pr[0] * er[0] + pr[1] * er[1]) * tiles
+        den = (el[0] ** 2 + el[1] ** 2 + er[0] ** 2 + er[1] ** 2) * tiles * tiles
+        s = num / den if den else 0.0
+        r2 = sum((pl[i] - s * tiles * el[i]) ** 2 + (pr[i] - s * tiles * er[i]) ** 2 for i in range(2))
+        return r2, s
+
+    for step, span, centre in ((1.0, None, None), (0.1, 1.5, None), (0.01, 0.15, None)):
+        if best is None:
+            yaws = [math.radians(d * step) for d in range(0, int(90 / step) + 1)]
+            elevs = [math.radians(5 + d * step) for d in range(0, int(84 / step) + 1)]
+        else:
+            y0, e0 = math.degrees(best[2]), math.degrees(best[3])
+            n = int(span / step)
+            yaws = [math.radians(y0 + d * step) for d in range(-n, n + 1)]
+            elevs = [math.radians(e0 + d * step) for d in range(-n, n + 1)]
+        for yaw in yaws:
+            for elev in elevs:
+                r2, s = score(yaw, elev)
+                if best is None or r2 < best[0]:
+                    best = (r2, s, yaw, elev)
+    r2, s, yaw, elev = best
+    return {"px_per_tile": s, "yaw_deg": math.degrees(yaw), "elevation_deg": math.degrees(elev),
+            "rms_px": math.sqrt(r2 / 4.0)}
+
+
+def _collect_bases(node, path, out, tiles_default):
+    if isinstance(node, dict):
+        size = node.get("size")
+        gb = node.get("groundBase")
+        name = node.get("buildingId") or node.get("id") or node.get("name") or path
+        if isinstance(gb, dict) and all(k in gb for k in ("front", "left", "right")):
+            out.append((name, gb, size))
+        elif all(k in node for k in ("front", "left", "right")) and isinstance(node.get("front"), dict):
+            out.append((path, node, None))
+        for k, v in node.items():
+            if k == "levelUpgrades" and isinstance(v, list):
+                for i, lv in enumerate(v):
+                    if isinstance(lv, dict) and isinstance(lv.get("groundBase"), dict):
+                        out.append(("%s@L%d" % (name, i + 2), lv["groundBase"], size))
+            elif k != "groundBase":
+                _collect_bases(v, "%s.%s" % (path, k), out, tiles_default)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _collect_bases(v, "%s[%d]" % (path, i), out, tiles_default)
+
+
+def cmd_spritecam(a):
+    with open(a.bases, encoding="utf-8") as f:
+        data = json.load(f)
+    found = []
+    _collect_bases(data, "", found, a.tiles)
+    rows = []
+    for name, gb, size in found:
+        if size and isinstance(size, dict) and (size.get("x") != a.tiles or size.get("y") != a.tiles):
+            continue
+        r = fit_diamond(gb, a.tiles)
+        r["name"] = name
+        rows.append(r)
+    good = [r for r in rows if r["rms_px"] <= a.max_rms]
+    if not good:
+        return emit({"ok": False, "error": "no %dx%d ground diamonds fit within %.1f px (found %d)" %
+                     (a.tiles, a.tiles, a.max_rms, len(rows))}, 1)
+
+    def med(k):
+        v = sorted(r[k] for r in good)
+        return v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
+    cam = {"source": "pw.py spritecam over %d of %d %dx%d ground diamonds in %s (rms <= %.1f px)" %
+                     (len(good), len(rows), a.tiles, a.tiles, os.path.basename(a.bases), a.max_rms),
+           "projection": "orthographic", "yaw_deg": round(med("yaw_deg"), 2),
+           "elevation_deg": round(med("elevation_deg"), 2), "px_per_tile": round(med("px_per_tile"), 2),
+           "yaw_meaning": "angle of the front-left ground edge from screen-left; front corner at world origin, "
+                          "footprint along +X (to the right corner) and +Y (to the left corner)",
+           "canvas_px": [a.tiles * a.tile_px, a.tiles * a.tile_px], "render_scale": 8, "tile_m": a.tile_m,
+           "footprint_tiles": [a.tiles, a.tiles],
+           "footprint_centre_px": [a.tiles * a.tile_px / 2, a.tiles * a.tile_px * 0.68],
+           "sun_dir": [-0.75, -0.35, 0.85],
+           "spread": {k: [round(min(r[k] for r in good), 2), round(max(r[k] for r in good), 2)]
+                      for k in ("yaw_deg", "elevation_deg", "px_per_tile")},
+           "per_sprite": {r["name"]: {k: round(r[k], 2) for k in ("px_per_tile", "yaw_deg", "elevation_deg", "rms_px")}
+                          for r in rows}}
+    if a.like:
+        hit = [r for r in rows if r["name"] == a.like]
+        if hit:
+            gb = next(g for n, g, s in found if n == a.like)
+            cam["footprint_centre_px"] = [round((gb["left"]["x"] + gb["right"]["x"]) / 2, 1),
+                                          round((gb["left"]["y"] + gb["right"]["y"]) / 2, 1)]
+            cam["px_per_tile_like"] = round(hit[0]["px_per_tile"], 2)
+    if a.out:
+        with open(a.out, "w", encoding="utf-8") as f:
+            json.dump(cam, f, indent=2)
+    res = {k: v for k, v in cam.items() if k != "per_sprite"}
+    res.update(ok=True, action="spritecam", out=a.out,
+               next="pw.py sprite <model.blend> --camera %s --out <dir>: renders through this camera" % (a.out or "camera.json"))
+    return emit(res)
+
+
+def line_pass(out_dir):
+    """Line art from a sprite render's id, normal and depth passes: an edge where the part, the surface direction
+    or the distance jumps. Needs numpy and Pillow; returns None without them."""
+    try:
+        import numpy as np
+        from PIL import Image
+    except ImportError:
+        return None
+    ld = lambda n: np.asarray(Image.open(os.path.join(out_dir, n + ".png")).convert("RGBA")).astype(float) / 255.0
+    if not all(os.path.isfile(os.path.join(out_dir, n + ".png")) for n in ("id", "normal", "depth")):
+        return None
+    idp, nrm, dep = ld("id"), ld("normal"), ld("depth")
+    alpha = dep[..., 3] > 0.5
+
+    def jump(arr, thr):
+        dx = np.abs(np.diff(arr, axis=1, prepend=arr[:, :1]))
+        dy = np.abs(np.diff(arr, axis=0, prepend=arr[:1]))
+        m = np.maximum(dx, dy)
+        return (m.max(axis=-1) if m.ndim == 3 else m) > thr
+    edge = jump(idp[..., :3], 0.2) | jump(nrm[..., :3], 0.25) | jump(dep[..., 0], 0.02)
+    inner = np.zeros_like(alpha)
+    inner[1:-1, 1:-1] = alpha[1:-1, 1:-1] & alpha[:-2, 1:-1] & alpha[2:, 1:-1] & alpha[1:-1, :-2] & alpha[1:-1, 2:]
+    edge = (edge & alpha) | (alpha & ~inner)
+    img = np.zeros(dep.shape[:2] + (4,), np.uint8)
+    img[..., :3] = 40
+    img[..., 3] = edge * 255
+    path = os.path.join(out_dir, "line.png")
+    Image.fromarray(img).save(path)
+    return path
+
+
+def cmd_sprite(a):
+    with open(a.camera, encoding="utf-8") as f:
+        cam = json.load(f)
+    split = lambda t: [v.strip() for v in (t or "").split(",") if v.strip()]
+    params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "camera": cam,
+              "passes": split(a.passes), "frames": a.frames, "frame_passes": split(a.frame_passes),
+              "samples": a.samples, "scale": a.scale, "hide": split(a.hide), "gpu": a.gpu, "pos_extent": a.pos_extent}
+    if a.footprint_m:
+        params["footprint_m"] = floats(a.footprint_m, 2)
+    res = bpy_action("sprite", params, timeout=a.timeout)
+    if res.get("ok") and "line" in split(a.passes) + ["line"] and not a.no_line:
+        res["line"] = line_pass(params["out"]) or "skipped (needs numpy, Pillow and the id, normal, depth passes)"
+    if res.get("ok"):
+        res["next"] = ("Read the passes at 1x and the beauty at canvas size beside the game's real sprites; paint "
+                       "over beauty with Canny of clay as control (an image model with a ControlNet); sprite.json "
+                       "carries groundBase, ring rims and ID colours for a geometry check of the painting")
+    return emit(res, 0 if res.get("ok") else 1)
 
 
 # ------------------------------------------------------------------------------------------ doctor
@@ -2545,6 +2712,33 @@ def main(argv=None):
     p.add_argument("--cols", type=int, default=3)
     p.add_argument("--no-sheet", action="store_true")
     p.set_defaults(fn=cmd_render)
+
+    p = sub.add_parser("spritecam", help="fit a game's orthographic sprite camera from ground diamonds (groundBase corners) in a JSON file")
+    p.add_argument("bases", help="any JSON holding groundBase {front,left,right} corners (a building registry) or bare {front,left,right} objects")
+    p.add_argument("--tiles", type=int, default=2, help="footprint side in tiles of the diamonds to use")
+    p.add_argument("--tile-px", type=int, default=48, help="canvas pixels per tile (canvas = tiles x tile-px)")
+    p.add_argument("--tile-m", type=float, default=5.0, help="metres per tile in the model")
+    p.add_argument("--max-rms", type=float, default=4.0, help="drop diamonds that fit worse than this (px)")
+    p.add_argument("--like", help="name of one sprite whose footprint centre and scale the new one should take")
+    p.add_argument("--out", help="camera.json to write")
+    p.set_defaults(fn=cmd_spritecam)
+
+    p = sub.add_parser("sprite", help="render a model through a sprite camera: beauty, clay, depth, normal, id, pos, line passes, loop frames, groundBase")
+    p.add_argument("file", help="the model; a .blend keeps its scene properties sprite_parts, loop, rings, footprint_m")
+    p.add_argument("--camera", required=True, help="camera.json from pw.py spritecam")
+    p.add_argument("--out", required=True, help="output folder")
+    p.add_argument("--passes", default="beauty,clay,depth,normal,id", help="comma list: beauty, clay, depth, normal, id, pos")
+    p.add_argument("--frames", type=int, default=0, help="loop frames to render (the scene's loop property)")
+    p.add_argument("--frame-passes", default="beauty,id", help="passes per loop frame (add pos for model-driven animation)")
+    p.add_argument("--samples", type=int, default=64)
+    p.add_argument("--scale", type=float, default=0, help="render pixels per canvas pixel (default the camera's render_scale; 1024/96 for diffusion input)")
+    p.add_argument("--hide", default="", help="comma list of object-name prefixes left out (a plate without the moving part)")
+    p.add_argument("--footprint-m", help="X,Y footprint in metres when the scene does not say")
+    p.add_argument("--pos-extent", type=float, default=2.5, help="pos pass: object coordinates in [-e, e] m map to 0..1")
+    p.add_argument("--no-line", action="store_true", help="skip the line-art pass")
+    p.add_argument("--gpu", action="store_true")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.set_defaults(fn=cmd_sprite)
 
     p = sub.add_parser("match", help="render a model from an existing picture's camera (RGBA), paste it in, write a blend mask")
     p.add_argument("file", help="the model (.blend, .glb, ...), forward axis +X, up +Z")
