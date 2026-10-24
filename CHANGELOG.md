@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.5.0 (2026-10-24)
+
+- Scene illustrations from a model: `pw.py framecam` grid-searches perspective cameras (position, aim, lens) that put named world points in screen boxes, keep others in frame and out of the UI's text bands, and maximise a hero's size on screen; it prints the best as `cameras.json` presets and names the rule that blocks an impossible search. Standard library only. `pw.py scene` renders a scene through one preset into clay, beauty, depth (inverse distance, its range measured from the scene unless set), normal, a flat id pass per part with the sky transparent, line art, an optional repainted sky, and `scene.json` with rings and named points projected to pixels. Its Blender half, `scripts/pw_scene.py`, also offers `sweep` and `ribbon` to scripts that build scenes. Made for a loading-screen illustration built around a game's mill model.
+
 ## 0.4.0 (2026-10-23)
 
 - `pw.py spritecam`: fit a game's orthographic sprite camera (yaw, elevation, pixels per tile) from the ground diamonds (`groundBase` front, left and right corners) in any JSON, such as a building registry; median over the sprites that fit, misfits dropped, `--like` takes one sprite's footprint centre. Standard library only.

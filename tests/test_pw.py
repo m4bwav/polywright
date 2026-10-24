@@ -946,5 +946,226 @@ class SpriteWithBlender(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+def frame_problem(**over):
+    """A hero two metres tall to be framed right of centre, a far landmark kept in frame, the UI's text bands
+    (centred, top and bottom 15 percent) kept clear of the hero's top and foot."""
+    prob = {"size": [1920, 1080],
+            "points": {"hero": [0, 0, 2], "hero_top": [0, 0, 4], "hero_bottom": [0, 0, 0], "far": [30, 20, 0]},
+            "boxes": {"hero": {"x": [0.6, 0.75], "y": [0.4, 0.6]}},
+            "keep_in_frame": ["far", "hero_top", "hero_bottom"],
+            "bands": [{"x": [0.25, 0.75], "y": [0, 0.15]}, {"x": [0.25, 0.75], "y": [0.85, 1]}],
+            "keep_out_of_bands": ["hero_top", "hero_bottom"],
+            "size_measure": ["hero_top", "hero_bottom"],
+            "search": {"pos": [[-8, 8, 2], [-30, -10, 2], [1, 5, 1]], "target": [[-4, 4, 1], 0, 2], "lens_mm": [20, 60, 5]}}
+    prob.update(over)
+    return prob
+
+
+class FrameCam(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="pwtest_fc_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def solve(self, prob, *extra):
+        path = os.path.join(self.tmp, "prob.json")
+        with open(path, "w") as f:
+            json.dump(prob, f)
+        return run("framecam", path, *extra)
+
+    def test_pinhole_puts_the_aim_at_the_centre_and_scales_with_the_lens(self):
+        proj = pw.pinhole((0, -10, 2), (0, 0, 2), 36.0, (1920, 1080))
+        x, y, z = proj((0, 0, 2))
+        self.assertAlmostEqual(x, 0.5)
+        self.assertAlmostEqual(y, 0.5)
+        self.assertAlmostEqual(z, 10.0)
+        x, y, _ = proj((1, 0, 3))  # 1 m right and up at 10 m: f_px x 0.1 = 192 px
+        self.assertAlmostEqual(x * 1920, 960 + 192, places=6)
+        self.assertAlmostEqual(y * 1080, 540 - 192, places=6)
+        self.assertIsNone(proj((0, -20, 2))[0])
+        self.assertIsNone(pw.pinhole((0, 0, 10), (0, 0, 0), 35, (64, 64)))
+
+    def test_framecam_finds_cameras_that_meet_every_rule(self):
+        prob = frame_problem()
+        out = os.path.join(self.tmp, "cameras.json")
+        with open(out, "w") as f:
+            json.dump({"sun": {"azimuth_deg": 200}, "cameras": {"old": {"pos": [0, 0, 1], "target": [0, 1, 1]}}}, f)
+        code, res = self.solve(prob, "--out", out, "--top", "3")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(sorted(res["cameras"]), ["framecam_1", "framecam_2", "framecam_3"])
+        sizes = [res["cameras"]["framecam_%d" % i]["size_px"] for i in (1, 2, 3)]
+        self.assertEqual(sizes, sorted(sizes, reverse=True))
+        for c in res["cameras"].values():  # check each rule with the projection alone
+            proj = pw.pinhole(c["pos"], c["target"], c["lens_mm"], (1920, 1080))
+            at = {n: proj(v) for n, v in prob["points"].items()}
+            self.assertTrue(0.6 <= at["hero"][0] <= 0.75 and 0.4 <= at["hero"][1] <= 0.6, at["hero"])
+            for n in ("far", "hero_top", "hero_bottom"):
+                self.assertTrue(0 <= at[n][0] <= 1 and 0 <= at[n][1] <= 1, (n, at[n]))
+            for n in ("hero_top", "hero_bottom"):
+                x, y, _ = at[n]
+                self.assertFalse(0.25 <= x <= 0.75 and (y <= 0.15 or y >= 0.85), (n, x, y))
+            top, bot = at["hero_top"], at["hero_bottom"]
+            self.assertAlmostEqual(math.hypot((top[0] - bot[0]) * 1920, (top[1] - bot[1]) * 1080), c["size_px"], delta=0.2)
+        with open(out) as f:
+            saved = json.load(f)
+        self.assertIn("old", saved["cameras"])  # merged, not replaced
+        self.assertIn("framecam_1", saved["cameras"])
+        self.assertEqual(saved["sun"], {"azimuth_deg": 200})
+
+    def test_framecam_names_the_rule_no_camera_can_meet(self):
+        prob = frame_problem()
+        prob["search"]["target"] = [0, 0, 2]  # aimed at the hero, it is always at the centre, never right of it
+        code, res = self.solve(prob)
+        self.assertEqual(code, 1, res)
+        self.assertFalse(res["ok"])
+        self.assertIn("never met: box:hero", res["error"])
+
+    def test_framecam_refuses_unknown_points_and_oversized_searches(self):
+        code, res = self.solve(frame_problem(keep_in_frame=["weir"]))
+        self.assertEqual(code, 1)
+        self.assertIn("unknown point names ['weir']", res["error"])
+        code, res = self.solve(frame_problem(), "--max-evals", "1000")
+        self.assertEqual(code, 1)
+        self.assertIn("over the 1000 limit", res["error"])
+
+
+class ScenePlumbing(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="pwtest_scn_")
+        self.cams = os.path.join(self.tmp, "cameras.json")
+        with open(self.cams, "w") as f:
+            json.dump({"sun": {"azimuth_deg": 120, "elevation_deg": 20, "energy": 3, "colour": [1, 1, 1]},
+                       "sky": {"strength": 0.5},
+                       "cameras": {"wide": {"pos": [10, -24, 5], "target": [2, -2, 1.5], "lens_mm": 32,
+                                            "depth_near_m": 8}}}, f)
+        self.calls = []
+        self.saved = pw.bpy_action
+
+        def fake(action, params, timeout=1800, script=pw.BPY_SCRIPT):
+            self.calls.append((action, params, script))
+            return {"ok": True, "action": action}
+        pw.bpy_action = fake
+
+    def tearDown(self):
+        pw.bpy_action = self.saved
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_scene_passes_the_preset_sun_size_and_options_to_the_scene_script(self):
+        code, res = run("scene", "s.blend", "--cameras", self.cams, "--camera", "wide", "--out", self.tmp,
+                        "--size", "1920x1080", "--passes", "clay, depth,id", "--samples", "8", "--hide", "wheel_,race_",
+                        "--no-line")
+        self.assertEqual(code, 0, res)
+        action, params, script = self.calls[0]
+        self.assertEqual((action, os.path.basename(script)), ("scene", "pw_scene.py"))
+        self.assertEqual(params["camera"]["lens_mm"], 32)
+        self.assertEqual(params["camera_name"], "wide")
+        self.assertEqual(params["sun"]["azimuth_deg"], 120)
+        self.assertEqual(params["world"], {"strength": 0.5})
+        self.assertEqual(params["size"], [1920, 1080])
+        self.assertEqual(params["passes"], ["clay", "depth", "id"])
+        self.assertEqual(params["hide"], ["wheel_", "race_"])
+        self.assertEqual(params["samples"], 8)
+        self.assertTrue(os.path.isabs(params["file"]))
+        self.assertNotIn("line", res)
+
+    def test_scene_refuses_unknown_cameras_passes_and_sizes_before_blender(self):
+        code, res = run("scene", "s.blend", "--cameras", self.cams, "--camera", "close", "--out", self.tmp)
+        self.assertEqual(code, 2)
+        self.assertEqual(res["known"], ["wide"])
+        code, res = run("scene", "s.blend", "--cameras", self.cams, "--camera", "wide", "--out", self.tmp,
+                        "--passes", "beauty,mist", "--size", "1280")
+        self.assertEqual(code, 2)
+        self.assertIn("unknown pass mist", res["error"])
+        self.assertIn("--size must be WxH", res["error"])
+        code, res = run("scene", "s.blend", "--cameras", os.path.join(self.tmp, "none.json"), "--camera", "wide",
+                        "--out", self.tmp)
+        self.assertEqual(code, 2)
+        self.assertEqual(self.calls, [])
+
+
+SCENE_BUILD = """
+import bpy, bmesh, json, sys
+from mathutils import Matrix
+blend, scripts = sys.argv[sys.argv.index("--") + 1:][:2]
+sys.path.insert(0, scripts)
+from pw_scene import sweep, ribbon
+bpy.ops.wm.read_factory_settings(use_empty=True)
+sc = bpy.context.scene
+def mesh(name, build):
+    bm = bmesh.new(); build(bm)
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    ob = bpy.data.objects.new(name, me); sc.collection.objects.link(ob)
+    return ob
+mesh("ground_plane", lambda bm: bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=60))
+def house(bm):
+    bmesh.ops.create_cube(bm, size=4.0)
+    bmesh.ops.translate(bm, vec=(-3, 6, 2), verts=bm.verts)
+mesh("house_body", house)
+def wheel(bm):
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=24, radius1=1.5, radius2=1.5, depth=0.4)
+    bmesh.ops.rotate(bm, cent=(0, 0, 0), matrix=Matrix.Rotation(1.5708, 3, "X"), verts=bm.verts)
+    bmesh.ops.translate(bm, vec=(3, 4, 1.8), verts=bm.verts)
+mesh("wheel_disc", wheel)
+sweep("bank_south", [(-20, -2), (0, -3), (20, -2)], [(-1.5, 0), (0, 0.8), (1.5, 0)])
+ribbon("road_track", [(-20, 12), (20, 12)], 1.5, lambda t, p: 0.02)
+sc["scene_parts"] = json.dumps({"house": "house_", "wheel": "wheel_", "ground": ["ground_", "bank_", "road_"]})
+sc["rings"] = json.dumps({"wheel": {"centre": [3, 4, 1.8], "radius": 1.5, "axis": "Y", "faces": [3.8, 4.2], "arms": 0, "hub_r": 0.3}})
+sc["scene_points"] = json.dumps({"door": [-3, 4, 1], "road": [[-10, 12, 0], [10, 12, 0]]})
+bpy.ops.wm.save_as_mainfile(filepath=blend)
+"""
+
+
+@unittest.skipUnless(pw.backend(), "Blender not found")
+class SceneWithBlender(unittest.TestCase):
+    def test_scene_renders_passes_and_projects_rings_and_points_as_framecam_does(self):
+        tmp = tempfile.mkdtemp(prefix="pwtest_sc3_")
+        try:
+            script = os.path.join(tmp, "build.py")
+            with open(script, "w") as f:
+                f.write(SCENE_BUILD)
+            blend = os.path.join(tmp, "scene.blend")
+            r = pw.run_blender_script(script, [blend, os.path.dirname(pw.BPY_SCRIPT)])
+            self.assertTrue(os.path.isfile(blend), r.get("stderr", "")[-800:] + r.get("stdout", "")[-800:])
+            preset = {"pos": [6, -14, 3], "target": [0, 4, 2], "lens_mm": 30}
+            cams = os.path.join(tmp, "cameras.json")
+            with open(cams, "w") as f:
+                json.dump({"cameras": {"low": preset}}, f)
+            out = os.path.join(tmp, "r")
+            code, res = run("scene", blend, "--cameras", cams, "--camera", "low", "--out", out, "--size", "192x108",
+                            "--samples", "2", "--no-line")
+            self.assertEqual(code, 0, res)
+            for n in ("clay", "beauty", "depth", "normal", "id"):
+                self.assertTrue(os.path.isfile(os.path.join(out, n + ".png")), n)
+            with open(os.path.join(out, "scene.json")) as f:
+                meta = json.load(f)
+            self.assertTrue(meta["depth_range_from"].startswith("measured"))
+            near, far = meta["depth_range_m"]
+            self.assertGreater(near, 2.0)  # nothing is nearer than the ground at the frame's foot
+            self.assertGreater(far, near)
+            proj = pw.pinhole(preset["pos"], preset["target"], 30, (192, 108))
+            x, y, _ = proj((-3, 4, 1))
+            got = meta["points"]["door"]
+            self.assertAlmostEqual(got["px"][0], x * 192, delta=0.3)
+            self.assertAlmostEqual(got["px"][1], y * 108, delta=0.3)
+            self.assertTrue(got["in_frame"])
+            self.assertEqual(len(meta["points"]["road"]), 2)
+            wheel = meta["rings"]["wheel"]
+            self.assertEqual((len(wheel["rim_px"]), len(wheel["hub_px"])), (72, 72))
+            cx, cy, _ = proj((3, 3.8, 1.8))  # the face nearer the camera
+            self.assertAlmostEqual(wheel["centre_px"][0], cx * 192, delta=0.3)
+            self.assertAlmostEqual(wheel["centre_px"][1], cy * 108, delta=0.3)
+            with open(os.path.join(out, "id.png"), "rb") as f:
+                w, h, ch, px = pw.png_decode(f.read())
+            self.assertEqual((w, h, ch), (192, 108, 4))
+            self.assertEqual(px[3], 0)  # top-left corner is sky: transparent
+            hx, hy, _ = proj((-3, 4, 2))  # the house's front face centre
+            i = (int(hy * 108) * 192 + int(hx * 192)) * 4
+            self.assertEqual(list(px[i:i + 3]), meta["id_colours_srgb"]["house"])
+            self.assertEqual(px[i + 3], 255)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

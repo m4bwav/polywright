@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-2 · 2026-10-24 · Scene illustration target: framecam and scene
+- because: L-018, L-019, L-020, user request (a loading-screen illustration built model-first around a mill model)
+- files: scripts/pw.py (pinhole, framecam, cmd_framecam, sky_pass, cmd_scene, parsers; bpy_action takes a script), scripts/pw_scene.py (new: act_scene, sweep, ribbon), SKILL.md ("Scene illustrations from a model"), references/cli.md (commands), tests/test_pw.py (FrameCam, ScenePlumbing, SceneWithBlender)
+- The working scripts of one illustration, generalised: the camera is searched against screen rules taken from the real UI instead of guessed, the scene renders the passes a painter and a gate need through that camera, and the depth range comes from the scene when the preset does not fix it.
+
 ### C-20261024-1 · 2026-10-24 · Game sprites: check size against the neighbours and keep beams off cylinders
 - because: L-016, L-017, user request (the sawmill read too small, and its log way read as an optical illusion)
 - files: SKILL.md ("Game sprites from a model", step 3)
