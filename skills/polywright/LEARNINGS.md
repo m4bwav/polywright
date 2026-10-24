@@ -6,6 +6,22 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-017 · 2026-10-24 · At sprite size a thin beam crossing a cylinder's silhouette reads as going through it
+- Trigger: the sawmill's log ran level out of the log door while the two log-way rails sloped down to the ground beneath it; in the 3/4 render the far rail showed above the log and the near one below, and the reviewer read it as an optical illusion with the wood above and below the exit.
+- Hypothesis: an orthographic 3/4 view drops the depth cue that separates two crossing members; a level cylinder over sloping rails projects with the rails cutting its outline at two heights, which no painter can fix.
+- Rule: when a part rests on supports, model the supports level with it and wider than its silhouette (a deck at the same height on posts), so no thin member crosses the part on screen; check the door, ramp and deck at 4x in the beauty before painting.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/model/renders/v10_logdeck.png (fixed: level sills at floor height, 0.45 m outside the log), reviewer screenshot of the first v10 take, 2026-10-24.
+- Scope: skill (game sprites from a model)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-016 · 2026-10-24 · A camera fitted to ground diamonds gives the ground scale, not the building's on-screen size
+- Trigger: the sawmill rendered through the camera fitted from the game's diamonds (33 px per tile) covered 3,606 of 9,216 px, against 4,800 to 5,400 for the game's work buildings; the reviewer called it too small, and the game's style guide says large buildings fill their canvas.
+- Hypothesis: the game's sprites overflow their diamonds with tall massing and props, so the same ground scale gives a smaller building when the model is historically lean (a narrow mill with an empty yard).
+- Rule: after the camera, measure coverage at 1x against same-class neighbours; fill with massing and props first (the sawmill went 3,606 to 3,733 px), then zoom (36 px per tile, footprint centre moved to keep the box inside the canvas: 4,435 px). Record the new `px_per_tile` and centre in camera.json with the reason, and let the registry's groundBase follow sprite.json.
+- Evidence: ArvumElectrum-anim-work/sawmill-3d/camera/camera_v10.json; artwright L-011 (the coverage floor in `aw.py sprite`), 2026-10-24.
+- Scope: skill (pw.py spritecam, sprite); artwright
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
 ### L-015 · 2026-10-23 · A 16-bit RGBA PNG from Blender reads back as 8 bits in Pillow and imageio; write data passes as TIFF
 - Trigger: the sawmill's object-position pass, written by Blender as a 16-bit RGBA PNG (header bit depth 16, colour type 6), came back from `PIL.Image.open` and `imageio.v3.imread` as uint8 with 256 levels, which made sub-centimetre body coordinates useless. Separately, setting `image_settings.file_format` after `color_depth` reset the depth to 8.
 - Hypothesis: Pillow has no 16-bit RGBA mode and imageio reads PNG through Pillow; OpenCV reads it but is not installed everywhere.
