@@ -117,3 +117,9 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - `pw.py texture --delight`: on a checkerboard under a 3:1 light gradient, block means over whole checker periods varied 157% before and 4.4% after; test added.
 - LOD switching by projected size (2 px rule) in the finish references; Unity's `LOD.screenRelativeTransitionHeight` (0-1) checked in the scripting reference. polywright-references names `--delight` and the limits of photo normal maps.
 - Skipped: `pw.py lods` switch estimates (Y2), an opt-in hard depth for crowd.
+
+## 2026-10-26: wiki for 0.5.0
+
+- Wiki updated from 0.2.1 to 0.5.0 with the wikiwright skill (owner-approved pass): new sections for duel, spritecam, sprite, framecam, scene, topology, crowd Mist, reserves, side B, two figures, texture --delight; 11 pages changed. Program and output: notes/2026-10-26-wiki-verify.py and .out.txt (67 sections, run against the release zip, two runs stable). Details, the shipped-doc inaccuracies and three small findings: notes/2026-10-26-github-wiki.md.
+- Found: the CHANGELOG's Unreleased section holds changes that are in the v0.5.0 tag and zip (PR #34), and 0.3.0 was never tagged.
+- Checks: check_skills ok; test_pw 69 OK; test_recipes 20 OK; budget YELLOW (767 KB). Wiki: check 0 errors, outputs 76 checked 0 missing, snippets 0 missing, tells 0 strong.
