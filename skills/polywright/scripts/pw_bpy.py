@@ -1401,16 +1401,22 @@ def crowd_layout(p):
     for side, sgn, action in sides[:int(p.get("sides", 2))]:
         if action not in CROWD_ACTIONS:
             raise ValueError("unknown action %s (%s)" % (action, ", ".join(CROWD_ACTIONS)))
+        b = side == "b"
+        jit = float(p["jitter_b"]) if b and p.get("jitter_b") is not None else float(p.get("jitter", 0.25))
+        size = float(p.get("scale_b", 1.0)) if b else 1.0
+        stagger = float(p.get("stagger_b", 0.4)) if b else 0.4
+        side_kit = set(p["kit_b"]) if b and p.get("kit_b") is not None else kit
         for r in range(int(p.get("ranks", 6))):
             for c in range(int(p.get("cols", 30))):
                 x0 = sgn * (gap / 2 + r * rs) + rng.uniform(-jit, jit)
-                stop = max(0.0, abs(x0) - (0.45 + r * rs + rng.uniform(0, 2 * jit))) if action in ("clash", "charge") else None  # ranks halt in order
-                figs.append({"side": side, "action": action, "kit": kit, "rank": r, "stop": stop,
+                # a loose side B (--jitter-b) runs right up to the line instead of halting rank by rank
+                stop = max(0.0, abs(x0) - (0.45 + (0 if b and p.get("jitter_b") is not None else r * rs) + rng.uniform(0, 2 * min(jit, 0.25)))) if action in ("clash", "charge") else None  # ranks halt in order
+                figs.append({"side": side, "action": action, "kit": side_kit, "rank": r, "stop": stop,
                              "pos": (x0, c * sp + rng.uniform(-jit, jit), 0.0),
                              "yaw": (0.0 if side == "a" else math.pi) + rng.uniform(-0.1, 0.1),
                              "phase": rng.uniform(0, 2 * math.pi), "speed": rng.uniform(0.9, 1.1),
-                             "scale": rng.uniform(0.94, 1.06),
-                             "delay": rng.uniform(0, 0.4) if action == "charge" else 0.0})
+                             "scale": size * rng.uniform(0.94, 1.06),
+                             "delay": rng.uniform(0, stagger) if action == "charge" else 0.0})
     return figs
 
 
@@ -1610,7 +1616,7 @@ def act_crowd(p):
     sc.collection.children.link(col)
     objs = []  # (figure index, part, object)
     for i, f in enumerate(figs):
-        for n in CROWD_PARTS + [k for k in ("spear", "shield", "helmet") if k in kit]:
+        for n in CROWD_PARTS + [k for k in ("spear", "shield", "helmet") if k in f["kit"]]:
             o = bpy.data.objects.new("f%d_%s" % (i, n), meshes[n[1:]] if n[0] in "rl" else meshes[n])
             col.objects.link(o)
             objs.append((i, n, o))

@@ -27,6 +27,14 @@ Figures are low-poly soldiers (torso, head, limbs, optional spear, shield, helme
 Every figure gets its own step phase, pace (0.9 to 1.1), height (0.94 to 1.06), placement jitter and a small yaw,
 so no two move in sync: the clone look comes from synchronised motion as much as from identical faces.
 
+**Two different sides** (a drilled line against a wild horde): side B can have its own placement jitter
+(`--jitter-b`, 1.5 m or more breaks its ranks into a scattered swarm, which then runs right up to the line
+instead of halting rank by rank), kit (`--kit-b ""` for bare figures), height (`--scale-b 0.8` for figures
+shoulder-high to side A) and charge start spread (`--stagger-b` seconds, default 0.4). Tested on 10 spearmen
+against 10 creatures (2026-10-25): the swarm read as no formation in the depth video, and the video model kept it
+at 0.6 and 0.8 strength; the smaller blockout height did not carry into the render at either strength, so say the
+height in words as well and check it.
+
 **Reserves behind the lines** (`--scatter N`): about N standing figures per side, Poisson-scattered behind the
 last rank with at least `--scatter-gap` (1.2 m) between them over `--scatter-depth` (25 m), drawn from three
 variants (heights 0.95 to 1.05, one without a helmet, one without a shield) with random yaw and scale. They are

@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-3 · 2026-10-25 · crowd: per-side jitter, kit, height and stagger for a horde against a line
+- because: user request (a wild horde with no formation against a spear line, for a layered-passes test in a private image-generation skill)
+- files: scripts/pw.py (crowd flags `--jitter-b`, `--kit-b`, `--scale-b`, `--stagger-b`), scripts/pw_bpy.py (crowd_layout per side; act_crowd builds each figure's own kit), tests/test_pw.py (test_crowd_side_b_loose_bare_and_shorter), references/crowd-blockouts.md
+- Side B can be scattered, bare, shorter and staggered while side A keeps its ranks; a loose side B runs up to the line instead of halting rank by rank. The blockout height did not carry into a video model's render.
 ### C-20261025-2 · 2026-10-25 · Exact-colour crowd masks; texture --delight
 - because: R-20261025-1, L-022
 - files: scripts/pw_bpy.py (act_crowd mask pass), scripts/pw.py (cmd_texture, texture parser), references/cli.md (texture row), references/crowd-blockouts.md (mask row), tests/test_pw.py (crowd preview mask colours, texture delight)
