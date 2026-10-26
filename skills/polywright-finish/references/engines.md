@@ -43,7 +43,7 @@ for props. A 1.8 m person is about 6.4 studs. The full route (styles, UVs, scale
 **Unity.** GLB through glTFast or Unity's glTF importer, or FBX with scale 1 and the axis change baked
 (`pw.py convert --fbx-bake-axes`) so the root is not rotated -90 on X. OpenGL normals. URP and HDRP mask maps
 pack channels differently from glTF ORM. LOD meshes named `<name>_LOD0..n` as siblings in one FBX become an LOD
-group. The full route (formats, FBX settings, lightmap UVs, collision, Humanoid): [unity.md](unity.md).
+group; it switches on screen-relative height, so set each level where its removed detail drops under about 2 px. The full route (formats, FBX settings, lightmap UVs, collision, Humanoid): [unity.md](unity.md).
 
 **Unreal.** FBX, GLB or USD; Z-up centimetres (the importer converts). Nanite takes dense opaque and masked
 static and skeletal meshes, foliage and tessellation; not translucent materials or morph targets; clamp WPO

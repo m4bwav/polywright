@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-1 · 2026-10-25 · When to switch LOD levels
+- because: R-20261025-1 (hub), CGPP 3e §25.4
+- files: references/web-threejs.md (LOD bullet), references/engines.md (Unity), references/unity.md (LODs)
+- Switch a level where the detail it removes would cover under about 2 pixels; removed geometry goes into the normal map, then roughness. Unity's LOD Group takes screen-relative heights from 0 to 1 (`LOD.screenRelativeTransitionHeight`, checked in the Unity scripting reference).
+
 ### C-20261022-1 · 2026-10-22 · topology.md, topology checks, Rigify and Smooth by Angle export rules
 - because: books track 7 (Packt *Squeaky Clean Topology in Blender*; Conlan ch. 4; *Blender 3D By Example*); L-002; T-20261022-1
 - files: references/topology.md (new), SKILL.md (links, Step 1, Step 3 row for meshes that bend, Step 5 Rigify, Step 6 Smooth by Angle), evals/evals.json (action-topology), tests/fixtures/flipped.glb

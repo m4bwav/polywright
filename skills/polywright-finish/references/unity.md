@@ -56,6 +56,9 @@ rotation (0,0,0) and a 1 m bounding box.
 - LODs: `pw.py lods` writes `<name>_LOD0..n` as separate files; for an automatic LOD Group join them as siblings
   in one FBX. Organic and dense meshes may need no hand LODs: Unity's import-time Mesh LOD builds levels from
   256 triangles up, but not for hard-surface or many-piece meshes and not usefully for skinned ones [verified].
+- LOD Group transitions are screen-relative heights from 0 to 1 (`LOD.screenRelativeTransitionHeight`, Unity
+  scripting reference [verified]). Set each level where the detail it removes would cover under about 2 pixels on
+  the target screen (CGPP 3e §25.4); dropped geometry goes into the normal map, then into roughness.
 
 ## Collision
 

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-1 · 2026-10-25 · Delight route and the limits of photo normal maps
+- because: R-20261025-1 (hub), CGPP 3e §27.11; Gambetta, normal mapping
+- files: SKILL.md Step 4 (the baked-light bullet)
+- Names `pw.py texture --delight` for broad baked light (sharp shadows still need painting out) and says photo normal maps change shading only, so large forms are modelled.
+
 ### C-20261018-1 · 2026-10-18 · Start from a history research pack's refs/index.json
 - because: user request (historywright's end-to-end test found polywright-references had no step that reads a research pack's reference index; the per-image dates, licences and the anachronism checklist were left for the modeller to find)
 - files: SKILL.md Step 1 (after the table)

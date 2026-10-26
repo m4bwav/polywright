@@ -74,7 +74,9 @@ extra limbs; the back can only show what the blockout implies. Feed the repainte
 - Quick maps from a photo or albedo: `pw.py texture <img> --out refs/tex [--convention opengl|directx]`
   writes height, normal and roughness derived from luminance. Fine for props and terrain, wrong for measured
   materials. Normal maps: OpenGL (Y+) for Blender, Unity, Godot, glTF, three.js, Roblox; DirectX (Y-) for Unreal.
-- Baked shadows in a photo become baked shadows in the albedo: fix upstream with flat light, or delight.
+- Baked light in a photo becomes baked light in the albedo: fix upstream with flat light, or add `--delight`
+  (divides out broad gradients; sharp cast shadows stay, paint those out). Normal maps change shading only:
+  silhouettes stay flat and big forms break at grazing angles, so model large forms and map only small detail.
 
 ## Step 5: put them to work
 

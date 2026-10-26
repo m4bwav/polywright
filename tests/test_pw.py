@@ -268,6 +268,32 @@ class Commands(unittest.TestCase):
         pw.split_bpy_args(a)  # after `--` everything belongs to the script
         self.assertEqual((a.blend, a.args), ("y.blend", ["--blend", "z"]))
 
+    def test_texture_delight_flattens_a_baked_light_gradient(self):
+        try:
+            import numpy as np
+            from PIL import Image
+        except ImportError:
+            self.skipTest("numpy and Pillow not installed")
+        h, w = 128, 256
+        yy, xx = np.mgrid[0:h, 0:w]
+        lin = np.where((xx // 16 + yy // 16) % 2 == 0, 0.6, 0.3) * np.linspace(1 / 3, 1, w)[None, :]  # light 3:1 across
+        srgb = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * lin ** (1 / 2.4) - 0.055)
+        src = os.path.join(self.tmp, "lit.png")
+        Image.fromarray((np.dstack([srgb] * 3) * 255).round().astype("uint8")).save(src)
+
+        def spread(path):  # block means over whole checker periods, in linear light
+            a = np.asarray(Image.open(path).convert("L"), dtype=float) / 255
+            a = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+            m = a.reshape(h, w // 32, 32).mean(axis=(0, 2))
+            return m.max() / m.min() - 1
+
+        code, out = run("texture", src, "--out", os.path.join(self.tmp, "t"), "--delight")
+        self.assertEqual(code, 0, out)
+        self.assertGreater(spread(src), 1.0)
+        self.assertLess(spread(out["maps"]["albedo_delit"]), 0.10)
+        code, plain = run("texture", src, "--out", os.path.join(self.tmp, "p"))
+        self.assertNotIn("albedo_delit", plain["maps"])  # off by default
+
     def test_pose_leaves_out_hidden_joints(self):
         try:
             from PIL import Image
@@ -652,6 +678,14 @@ class WithBlender(unittest.TestCase):
         for name in ("depth", "mask", "clay"):
             self.assertEqual(len(os.listdir(os.path.join(d, name))), 3, name)
         self.assertLess(out["near_m"], out["far_m"])
+        try:
+            from PIL import Image
+        except ImportError:
+            Image = None
+        if Image:  # Workbench AA is off for masks: only the two side colours and the black ground
+            im = Image.open(os.path.join(d, "mask", sorted(os.listdir(os.path.join(d, "mask")))[1])).convert("RGB")
+            stray = sum(n for n, c in im.getcolors(1 << 16) if c not in ((255, 0, 0), (0, 0, 255), (0, 0, 0)))
+            self.assertEqual(stray, 0)
         if "skipped" not in out["pose"]:
             self.assertGreater(out["pose"]["skeletons"], 0)
         with open(os.path.join(d, "camera.json")) as f:
