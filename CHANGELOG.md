@@ -11,6 +11,7 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 ## 0.5.0 (2026-10-24)
 
 - Scene illustrations from a model: `pw.py framecam` grid-searches perspective cameras (position, aim, lens) that put named world points in screen boxes, keep others in frame and out of the UI's text bands, and maximise a hero's size on screen; it prints the best as `cameras.json` presets and names the rule that blocks an impossible search. Standard library only. `pw.py scene` renders a scene through one preset into clay, beauty, depth (inverse distance, its range measured from the scene unless set), normal, a flat id pass per part with the sky transparent, line art, an optional repainted sky, and `scene.json` with rings and named points projected to pixels. Its Blender half, `scripts/pw_scene.py`, also offers `sweep` and `ribbon` to scripts that build scenes. Made for a loading-screen illustration built around a game's mill model.
+- `pw.py crowd`: side B can differ from side A: `--jitter-b` (a loose swarm that runs up to the line), `--kit-b`, `--scale-b`, `--stagger-b`; each figure now carries only its own side's kit.
 - `pw.py crowd`: the `next` hint names only the passes the run wrote (it always said depth.mp4 and pose.mp4); film-and-video adds a second Mist test (a duel, close to a coin flip) and crowd-blockouts the `--gap` and `--far` a two-figure clash needs.
 
 ## 0.4.0 (2026-10-23)

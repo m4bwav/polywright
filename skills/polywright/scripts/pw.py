@@ -2721,8 +2721,8 @@ def cmd_crowd(a):
     pt = lambda t: [float(v) for v in t.split(",")] if t else None
     out = os.path.abspath(a.out)
     params = {"out": out, "size": [W, H], "frames": a.frames, "fps": a.fps, "sides": a.sides, "ranks": a.ranks,
-              "cols": a.cols, "spacing": a.spacing, "rank_spacing": a.rank_spacing, "gap": a.gap, "jitter": a.jitter,
-              "action": a.action, "action_b": a.action_b, "kit": [k for k in a.kit.split(",") if k],
+              "cols": a.cols, "spacing": a.spacing, "rank_spacing": a.rank_spacing, "gap": a.gap, "jitter": a.jitter, "jitter_b": a.jitter_b, "scale_b": a.scale_b, "stagger_b": a.stagger_b,
+              "action": a.action, "action_b": a.action_b, "kit": [k for k in a.kit.split(",") if k], "kit_b": None if a.kit_b is None else [k for k in a.kit_b.split(",") if k],
               "view": a.view, "lens": a.lens, "cam_dist": a.cam_dist, "cam_height": a.cam_height,
               "cam": pt(a.cam), "aim": pt(a.aim), "move": a.move, "seed": a.seed, "passes": passes,
               "pose_min_px": a.pose_min_px, "samples": a.samples, "gpu": a.gpu, "far": a.far,
@@ -3272,6 +3272,10 @@ def main(argv=None):
     p.add_argument("--jitter", type=float, default=0.25, help="metres of random placement per figure")
     p.add_argument("--action", choices=["hold", "march", "advance", "charge", "clash"], default="march", help="side A (and B unless --action-b)")
     p.add_argument("--action-b", choices=["hold", "march", "advance", "charge", "clash"])
+    p.add_argument("--jitter-b", type=float, help="side B's own jitter in metres; 1.5+ breaks its ranks into a loose swarm")
+    p.add_argument("--kit-b", help="side B's own kit (default: --kit); empty for bare figures")
+    p.add_argument("--scale-b", type=float, default=1.0, help="side B's height against side A (0.8 = shoulder-high)")
+    p.add_argument("--stagger-b", type=float, default=0.4, help="side B charge: seconds of random start delay per figure")
     p.add_argument("--kit", default="spear,shield,helmet", help="any of spear, shield, helmet; empty for bare figures")
     p.add_argument("--view", choices=["side", "behind", "high"], default="side")
     p.add_argument("--lens", type=float, default=50.0, help="mm on a 36 mm sensor; long lenses stack the ranks")

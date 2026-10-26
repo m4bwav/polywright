@@ -691,6 +691,34 @@ class WithBlender(unittest.TestCase):
         with open(os.path.join(d, "camera.json")) as f:
             self.assertEqual(len(json.load(f)["matrix_world_rows"]), 17)
 
+    def test_crowd_side_b_loose_bare_and_shorter(self):
+        # a horde (side B) with no kit, no ranks and smaller bodies against a kitted line (side A)
+        args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--action", "clash",
+                "--action-b", "charge", "--passes", "mask", "--preview", "--seed", "3"]
+        code, base = run("crowd", "--out", os.path.join(self.tmp, "b_plain"), *args)
+        self.assertEqual(code, 0, base)
+        d = os.path.join(self.tmp, "b_loose")
+        code, out = run("crowd", "--out", d, *args, "--jitter-b", "1.6", "--scale-b", "0.7", "--stagger-b", "0.9",
+                        "--kit-b", "")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["figures"], {"a": 8, "b": 8})
+
+        def blue_rows(folder):  # how many image rows side B's mask covers on the first frame
+            with open(os.path.join(folder, "mask", "0001.png"), "rb") as f:
+                w, h, ch, px = pw.png_decode(f.read())[:4]
+            rows = set()
+            for y in range(h):
+                for x in range(w):
+                    i = (y * w + x) * ch
+                    if px[i + 2] > 128 and px[i] < 64:
+                        rows.add(y)
+                        break
+            return rows
+
+        plain, loose = blue_rows(os.path.join(self.tmp, "b_plain")), blue_rows(d)
+        self.assertTrue(plain and loose)
+        self.assertLess(min(plain), min(loose))  # shorter bodies and no spear tips: side B's top sits lower
+
     def test_crowd_mist_pass_beside_unchanged_depth(self):
         args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--preview"]
         code, plain = run("crowd", "--out", os.path.join(self.tmp, "nomist"), "--passes", "depth", *args)
