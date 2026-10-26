@@ -16,7 +16,7 @@ Last updated 2026-10-25 (Mist on a duel, crowd hint, L-021); before that 2026-10
 
 - 2026-10-23: `crowd --passes depth,mist` built (L-012 applied, L-013 on comparing PNGs); unreleased.
 - Unreleased on main after the track-7 PR: `crowd --scatter`, `inspect --topology`, `convert --fix-winding`, MP4 through Blender, two recipe files, topology.md. Release (0.4.0) waits for the owner.
-- 2026-10-25: Mist on a second shot type (a duel through crowd, D:/ComfyUI/output/video/depthtest2): both controls close; the owner's blind pick of blind_s11/blind_s23 is still owed (key in depthtest2_key, record with comfyui-gen h3_tools.py pick).
+- 2026-10-25: Mist on a second shot type (a duel through crowd, <video output>/depthtest2): both controls close; the owner's blind pick of blind_s11/blind_s23 is still owed (key in depthtest2_key, record the pick with the H3 pair tool).
 - Open from it: does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
 
 ## Owed
