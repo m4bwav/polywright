@@ -45,7 +45,9 @@ the reserves fall outside the frame unless the camera is widened (`--cam-dist`, 
   between shots never flips a side. Keep the camera on one side of the battle line (x = 0) in every shot.
 - **Actions**: `hold`, `march` (1.3 m/s), `advance` (2 m/s), `charge` (5 m/s, spears levelled), `clash` (ranks
   halt in turn at the line and thrust). For clash and charge the starting gap defaults to what both sides cover
-  in two thirds of the shot, so they meet on screen.
+  in two thirds of the shot, so they meet on screen. A two-figure clash (`--ranks 1 --cols 1`) needs a smaller
+  `--gap` (5 m at 9 m back) or both start out of frame, and `--far` past the ground in view, since the default
+  far plane stops just past the farthest figure and turns the field behind a duel black like the sky.
 - **Views**: `side` (elevated 6 m, looking down the frontage: both armies, ranks stacked in depth), `behind`
   (over side A's shoulders at the enemy), `high` (crane, god's eye), or `--cam x,y,z --aim x,y,z`. Moves:
   `static` (default; the model spends its capacity on bodies, not camera), `push`, `crane`, `truck`.
