@@ -45,6 +45,13 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261025-1 · 2026-10-25 · Subject: rendering principles for blockout passes and photo textures (round 2 books track)
+- Summary: a pass used as a mask is a label image, so filtering (anti-aliasing) and dither make colours that belong to neither side (CGPP 3e §17.5); albedo is a material map separate from lighting, so light baked into a photo has to be divided out (§27.11, §17.4.5 on linear light). Checked on Blender 5.2.1: `scene.display.render_aa` takes OFF, FXAA, 5, 8, 11, 16, 32 (default 8); the remaining off-colour pixels after AA off were +-1 values from `render.dither_intensity`.
+- Track: subject
+- Sources: Hughes et al., Computer Graphics: Principles and Practice 3e; a probe through `pw.py bpy` on Blender 5.2.1 LTS
+- Magnitude: minor
+- Applied: C-20261025-2
+
 ### R-20261017-1 · 2026-10-17 · Subject: building models and blockouts for film and AI video
 - summary: A film needs size, place and camera, not topology. Build from the shot cameras and only what they see; set detail by the largest on-screen size (an LOD ladder per shot size, EWS to ECU); far scenery as plate cards or 2.5D camera projection; kitbash hard-surface sets; splats for scouting and layout, not final pixels (a 2026 feature used them that way). For AI video the blockout is spatial reference and extra detail confuses the model, so passes stay grey. Field tests (crowd 2026-10-13, set 2026-10-15, two fighters 2026-10-16/17) supply the pass rules: one depth range per shot, pose only above about 40 px, face points left out when a head turns away, thick blades in depth only, end states checked through their camera.
 - track: subject

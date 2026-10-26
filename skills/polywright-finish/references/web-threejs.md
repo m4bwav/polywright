@@ -29,6 +29,10 @@ less than all three. Model for those first.
   to budget, then re-bake, before any web compression.
 - LODs only for big scenes and repeated props: `pw.py lods` at about half the triangles per level, children named
   `<name>_LOD0`, `_LOD1`. The page builds its own LOD object from them; glTF has no LOD that three.js reads.
+- When to switch: by projected size, not a round distance. A level takes over where the detail it removes would
+  cover under about 2 pixels, since anything finer only aliases (CGPP 3e §25.4). Geometry a level drops goes into
+  the normal map; on the farthest levels soften that normal map and raise roughness, or fine bumps sparkle. The
+  distance formula and three.js's hysteresis setting are in threewright's `performance` topic.
 
 ## UVs, texel density and texture sets
 

@@ -19,6 +19,10 @@ Last updated 2026-10-25 (Mist on a duel, crowd hint, L-021); before that 2026-10
 - 2026-10-25: Mist on a second shot type (a duel through crowd, <video output>/depthtest2): both controls close; the owner's blind pick of blind_s11/blind_s23 is still owed (key in depthtest2_key, record the pick with the H3 pair tool).
 - Open from it: does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
 
+## Round 2 books track 17 (2026-10-25)
+
+- Under root CHANGELOG Unreleased (not in 0.5.0, which another session versioned): exact-colour crowd masks (Workbench AA and dither off, L-022), `pw.py texture --delight`, LOD switch rule in the finish references, delight and normal-map limits in polywright-references. Skipped this round: `pw.py lods` switch estimates, an opt-in hard-edged crowd depth (soft depth edges may suit a control model; no failing case).
+
 ## Owed
 
 1. Evals: every case has run three times (2026-10-17: triggers 80/87 then fixes 24/24; actions and outcomes 42/42 graded plus crowd 3/3 by hand). Owed: outcome cases that discriminate (baselines without polywright pass 20/21), polywright-specific questions or commands.

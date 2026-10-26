@@ -110,3 +110,10 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - Checks: check_skills ok; test_pw 67 OK (7 new); test_recipes 20 OK; budget YELLOW as on main (installed skills folder about 756 KB of 800, hub SKILL.md about 3,270 tokens). Version 0.5.0 in plugin.json and pw.py; not tagged. Evals not re-run.
 ## [2026-10-25] evidence | second Mist test: a duel through crowd
 - `pw.py crowd --ranks 1 --cols 1 --action clash --cam 0,-9,1.7 --aim 0,0,1.0 --move truck --gap 5 --far 30 --passes depth,mist,clay`, 608x352, 73 frames; H3 (the H3 helper script, 4-step LoRA, Fun ControlNet Union 2.0 at 0.6 ending 0.4), seeds 11 and 23; files and blind pairs in <video output>/depthtest2 (key outside it). Both controls held the blockout almost equally; owner's blind pick still to come. Crowd defaults for two figures and the hint fix: L-021. Video-helper side: the H3 script uploads controls under their own name with overwrite, so every pw.py run's depth.mp4/mist.mp4 replaces the last one in ComfyUI's input folder (copy to a unique name first).
+
+## 2026-10-25: rendering books (round 2 books track 17)
+
+- From the round 2 books track (CGPP 3e, Gambetta). `pw.py crowd` mask pass: Workbench AA off still left 6,322 off-colour pixels a frame from dither; with `dither_intensity` 0 too, none (L-022). Depth and clay frames compared pixel for pixel against the old code on a 9-frame clash: identical; masks differ by 110,089 pixels (the blended edges).
+- `pw.py texture --delight`: on a checkerboard under a 3:1 light gradient, block means over whole checker periods varied 157% before and 4.4% after; test added.
+- LOD switching by projected size (2 px rule) in the finish references; Unity's `LOD.screenRelativeTransitionHeight` (0-1) checked in the scripting reference. polywright-references names `--delight` and the limits of photo normal maps.
+- Skipped: `pw.py lods` switch estimates (Y2), an opt-in hard depth for crowd.

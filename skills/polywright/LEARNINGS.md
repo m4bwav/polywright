@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-022 · 2026-10-25 · Turning off anti-aliasing is not enough for an exact-colour pass: dither adds +-1 noise
+- Trigger: 2026-10-25, a crowd mask rendered with Workbench `render_aa = "OFF"` still had 6,322 off-colour pixels in a 320x192 frame, all one level away from red, blue or black.
+- Hypothesis: Blender's render dither (`render.dither_intensity`, default 1) adds noise when it writes 8-bit files, after anti-aliasing.
+- Rule: for any label or mask pass, set `render_aa` to OFF and `dither_intensity` to 0, restore both before passes that want them, and test by counting colours outside the expected set, not by eye.
+- Evidence: C-20261025-2; 12,098 stray pixels with the defaults, 6,322 with AA off, 0 with dither off too; depth and clay unchanged pixel for pixel.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+
 ### L-021 · 2026-10-25 · A crowd blockout cut down to two figures keeps crowd defaults that hide them
 - Trigger: a Mist-against-depth test staged a duel with `pw.py crowd --ranks 1 --cols 1 --action clash`; frame 1 was empty (the clash gap is sized for ranks to cover in two thirds of the shot) and the field behind the pair came out black (far plane just past the farthest figure). The JSON hint also said to feed pose.mp4 to Wan VACE though the run wrote no pose pass and fed H3.
 - Hypothesis: crowd's gap and depth range are tuned to deep formations seen from above, where the far rank is the farthest thing in view; at eye level the ground runs on past two figures.

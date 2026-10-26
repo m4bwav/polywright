@@ -2,6 +2,12 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## Unreleased
+
+- `pw.py crowd`: the mask pass renders with Workbench anti-aliasing and dither off, so its frames hold only the two side colours and black (a 9-frame test had 110,089 off-colour pixels before); depth, Mist and clay frames are pixel-identical to before.
+- `pw.py texture --delight`: divides out broad light baked into a photo (a wide blur of linear luminance, rescaled to the median) before the other maps; writes `<name>_albedo.png`.
+- polywright-finish: when to switch LOD levels (projected size, the 2-pixel rule) in web-threejs.md, engines.md and unity.md. polywright-references: the delight route and what photo normal maps cannot do. From the round 2 books track (CGPP 3e).
+
 ## 0.5.0 (2026-10-24)
 
 - Scene illustrations from a model: `pw.py framecam` grid-searches perspective cameras (position, aim, lens) that put named world points in screen boxes, keep others in frame and out of the UI's text bands, and maximise a hero's size on screen; it prints the best as `cameras.json` presets and names the rule that blocks an impossible search. Standard library only. `pw.py scene` renders a scene through one preset into clay, beauty, depth (inverse distance, its range measured from the scene unless set), normal, a flat id pass per part with the sky transparent, line art, an optional repainted sky, and `scene.json` with rings and named points projected to pixels. Its Blender half, `scripts/pw_scene.py`, also offers `sweep` and `ribbon` to scripts that build scenes. Made for a loading-screen illustration built around a game's mill model.

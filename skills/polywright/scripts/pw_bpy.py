@@ -1690,6 +1690,7 @@ def act_crowd(p):
     keys = sorted({0, frames // 2, frames - 1}) if p.get("preview") else list(range(frames))
     pose_min = float(p.get("pose_min_px", 40))
     joints_out = []
+    aa_clay, dither_clay = sc.display.render_aa, sc.render.dither_intensity
     t0 = time.time()
     for k in keys:
         cam_at(k)
@@ -1727,6 +1728,8 @@ def act_crowd(p):
                 continue
             flat = pas == "mask"
             sc.render.engine = "BLENDER_WORKBENCH"
+            sc.display.render_aa = "OFF" if flat else aa_clay  # a mask holds only its exact side colours:
+            sc.render.dither_intensity = 0.0 if flat else dither_clay  # no blended edges, no +-1 dither noise
             sc.view_settings.view_transform = "Standard"
             sh = sc.display.shading
             sh.color_type = "OBJECT"
@@ -1744,6 +1747,7 @@ def act_crowd(p):
             sc.world.color = (0, 0, 0) if flat else (0.62, 0.66, 0.72)
             sc.render.filepath = os.path.join(out, pas, name)
             bpy.ops.render.render(write_still=True)
+        sc.display.render_aa, sc.render.dither_intensity = aa_clay, dither_clay  # the next frame's depth and mist as before
     if "pose" in passes:
         with open(os.path.join(out, "joints.json"), "w", encoding="utf-8") as fh:
             json.dump({"size": [W, H], "frames": joints_out}, fh, separators=(",", ":"))

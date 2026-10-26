@@ -43,7 +43,7 @@ Back to [SKILL.md](../SKILL.md). Checked against Blender 5.2.1 LTS on Windows 11
 | `gen --image FRONT [--left --back --right] --out X.glb [--turbo] [--seed N] [--octree 256]` | ComfyUI with Hunyuan3D-2 checkpoints | built-in Hunyuan3D-2 single or multi-view graph; background removal (rembg if installed), padding; writes `X.gen.json` with host, model, seed, licence note |
 | `gen --image IMG --workflow W.json --out X.glb [--set NODE.input=VALUE] [--save-api G.json]` | ComfyUI with the workflow's nodes | any workflow, API format or as saved by the editor (a template file works as is: converted with the host's node definitions); picks a host that has every node; a rejected graph prints ComfyUI's node_errors |
 | `place --bbox S,W,N,E \| --center LAT,LON --size-m M --out DIR [--dem auto\|usgs\|terrarium\|flat] [--res M] [--print-mm N --exaggerate 1.5 --base-mm 3 --print-roads]` | network (Overpass, elevation) | `scene.glb` (terrain coloured by land use, buildings with OSM heights, roads, paths, waterways, trees), `place.json` with counts and credits, and a print tile |
-| `texture IMG --out DIR [--seamless] [--convention opengl\|directx]` | numpy, Pillow | quick height, normal and roughness maps from a photo; a seamless albedo |
+| `texture IMG --out DIR [--delight] [--seamless] [--convention opengl\|directx]` | numpy, Pillow | quick height, normal and roughness maps from a photo; a seamless albedo; `--delight` first divides out broad baked light (a blur of 1/8 the image in linear light, rescaled to the median) and writes `<name>_albedo.png`, which the other maps then use |
 
 ## Reading results
 

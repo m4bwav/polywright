@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-2 · 2026-10-25 · Exact-colour crowd masks; texture --delight
+- because: R-20261025-1, L-022
+- files: scripts/pw_bpy.py (act_crowd mask pass), scripts/pw.py (cmd_texture, texture parser), references/cli.md (texture row), references/crowd-blockouts.md (mask row), tests/test_pw.py (crowd preview mask colours, texture delight)
+- The mask pass turns Workbench anti-aliasing and dither off and restores both before the next frame's depth and Mist. `texture --delight` divides the photo by a blur of 1/8 its size in linear light, rescaled to the median, so a baked light gradient leaves the albedo.
+
 ### C-20261025-1 · 2026-10-25 · Mist on a duel; crowd defaults for two figures; hint names the passes written
 - because: L-021; second Mist test (duel, H3 0.6/0.4, two seeds)
 - files: references/film-and-video.md (Mist on a video model), references/crowd-blockouts.md (Actions), scripts/pw.py (cmd_crowd next hint)

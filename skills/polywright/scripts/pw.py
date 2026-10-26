@@ -1555,6 +1555,22 @@ def cmd_texture(a):
     stem = os.path.splitext(os.path.basename(a.image))[0]
     img = np.asarray(Image.open(a.image).convert("RGB"), dtype=np.float32) / 255.0
     out = {}
+    if a.delight:  # divide out light baked into a photo: albedo is a material map, the scene lights it
+        lin = np.where(img <= 0.04045, img / 12.92, ((img + 0.055) / 1.055) ** 2.4)
+        y = lin @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+        r = max(1, min(y.shape) // 8)
+        blur = y
+        for _ in range(3):  # three box passes come close to a Gaussian
+            for ax in (0, 1):
+                pad = [(0, 0), (0, 0)]
+                pad[ax] = (r + 1, r)
+                c = np.cumsum(np.pad(blur, pad, mode="reflect"), axis=ax, dtype=np.float64)
+                blur = ((np.take(c, range(2 * r + 1, c.shape[ax]), axis=ax) - np.take(c, range(0, c.shape[ax] - 2 * r - 1), axis=ax)) / (2 * r + 1)).astype(np.float32)
+        lin = np.clip(lin * (float(np.median(y)) / np.maximum(blur, 1e-4))[..., None], 0, 1)
+        img = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * lin ** (1 / 2.4) - 0.055).astype(np.float32)
+        p = os.path.join(a.out, stem + "_albedo.png")
+        Image.fromarray((img * 255).round().astype("uint8")).save(p)
+        out["albedo_delit"] = p
     if a.seamless:
         h, w, _ = img.shape
         sh = np.roll(np.roll(img, h // 2, 0), w // 2, 1)
@@ -3296,6 +3312,7 @@ def main(argv=None):
     p.add_argument("image")
     p.add_argument("--out", required=True)
     p.add_argument("--seamless", action="store_true")
+    p.add_argument("--delight", action="store_true", help="divide out broad light gradients baked into the photo (blur of 1/8 the image in linear light) before the other maps")
     p.add_argument("--strength", type=float, default=2.0)
     p.add_argument("--convention", choices=["opengl", "directx"], default="opengl")
     p.set_defaults(fn=cmd_texture)
