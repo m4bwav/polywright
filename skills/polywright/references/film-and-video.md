@@ -57,8 +57,10 @@ Back to [../SKILL.md](../SKILL.md). Target: `video-blockout` in [targets.json](t
   is anti-aliased and normalised but maps plain distance, not 1/z, so the near ranks get fewer tones; for
   inverse depth from a hand-built scene use a shader AOV (recipe `passes-one-render` in polywright-blender).
   Mist on a video model: one blind test on a local H3 graph (crowd push-in, control 0.6, end 0.4, two seeds)
-  picked Mist over inverse depth both times, so render both for wide crowds and keep the better take. `crowd
-  --passes depth,mist` writes both from one render (`mist/`, `mist.mp4`, near white, 16-bit).
+  picked Mist over inverse depth both times, so render both for wide crowds and keep the better take. On a
+  two-figure duel (eye level, truck) both controls held the blockout almost equally, so there it is close to
+  a coin flip. `crowd --passes depth,mist` writes both from one render (`mist/`, `mist.mp4`, near white,
+  16-bit).
 - **Pose**: COCO-18 joints for figures taller than about 40 px; leave out the nose and eyes when a head faces
   away from the camera, or the model turns the person to the lens.
 - **Masks**: one colour per side or team, for per-side prompts and inpainting.

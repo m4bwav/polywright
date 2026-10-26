@@ -683,6 +683,11 @@ class WithBlender(unittest.TestCase):
         code, only = run("crowd", "--out", os.path.join(self.tmp, "mistonly"), "--passes", "mist", *args)
         self.assertEqual(code, 0, only)
         self.assertFalse(os.path.isdir(os.path.join(self.tmp, "mistonly", "depth")))
+        # the hint names only the passes this run wrote (0.4.0 always said depth.mp4 and pose.mp4)
+        self.assertIn("mist.mp4", only["next"])
+        self.assertNotIn("depth.mp4", only["next"])
+        self.assertNotIn("pose.mp4", plain["next"])
+        self.assertIn("depth.mp4 or mist.mp4", out["next"])
         self.assertEqual(len(os.listdir(os.path.join(self.tmp, "mistonly", "mist"))), 3)
 
     def test_crowd_from_behind_hides_faces(self):

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-1 · 2026-10-25 · Mist on a duel; crowd defaults for two figures; hint names the passes written
+- because: L-021; second Mist test (duel, H3 0.6/0.4, two seeds)
+- files: references/film-and-video.md (Mist on a video model), references/crowd-blockouts.md (Actions), scripts/pw.py (cmd_crowd next hint)
+- The duel result is added beside the crowd result (close to a coin flip on two figures), the inline code that broke across lines is rejoined, crowd-blockouts says which flags a two-figure clash needs, and the crowd hint lists only the passes the run wrote.
+
 ### C-20261024-2 · 2026-10-24 · Scene illustration target: framecam and scene
 - because: L-018, L-019, L-020, user request (a loading-screen illustration built model-first around a mill model)
 - files: scripts/pw.py (pinhole, framecam, cmd_framecam, sky_pass, cmd_scene, parsers; bpy_action takes a script), scripts/pw_scene.py (new: act_scene, sweep, ribbon), SKILL.md ("Scene illustrations from a model"), references/cli.md (commands), tests/test_pw.py (FrameCam, ScenePlumbing, SceneWithBlender)

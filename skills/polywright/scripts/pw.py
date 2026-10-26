@@ -2726,9 +2726,12 @@ def cmd_crowd(a):
         res["sheet"] = crowd_sheet(out, passes)
     except ImportError:
         pass
+    feeds = " or ".join(f"{p}.mp4" for p in ("depth", "mist") if p in passes)  # only what this run wrote
+    if "pose" in passes:
+        feeds = (feeds + " (and pose.mp4 for the front ranks)") if feeds else "pose.mp4"
     res["next"] = ("Read sheet.png: both sides in frame, readable ranks, no figure crossing the camera. Then feed "
-                   "depth.mp4 (and pose.mp4 for the front ranks) to Wan VACE or Fun Control with a start frame "
-                   "repainted from clay frame 1 (polywright hub, 'Crowd and battle blockouts')")
+                   f"{feeds or 'a control pass'} to the video model's control (Wan VACE, Fun Control, H3) with a start "
+                   "frame repainted from clay frame 1 (polywright hub, 'Crowd and battle blockouts')")
     return emit(res)
 
 

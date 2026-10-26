@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-021 · 2026-10-25 · A crowd blockout cut down to two figures keeps crowd defaults that hide them
+- Trigger: a Mist-against-depth test staged a duel with `pw.py crowd --ranks 1 --cols 1 --action clash`; frame 1 was empty (the clash gap is sized for ranks to cover in two thirds of the shot) and the field behind the pair came out black (far plane just past the farthest figure). The JSON hint also said to feed pose.mp4 to Wan VACE though the run wrote no pose pass and fed H3.
+- Hypothesis: crowd's gap and depth range are tuned to deep formations seen from above, where the far rank is the farthest thing in view; at eye level the ground runs on past two figures.
+- Rule: for a duel through crowd, set `--gap` and `--far` and read the preview sheet first; for the full duel rig use `pw.py duel`. The hint now names only the passes the run wrote.
+- Evidence: <video output>/depthtest2 (608x352, 73 frames, `--gap 5 --far 30`, depth range 5.96 to 30 m); H3 at 0.6/0.4, seeds 11 and 23; test_crowd_mist_pass_beside_unchanged_depth checks the hint
+- Scope: skill (pw.py crowd)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+
 ### L-020 · 2026-10-24 · A bank or dyke along a path is one swept profile, not a row of boxes
 - Trigger: building the illustration's water path, the banks along the head race started as a row of boxes, one per path segment; the scene builder replaced them with one profile swept along the path (its comment: "one continuous bank, not a row of boxes").
 - Hypothesis: boxes meet at an angle on a bend and overlap or gap on the outside; at a low eye level the camera looks along the bank, so each joint can read as an edge in the clay, line and depth passes the painter follows.
