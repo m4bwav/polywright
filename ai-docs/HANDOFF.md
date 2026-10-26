@@ -23,6 +23,11 @@ Last updated 2026-10-25 (Mist on a duel, crowd hint, L-021); before that 2026-10
 
 - Under root CHANGELOG Unreleased (not in 0.5.0, which another session versioned): exact-colour crowd masks (Workbench AA and dither off, L-022), `pw.py texture --delight`, LOD switch rule in the finish references, delight and normal-map limits in polywright-references. Skipped this round: `pw.py lods` switch estimates, an opt-in hard-edged crowd depth (soft depth edges may suit a control model; no failing case).
 
+## Wiki for 0.5.0 (2026-10-26)
+
+- The wiki now describes 0.5.0 (it was at 0.2.1; 0.3.0 was never tagged, 0.4.0 got no wiki pass): [notes/2026-10-26-github-wiki.md](notes/2026-10-26-github-wiki.md), program and saved output beside it. The next wiki update reruns `notes/2026-10-26-wiki-verify.py`.
+- Correction to the track-17 line above: the v0.5.0 tag (2026-10-26) came after PR #34, so the exact-colour masks, `texture --delight` and the LOD references are in 0.5.0 and its zip. Move those CHANGELOG lines from Unreleased into 0.5.0 at the next edit. The note lists six more README and CHANGELOG inaccuracies (recipe and test counts, eval status, the blender-app CI job, ffmpeg in Needs, the untagged 0.3.0) and three small findings in 0.5.0 (crowd's size refusal names flags without dashes, duel's `seconds` is the clip length, inspect calls a box with a flipped face watertight).
+
 ## Owed
 
 1. Evals: every case has run three times (2026-10-17: triggers 80/87 then fixes 24/24; actions and outcomes 42/42 graded plus crowd 3/3 by hand). Owed: outcome cases that discriminate (baselines without polywright pass 20/21), polywright-specific questions or commands.
@@ -31,7 +36,7 @@ Last updated 2026-10-25 (Mist on a duel, crowd hint, L-021); before that 2026-10
 4. Linux snap and distro packages, `~/Applications` on macOS, Steam installs: Blender discovery unchecked there.
 5. The private printing skill (miniatures) calls `printable`: its figures were hollow before the fill; re-run one and check walls with `check --target print-fdm`.
 6. Done 2026-10-17: the hollow-shell fill fix shipped in 0.2.1 and the wiki is updated for it (wiki commit 8363f76; `--hollow` workaround dropped; [notes/2026-10-17-github-wiki.md](notes/2026-10-17-github-wiki.md)).
-7. `pw.py duel` next, when a film test asks for it: per-fighter and weapon masks, layout boxes, a depth-plus-Canny composite pass (one control video carrying both), rigged bodies for falls. The wiki's Commands page gets `duel` at the next release.
+7. `pw.py duel` next, when a film test asks for it: per-fighter and weapon masks, layout boxes, a depth-plus-Canny composite pass (one control video carrying both), rigged bodies for falls. The wiki's Commands page has `duel` since 2026-10-26.
 
 Related: [INDEX.md](INDEX.md)
 
