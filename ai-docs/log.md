@@ -135,4 +135,18 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - All commands exited 0: check_skills (7 skills), test_pw (69 tests, 254.870 s), test_recipes (20 recipes, 40.115 s), budget and git diff --check. Blender-backed paths ran, including the flipped-face regression. Existing unclosed-file ResourceWarnings were not changed.
 - Installed skills folder 768 KB (YELLOW, red limit 800), descriptions 1,053 tokens, hub SKILL.md 3,272 tokens, largest reference 3,915 tokens. No trigger or routing changes, so paid skill evals were not rerun.
 - Wiki edits are being prepared from the verified tests and unchanged 0.5.0 examples; published-zip verification follows the release. Hub research remains due since 2026-10-25.
+
+## 2026-10-26: 0.5.1 release and archive verification
+
+- PR #37 merged as 7b589304. GitHub release v0.5.1 is live, with its zip and a green release workflow.
+- The wiki verifier downloaded the published zip and exited 0 with empty stderr. Reviewed the version, restored crowd flag dashes, duel clip duration/fields, flipped-face topology and exact mask colours against its output. Numeric wiki examples remain unchanged.
+- Wiki diff/gates, publication commit and the docs-only publication PR remain pending. Research freshness remains due; no runtime or skill-routing changes were made after validation.
+
+## 2026-10-26: 0.5.1 wiki published
+
+- Wiki published as d2d34b150e9a7a48852b302d33f8db699264377f: https://github.com/m4bwav/polywright/wiki. PR #37 is merged; release v0.5.1 and its verified GitHub zip are live.
+- Final gates: check 11 pages, 0 errors; outputs 76 checked, 0 missing, 3 skipped; snippets 4 blocks, 66 commands, 0 missing, 7 skipped; prose 0 strong, 64 weak; live 11 pages, 0 failures, 73 anchors, 0 broken. Diff against 0.5.0: 67 sections, 64 unchanged, three expected changes.
+- Released-zip transcript preserved as notes/2026-10-26-wiki-verify-0.5.1.out.txt. Documentation-only publication PR follows; no source changes after validation.
+- The local plugin install stays blocked by another session's uncommitted shared-clone edits, which were left untouched. Hub research remains due since 2026-10-25; no unsupported freshness claim or registry publishing.
+## [2026-10-26] index | rebuilt (8 entries)
 ## [2026-10-26] index | rebuilt (8 entries)

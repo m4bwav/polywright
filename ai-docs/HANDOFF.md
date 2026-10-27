@@ -1,12 +1,14 @@
 # Handoff
 
-Last updated 2026-10-26 (0.5.1 locally validated; merge, release and wiki verification pending).
+Last updated 2026-10-26 (0.5.1 merged, released, archive-verified and wiki published).
 
 ## State
 
 - Seven skills under `skills/`, the CLI `skills/polywright/scripts/pw.py` (+ `pw_bpy.py`), budgets in `skills/polywright/references/targets.json`, research in `research/`.
 - Local 0.5.1 validation: `check_skills.py` passed; `test_pw.py` 69 tests passed in 254.870 s, including Blender-backed regressions; `test_recipes.py` 20 recipes passed in 40.115 s; `git diff --check` passed. Budget YELLOW: installed skills folder 768 KB (red at 800), descriptions 1,053 tokens, largest SKILL.md 3,272 tokens.
-- github.com/m4bwav/polywright (public). Released v0.5.0 on 2026-10-26, including PR #34. Version 0.5.1 is locally validated, not yet tagged. The owner authorizes merging and GitHub releases after checks pass; registry publishing still needs explicit permission.
+- github.com/m4bwav/polywright (public). [PR #37](https://github.com/m4bwav/polywright/pull/37) merged as 7b589304. [v0.5.1](https://github.com/m4bwav/polywright/releases/tag/v0.5.1) is live, with a green release workflow and zip. The published-zip wiki verifier exited 0 with empty stderr on 2026-10-26. The owner authorizes merging and GitHub releases after checks pass; registry publishing still needs explicit permission.
+- [Wiki](https://github.com/m4bwav/polywright/wiki) published for 0.5.1, commit d2d34b150e9a7a48852b302d33f8db699264377f. Final gates: 11 pages, 0 errors; 76 outputs, 0 missing; 66 snippet commands, 0 missing; prose 0 strong/64 weak; live 11 pages and 73 anchors, no failures or broken anchors.
+- The local plugin install remains blocked by another session's uncommitted changes in the shared clone. It was not switched, stashed, overwritten or updated by this follow-up.
 - Evals: `tests/run_evals.py` runs the cases headless (see its docstring). Trigger and decoy cases, three runs each: 80/87 first pass, then the four weak cases 24/24 after fixes (each TESTS.md, T-20261017-1). Cost about $0.30 to $0.50 per trigger run.
 - `pw.py duel` first shipped in 0.4.0; the 0.3.0 changelog section was never tagged. Plan and format: [plans/2026-10-17-pw-duel.md](plans/2026-10-17-pw-duel.md).
 - Topic pages shipped in 0.2.1: finish web-threejs.md, roblox.md, unity.md; hub film-and-video.md; references images-for-3d.md; print supports-and-slicing.md. check_skills.py guards drive paths and private names.
@@ -22,14 +24,15 @@ Last updated 2026-10-26 (0.5.1 locally validated; merge, release and wiki verifi
 
 - Shipped in 0.5.0: exact-colour crowd masks (Workbench AA and dither off, L-022), `pw.py texture --delight`, LOD switch rule in the finish references, delight and normal-map limits in polywright-references. The root CHANGELOG now places them there. Skipped this round: `pw.py lods` switch estimates, an opt-in hard-edged crowd depth (soft depth edges may suit a control model; no failing case).
 
-## Wiki for 0.5.0 (2026-10-26)
+## Wiki for 0.5.0 and 0.5.1 (2026-10-26)
 
 - The wiki now describes 0.5.0 (it was at 0.2.1; 0.3.0 was never tagged, 0.4.0 got no wiki pass): [notes/2026-10-26-github-wiki.md](notes/2026-10-26-github-wiki.md), program and saved output beside it. The next wiki update reruns `notes/2026-10-26-wiki-verify.py`.
 - The 0.5.1 follow-up corrects the root CHANGELOG and README findings. Crowd refusal messages restore flag dashes. Duel and inspect semantics are documented and preserved; see the follow-up section in the wiki note.
+- The published 0.5.1 zip was verified and the wiki updated. Saved output: [notes/2026-10-26-wiki-verify-0.5.1.out.txt](notes/2026-10-26-wiki-verify-0.5.1.out.txt); publication and gate results are in the same wiki note.
 
 ## Next single action
 
-Run CI, merge with a merge commit, tag 0.5.1 and let release.yml publish the GitHub zip. Re-run the wiki verification against that zip and validate the prepared wiki edits.
+Merge the documentation-only publication record. The useful round-2 follow-up is released and its wiki is published; no source fix remains from this pass. Update the local plugin only after the other session has resolved its shared-clone edits.
 
 The hub's evergreen research check is overdue (next_due 2026-10-25); no research freshness claim was changed in this follow-up.
 
