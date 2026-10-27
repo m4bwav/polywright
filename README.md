@@ -52,7 +52,7 @@ paths, the lake (hydro-flattened), trees and buildings into `scene.glb`, and a w
 | [`polywright-references`](skills/polywright-references/SKILL.md) | What references to gather or generate: orthographic views, A-pose turnarounds, multi-view sets, repainted blockouts, seamless textures and quick PBR maps | fast |
 | [`polywright-capture`](skills/polywright-capture/SKILL.md) | Real things and places: OSM and elevation, photogrammetry (RealityScan, COLMAP, OpenMVS), splats, scanners, measurements, scan cleanup | moderate |
 | [`polywright-generate`](skills/polywright-generate/SKILL.md) | Imagined things: generators with their licences and VRAM, code modelling, procedural kits, AI texturing | fast |
-| [`polywright-blender`](skills/polywright-blender/SKILL.md) | Blender 5.x from an agent: headless runs that report errors, the API traps models still write, ten tested recipes, MCP servers and their risks, tools per OS | moderate |
+| [`polywright-blender`](skills/polywright-blender/SKILL.md) | Blender 5.x from an agent: headless runs that report errors, the API traps models still write, 20 tested recipes, MCP servers and their risks, tools per OS | moderate |
 | [`polywright-finish`](skills/polywright-finish/SKILL.md) | Fit a mesh to its target: scale, pivots, LODs, retopology, UVs, bakes, normal-map conventions, collision, rigging, export per engine | moderate |
 | [`polywright-print`](skills/polywright-print/SKILL.md) | Printable solids: watertight remesh, union, design rules, splitting, multi-colour 3MF, terrain and miniatures, slicer CLIs | moderate |
 
@@ -103,15 +103,17 @@ into the agent's skills directory. Keep all seven together, because the siblings
 
 Needs: Python 3.9+ and Blender 4.5 or newer (5.2 LTS tested) for most commands. Optional: trimesh (3MF, and
 `inspect` without Blender), numpy and Pillow (`texture`), a ComfyUI host with 3D models (`gen`).
+`crowd` and `duel` draw poses and contact sheets with Pillow; their videos use ffmpeg on PATH, or Blender's
+own FFmpeg when ffmpeg is absent.
 
-## Verified (2026-10-11, Windows 11, Blender 5.2.1, RTX 5060 Ti 16 GB)
+## Verified (through 2026-10-26, Windows 11, Blender 5.2.1, RTX 5060 Ti 16 GB)
 
 These come from real runs, not from a model's say-so:
 
-- `tests/test_pw.py`: 24 tests: geometry, file formats, manifest, an offline `place`, and Blender-backed inspect,
+- `tests/test_pw.py`: 69 tests: geometry, file formats, manifest, an offline `place`, and Blender-backed inspect,
   render, convert, printable, union and the bpy runner. They pass with the Blender executable and with the PyPI
   `bpy` 5.2.2 wheel.
-- `tests/test_recipes.py`: all ten recipes in `polywright-blender` run in Blender. The test caught two 5.x API
+- `tests/test_recipes.py`: all 20 recipes in three `polywright-blender` reference files run in Blender. The test caught two 5.x API
   changes the research had missed (`show_shadows`, and the multilayer EXR media type).
 - The fountain and Central Park runs above, and a 540 x 420 m neighbourhood park (249 buildings). The park run
   caught and fixed four bugs: roads outside the box, an inside-out terrain block that made the Manifold union
@@ -119,14 +121,17 @@ These come from real runs, not from a model's say-so:
 
 - Agent evals, headless in fresh sessions with `tests/run_evals.py`: every trigger and decoy case three times,
   80 of 87 on the first pass, and the four weak cases 24 of 24 after their fixes (2026-10-17); the print and
-  capture action cases ran `pw.py` for real. Details in each skill's TESTS.md.
+  capture action cases ran `pw.py` for real. Action and outcome cases ran three times each (42/42 graded,
+  plus crowd 3/3 by hand, 2026-10-17). The 2026-10-22 action additions scored scatter 3/3 and topology 2/3.
+  Outcome baselines without the skills passed 20/21, so sharper outcome cases are still owed.
+  Details in each skill's TESTS.md.
 
 - TRELLIS.2 and Pixal3D through ComfyUI's own template, run as is by `pw.py gen --workflow` on the 16 GB card:
   TRELLIS.2 377 s of GPU time for an upright 699k-triangle model with 4096 px PBR textures; Pixal3D 329 s, in the
   camera's frame, stood up by `pw.py convert --level`.
 
-Not verified yet: Blender from Linux snaps and distro packages, any hosted generator, and three runs of the
-action and outcome eval cases. The [wiki](https://github.com/m4bwav/polywright/wiki) has every command
+Not verified yet: Blender from Linux snaps and distro packages, and any hosted generator.
+The [wiki](https://github.com/m4bwav/polywright/wiki) has every command
 with real output.
 
 ## Testing
@@ -136,7 +141,10 @@ CI (`.github/workflows/tests.yml`):
 - Linux, macOS and Windows, Python 3.9 and 3.14: `tests/check_skills.py` (frontmatter, description limits,
   companions, manifests, relative links, public-safety guards) and `tests/test_pw.py` (Blender parts skip).
 - A Blender job on Linux with the `bpy` 5.2.2 wheel: the Blender tests and every recipe.
-- `scripts/budget.py`: what every session loads (about 1,000 tokens of descriptions) and the installed size stay green.
+- Real Blender apps on macOS (Homebrew cask) and Linux (official tarball): install-folder discovery and
+  `tests/test_pw.py`.
+- `scripts/budget.py`: descriptions and installed size are checked against green, yellow and red limits.
+  The installed skills folder is 768 KB at 0.5.1 (YELLOW; 800 KB is the red limit).
 
 ## Privacy
 

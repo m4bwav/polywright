@@ -123,3 +123,16 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - Wiki updated from 0.2.1 to 0.5.0 with the wikiwright skill (owner-approved pass): new sections for duel, spritecam, sprite, framecam, scene, topology, crowd Mist, reserves, side B, two figures, texture --delight; 11 pages changed. Program and output: notes/2026-10-26-wiki-verify.py and .out.txt (67 sections, run against the release zip, two runs stable). Details, the shipped-doc inaccuracies and three small findings: notes/2026-10-26-github-wiki.md.
 - Found: the CHANGELOG's Unreleased section holds changes that are in the v0.5.0 tag and zip (PR #34), and 0.3.0 was never tagged.
 - Checks: check_skills ok; test_pw 69 OK; test_recipes 20 OK; budget YELLOW (767 KB). Wiki: check 0 errors, outputs 76 checked 0 missing, snippets 0 missing, tells 0 strong.
+
+## 2026-10-26: 0.5.1 wiki-findings follow-up prepared
+
+- Fixed crowd's refusal flag names at the CLI boundary, keeping duel JSON-key messages unchanged. Its existing test now runs without Blender. Preserved and documented duel result fields and inspect's edge-based watertight semantics; expanded their existing regression tests.
+- Corrected README counts, eval history, CI and video dependencies; moved shipped PR #34 changes under 0.5.0 and marked 0.3.0 untagged. Updated stale HANDOFF release state.
+- Prepared version 0.5.1. Validation, merge, release and wiki verification are pending. The hub's research freshness check remains due; no skill triggers or routing changed.
+
+## 2026-10-26: 0.5.1 local validation
+
+- All commands exited 0: check_skills (7 skills), test_pw (69 tests, 254.870 s), test_recipes (20 recipes, 40.115 s), budget and git diff --check. Blender-backed paths ran, including the flipped-face regression. Existing unclosed-file ResourceWarnings were not changed.
+- Installed skills folder 768 KB (YELLOW, red limit 800), descriptions 1,053 tokens, hub SKILL.md 3,272 tokens, largest reference 3,915 tokens. No trigger or routing changes, so paid skill evals were not rerun.
+- Wiki edits are being prepared from the verified tests and unchanged 0.5.0 examples; published-zip verification follows the release. Hub research remains due since 2026-10-25.
+## [2026-10-26] index | rebuilt (8 entries)

@@ -375,6 +375,16 @@ def duel_spec(**over):
     return s
 
 
+class VideoSizes(unittest.TestCase):
+    def test_crowd_rejects_sizes_wan_cannot_take(self):
+        code, out = run("crowd", "--out", "unused", "--size", "830x480", "--frames", "80")
+        self.assertEqual(code, 2)
+        self.assertIn("--size 830x480:", out["error"])
+        self.assertIn("--frames 80:", out["error"])
+        self.assertIn("4n+1", out["error"])
+        self.assertEqual(out["hint"], "--any-size skips this check")
+
+
 class Duel(unittest.TestCase):
     def test_pose_keys_smoothstep_between_held_ends(self):
         pool = dict(pw.DUEL_POSES)
@@ -418,6 +428,10 @@ class Duel(unittest.TestCase):
         for want in ("4n+1", "divisible by 16", "camera needs", "out of time order", "loops", "unknown pose nope",
                      "pose half: spine must be 3 numbers", "C: mark", "B cannot throw rblade"):
             self.assertIn(want, text)
+        self.assertIn("size 830x480:", text)
+        self.assertIn("frames 80:", text)
+        self.assertNotIn("--size", text)
+        self.assertNotIn("--frames", text)
 
     def test_face_points_hidden_by_the_camera_side(self):
         # a head at (0, 0, 1.6) facing +X: nose, right eye (-Y), left eye, right ear, left ear
@@ -433,6 +447,9 @@ class Duel(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertEqual(out["sheet_frames"], [1, 20, 32, 47, 59, 73])
         self.assertEqual(set(out["fighters"]), {"A", "B"})
+        self.assertEqual(out["seconds"], round(out["frames"] / out["fps"], 2))
+        self.assertNotIn("action", out)
+        self.assertNotIn("blender", out)
         code, out = run("duel", os.path.join(FIX, "missing.json"), "--check")
         self.assertEqual(code, 2)
 
@@ -521,6 +538,9 @@ class WithBlender(unittest.TestCase):
         self.assertEqual(out["topology"]["winding_mismatch"], 0)
         self.assertEqual(out["topology"]["tris"], 12)
         code, out = run("inspect", bad, "--topology")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["watertight"])
+        self.assertEqual((out["boundary_edges"], out["non_manifold_edges"]), (0, 0))
         self.assertEqual(out["topology"]["winding_mismatch"], 3)  # the flipped triangle's three edges
         code, chk = run("check", bad, "--target", "web-threejs")
         self.assertEqual({r["rule"]: r["status"] for r in chk["results"]}["max_winding_mismatch"], "warn")
@@ -796,11 +816,6 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(os.path.getsize(os.path.join(out, "depth.mp4")) > 1000, vids)
         self.assertNotIn("mask", vids)  # no frames, no video
         self.assertFalse([n for n in os.listdir(out) if n.startswith("_pw_encode_")])
-
-    def test_crowd_rejects_sizes_wan_cannot_take(self):
-        code, out = run("crowd", "--out", os.path.join(self.tmp, "no"), "--size", "830x480", "--frames", "80")
-        self.assertEqual(code, 2)
-        self.assertIn("4n+1", out["error"])
 
     def test_duel_example_preview_writes_every_pass(self):
         d = os.path.join(self.tmp, "duel")

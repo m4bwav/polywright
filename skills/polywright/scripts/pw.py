@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -2711,7 +2711,7 @@ def crowd_sheet(out, passes, frames=None, fps=None):
 
 def cmd_crowd(a):
     W, H = (int(v) for v in a.size.lower().split("x"))
-    problems = video_size_problems(W, H, a.frames)
+    problems = ["--" + p for p in video_size_problems(W, H, a.frames)]
     if problems and not a.any_size:
         return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips this check"}, 2)
     passes = [x.strip() for x in a.passes.split(",") if x.strip()]
