@@ -4,11 +4,17 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+## 0.5.1 (2026-10-26)
+
+- `pw.py crowd`: restore `--size` and `--frames` in size-refusal messages. The regression test now runs without Blender; `duel` still names JSON keys without dashes.
+- Correct the README's recipe and test counts, eval history, Blender-app CI coverage, video dependencies and size-budget status. Document `duel`'s clip-length `seconds` and `inspect`'s edge-based `watertight` result without changing their JSON contracts.
+- Correct the release history: PR #34's mask, delight and LOD-reference changes shipped in 0.5.0; 0.3.0 was never tagged.
+
+## 0.5.0 (2026-10-24; tagged 2026-10-26)
+
 - `pw.py crowd`: the mask pass renders with Workbench anti-aliasing and dither off, so its frames hold only the two side colours and black (a 9-frame test had 110,089 off-colour pixels before); depth, Mist and clay frames are pixel-identical to before.
 - `pw.py texture --delight`: divides out broad light baked into a photo (a wide blur of linear luminance, rescaled to the median) before the other maps; writes `<name>_albedo.png`.
 - polywright-finish: when to switch LOD levels (projected size, the 2-pixel rule) in web-threejs.md, engines.md and unity.md. polywright-references: the delight route and what photo normal maps cannot do. From the round 2 books track (CGPP 3e).
-
-## 0.5.0 (2026-10-24)
 
 - Scene illustrations from a model: `pw.py framecam` grid-searches perspective cameras (position, aim, lens) that put named world points in screen boxes, keep others in frame and out of the UI's text bands, and maximise a hero's size on screen; it prints the best as `cameras.json` presets and names the rule that blocks an impossible search. Standard library only. `pw.py scene` renders a scene through one preset into clay, beauty, depth (inverse distance, its range measured from the scene unless set), normal, a flat id pass per part with the sky transparent, line art, an optional repainted sky, and `scene.json` with rings and named points projected to pixels. Its Blender half, `scripts/pw_scene.py`, also offers `sweep` and `ribbon` to scripts that build scenes. Made for a loading-screen illustration built around a game's mill model.
 - `pw.py crowd`: side B can differ from side A: `--jitter-b` (a loose swarm that runs up to the line), `--kit-b`, `--scale-b`, `--stagger-b`; each figure now carries only its own side's kit.
@@ -26,6 +32,8 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 - `references/contract.md`: concept art before image-to-3D and turnaround renders can go to artwright's judge, which writes `artwright/verdict.json` (one row in "Which plugin takes what").
 
 ## 0.3.0 (2026-10-18)
+
+Never tagged or released separately; these changes first shipped in 0.4.0.
 
 - `pw.py duel`: a two-fighter previs for AI video controls. A JSON file names the set (a `.blend`, a room script or a floor), the shot's camera, two fighters with marks, facing and poses keyed in seconds (a built-in pose library plus your own, base plus overrides), blades on the wrists and thrown props. Each frame it renders clay, a Canny of the clay, inverse depth with real and with thick blades, and COCO-18 skeletons with face points turned from the lens left out, then one `<name>_<pass>.mp4` per pass and a sheet at chosen seconds; it warns when a fighter's end state is out of frame. `--check` validates a file without Blender. Shared with `crowd`: the mannequin, the depth material, the skeleton drawer (now capped in width, and hidden ankles no longer skew it), the video encoder and the sheet (now labelled). Example `skills/polywright/examples/duel.json`.
 - polywright lesson L-008: the duel passes hold where the fighters stand and which way they face, but not a kneeling or lying pose; pin those with a guide still.

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261026-1 · 2026-10-26 · Restore crowd refusal flag names; document existing result semantics
+- because: user request; wiki findings of 2026-10-26
+- files: scripts/pw.py (cmd_crowd, VERSION), references/cli.md (result semantics), tests/test_pw.py
+- Crowd refusal messages again name `--size` and `--frames`; the test runs without Blender. Duel JSON-key validation keeps bare names. Clip-duration `seconds` and edge-based `watertight` remain unchanged and have regression assertions.
+
 ### C-20261025-3 · 2026-10-25 · crowd: per-side jitter, kit, height and stagger for a horde against a line
 - because: user request (a wild horde with no formation against a spear line, for a layered-passes test in a private image-generation skill)
 - files: scripts/pw.py (crowd flags `--jitter-b`, `--kit-b`, `--scale-b`, `--stagger-b`), scripts/pw_bpy.py (crowd_layout per side; act_crowd builds each figure's own kit), tests/test_pw.py (test_crowd_side_b_loose_bare_and_shorter), references/crowd-blockouts.md

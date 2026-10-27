@@ -58,6 +58,16 @@ _Footer, Home, Getting-Started (zip, version, needs table: commands that need no
 - A crowd mask frame holds exactly three colours (black, 255,0,0 and 0,0,255).
 - Mist frames are 16-bit grey PNGs.
 
+## 0.5.1 follow-up
+
+- Corrected the root CHANGELOG's placement of PR #34 and labelled 0.3.0 as never separately released. The README now records 20 recipes, 69 tests, completed action/outcome runs and their weak baselines, Blender-app CI, FFmpeg fallback and the yellow size budget.
+- Restored flag dashes at `cmd_crowd`, rather than in the shared `video_size_problems` helper: `duel_load` validates JSON keys, which should keep bare names. Moved the existing refusal test out of the Blender-only class so every supported Python/OS CI job runs it. Added assertions that duel validation keeps bare keys.
+- Kept duel's existing JSON contract. `seconds` is clip duration (`frames / fps`), and successful results lack `action` and `blender`; the command reference explains this and the check test guards it.
+- Kept inspect's edge-based `watertight` meaning. The Blender implementation counts welded edge incidence independently of face orientation. The existing flipped-triangle test now also asserts zero boundary/non-manifold edges and `watertight: true` beside three winding mismatches. The CLI reference explains why `inside_out` cannot detect every flipped face. Changing this boolean would affect print/check behavior and the trimesh fallback, so no change was justified by this fixture.
+- Candidate version: 0.5.1 in plugin.json and pw.py. Local validation passed: `check_skills.py` (7 skills), `test_pw.py` (69 tests, 254.870 s), `test_recipes.py` (20 tests, 40.115 s), `budget.py` and `git diff --check`, all exit 0. The full suite includes the crowd refusal, duel contract and flipped-triangle regressions; the Blender-backed tests ran rather than skipping. Existing unclosed-file ResourceWarnings were non-failing and left outside this change.
+- Budget remains YELLOW: installed skills 768 KB of 800, descriptions 1,053 tokens, hub SKILL.md 3,272 tokens and largest reference 3,915 tokens. Merge, GitHub release and wiki verification are pending.
+- Research scope: the hub's evergreen.json says last_checked 2026-10-11, next_due 2026-10-25, interval 14 days, verify_at_use false, no volatile claims and no contradiction. This follow-up changes diagnostics and documents already implemented behavior, without new Blender API, licence or policy claims. Research freshness remains due; no metadata was advanced without a refresh.
+
 ## Update procedure
 
 Unchanged from the 0.1.2 note, with the new file names: `python ai-docs/notes/2026-10-26-wiki-verify.py <version> > new.out.txt` (Blender on the machine), strip CRs, `wikiwright.py diffout ai-docs/notes/2026-10-26-wiki-verify.out.txt new.out.txt`, fix each changed section on its page, then `check --version`, `outputs --address ''`, `snippets`, `live`. Do not use `diffout --save` (it masks the port in `http://127.0.0.1:9`, which the Errors page shows). Pages that name the version: _Footer, Home, Getting-Started (zip name and `--version` output), Commands (intro), Versions-and-Upgrading, Errors-and-Edge-Cases ("Known limits in 0.5.0"). The manifest review date on Commands is the day the program ran.

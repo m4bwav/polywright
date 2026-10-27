@@ -1,32 +1,37 @@
 # Handoff
 
-Last updated 2026-10-25 (Mist on a duel, crowd hint, L-021); before that 2026-10-23 (crowd --passes mist); before that 2026-10-17 (pw.py duel; evals harness, wall thickness, hollow-shell fill, convert --level, roofs, sibling pointers).
+Last updated 2026-10-26 (0.5.1 locally validated; merge, release and wiki verification pending).
 
 ## State
 
 - Seven skills under `skills/`, the CLI `skills/polywright/scripts/pw.py` (+ `pw_bpy.py`), budgets in `skills/polywright/references/targets.json`, research in `research/`.
-- Tests: `python tests/check_skills.py`, `python tests/test_pw.py` (49), `python tests/test_recipes.py` (11) and `python scripts/budget.py` pass on Windows 11 with Blender 5.2.1. Budget YELLOW: installed skills folder 566 KB after the six topic pages of 2026-10-17 (green to 400, red at 800).
-- github.com/m4bwav/polywright (public), CI green on main. Released v0.2.1 (2026-10-17; 0.2.0 the same day). Under Unreleased in CHANGELOG.md: `pw.py duel`. A release waits for the owner's go-ahead; the wiki is updated with each release ([notes/2026-10-11-github-wiki.md](notes/2026-10-11-github-wiki.md)).
+- Local 0.5.1 validation: `check_skills.py` passed; `test_pw.py` 69 tests passed in 254.870 s, including Blender-backed regressions; `test_recipes.py` 20 recipes passed in 40.115 s; `git diff --check` passed. Budget YELLOW: installed skills folder 768 KB (red at 800), descriptions 1,053 tokens, largest SKILL.md 3,272 tokens.
+- github.com/m4bwav/polywright (public). Released v0.5.0 on 2026-10-26, including PR #34. Version 0.5.1 is locally validated, not yet tagged. The owner authorizes merging and GitHub releases after checks pass; registry publishing still needs explicit permission.
 - Evals: `tests/run_evals.py` runs the cases headless (see its docstring). Trigger and decoy cases, three runs each: 80/87 first pass, then the four weak cases 24/24 after fixes (each TESTS.md, T-20261017-1). Cost about $0.30 to $0.50 per trigger run.
-- `pw.py duel` (2026-10-17, unreleased): two-fighter previs controls; plan, format and result in [plans/2026-10-17-pw-duel.md](plans/2026-10-17-pw-duel.md). Budget after it: installed skills folder 600 KB (YELLOW), hub SKILL.md 2,499 tokens (green, one token under).
-- Topic pages (2026-10-17, unreleased): finish web-threejs.md, roblox.md, unity.md; hub film-and-video.md; references images-for-3d.md; print supports-and-slicing.md. check_skills.py guards drive paths and private names.
+- `pw.py duel` first shipped in 0.4.0; the 0.3.0 changelog section was never tagged. Plan and format: [plans/2026-10-17-pw-duel.md](plans/2026-10-17-pw-duel.md).
+- Topic pages shipped in 0.2.1: finish web-threejs.md, roblox.md, unity.md; hub film-and-video.md; references images-for-3d.md; print supports-and-slicing.md. check_skills.py guards drive paths and private names.
 - Siblings now point at polywright's folder contract (one line each, merged 2026-10-17): threewright #9 (threewright-assets), cinewright #48 (cinewright-sets, target `video-blockout`), roblox-agent #14 (roblox-agent-workflow), unity-agent #12 (unity-agent-workflow), and a private image-generation skill.
 
 ## Books track 7 (2026-10-22)
 
-- 2026-10-23: `crowd --passes depth,mist` built (L-012 applied, L-013 on comparing PNGs); unreleased.
-- Unreleased on main after the track-7 PR: `crowd --scatter`, `inspect --topology`, `convert --fix-winding`, MP4 through Blender, two recipe files, topology.md. Release (0.4.0) waits for the owner.
+- Shipped in 0.4.0: `crowd --passes depth,mist` (L-012, L-013), `crowd --scatter`, `inspect --topology`, `convert --fix-winding`, MP4 through Blender, two recipe files, topology.md.
 - 2026-10-25: Mist on a second shot type (a duel through crowd, <video output>/depthtest2): both controls close; the owner's blind pick of blind_s11/blind_s23 is still owed (key in depthtest2_key, record the pick with the H3 pair tool).
 - Open from it: does a Line Art pass beat Canny of the clay as an edge control; the duel animation principles (crowd-blockouts.md "Open"), one at a time against the same take; a judged set to calibrate the UV spread line; Unity-side checks of FBX takes and axes.
 
 ## Round 2 books track 17 (2026-10-25)
 
-- Under root CHANGELOG Unreleased (not in 0.5.0, which another session versioned): exact-colour crowd masks (Workbench AA and dither off, L-022), `pw.py texture --delight`, LOD switch rule in the finish references, delight and normal-map limits in polywright-references. Skipped this round: `pw.py lods` switch estimates, an opt-in hard-edged crowd depth (soft depth edges may suit a control model; no failing case).
+- Shipped in 0.5.0: exact-colour crowd masks (Workbench AA and dither off, L-022), `pw.py texture --delight`, LOD switch rule in the finish references, delight and normal-map limits in polywright-references. The root CHANGELOG now places them there. Skipped this round: `pw.py lods` switch estimates, an opt-in hard-edged crowd depth (soft depth edges may suit a control model; no failing case).
 
 ## Wiki for 0.5.0 (2026-10-26)
 
 - The wiki now describes 0.5.0 (it was at 0.2.1; 0.3.0 was never tagged, 0.4.0 got no wiki pass): [notes/2026-10-26-github-wiki.md](notes/2026-10-26-github-wiki.md), program and saved output beside it. The next wiki update reruns `notes/2026-10-26-wiki-verify.py`.
-- Correction to the track-17 line above: the v0.5.0 tag (2026-10-26) came after PR #34, so the exact-colour masks, `texture --delight` and the LOD references are in 0.5.0 and its zip. Move those CHANGELOG lines from Unreleased into 0.5.0 at the next edit. The note lists six more README and CHANGELOG inaccuracies (recipe and test counts, eval status, the blender-app CI job, ffmpeg in Needs, the untagged 0.3.0) and three small findings in 0.5.0 (crowd's size refusal names flags without dashes, duel's `seconds` is the clip length, inspect calls a box with a flipped face watertight).
+- The 0.5.1 follow-up corrects the root CHANGELOG and README findings. Crowd refusal messages restore flag dashes. Duel and inspect semantics are documented and preserved; see the follow-up section in the wiki note.
+
+## Next single action
+
+Run CI, merge with a merge commit, tag 0.5.1 and let release.yml publish the GitHub zip. Re-run the wiki verification against that zip and validate the prepared wiki edits.
+
+The hub's evergreen research check is overdue (next_due 2026-10-25); no research freshness claim was changed in this follow-up.
 
 ## Owed
 

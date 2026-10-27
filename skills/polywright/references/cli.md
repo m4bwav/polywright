@@ -7,6 +7,16 @@
 
 Back to [SKILL.md](../SKILL.md). Checked against Blender 5.2.1 LTS on Windows 11, 2026-10-11.
 
+## Result semantics
+
+`duel` reports clip duration in `seconds` (`frames / fps`), not elapsed runtime. Its successful result has no
+`action` or `blender` fields; `--check` returns the same clip metadata without running Blender.
+
+For Blender-backed `inspect`, `watertight` means no boundary or non-manifold edges after welding positions.
+It does not certify face orientation or absence of self-intersections. `inside_out` uses the signed volume of
+each object, so it can miss a single flipped face. Use `--topology` for `winding_mismatch`, then
+`convert --fix-winding` to repair inconsistent winding.
+
 ## Finding tools
 
 | Variable | Use |
