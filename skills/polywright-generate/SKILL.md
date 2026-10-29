@@ -66,8 +66,9 @@ then rethink.
 ## Step 4: textures for a generated or coded mesh
 
 TRELLIS.2 and Pixal3D bake PBR textures in their workflow. For an untextured mesh: TRELLIS.2's
-shape-conditioned texture stage, StableGen (Blender add-on on a ComfyUI backend, GPLv3) projecting SDXL or Flux
-from cameras, or plain materials from CC0 libraries (polywright-references). Hunyuan 2.1 paint needs about 21 GB.
+shape-conditioned texture stage, StableGen (Blender add-on on a ComfyUI backend, GPLv3) projecting SDXL, Flux or
+Qwen Image 2.1 from cameras (0.4.0 adds masked regional re-texturing and SkinTokens auto-rigging; Qwen Image 2.1
+and FIBO 2.0 Edit are non-commercial, MOSS Image is Apache-2.0), or plain materials from CC0 libraries (polywright-references). Hunyuan 2.1 paint needs about 21 GB.
 
 ## Licences (record per run)
 

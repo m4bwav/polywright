@@ -41,6 +41,11 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261029-1 · 2026-10-29 · Subject: StableGen 0.4.0
+- StableGen 0.4.0 (Blender add-on, ComfyUI backend): prompt to preview gallery to TRELLIS.2 mesh; texturing by projecting Qwen Image 2.1 from 10 cameras (RTX 4080 16 GB in the maker's video) with Marigold V2 PBR maps; new masked edit (regenerate a painted region through the cameras that see it) and SkinTokens auto-rigging with FBX/BVH retargeting; experimental MOSS Image and FIBO 2.0 Edit. Licences per the maker: Qwen Image 2.1 and FIBO 2.0 Edit non-commercial, MOSS Image Apache-2.0. Found in the everscout indie-ai-games scan; not run here.
+- Sources: https://www.reddit.com/r/StableDiffusion/comments/1xiolct/qwen_image_21_trellis2_in_blender_from_a_prompt/, https://github.com/sakalond/StableGen
+- Applied: SKILL.md Step 4 (StableGen line)
+
 ### R-20261011-3 · 2026-10-11 · Testing: Pixal3D through ComfyUI's template on a 16 GB card
 - summary: The seven template files (14.5 GB) downloaded from Comfy-Org on Hugging Face; the template ran unmodified through pw.py gen's converter in 331 s on an RTX 5060 Ti 16 GB (ComfyUI 0.38.2), giving a 700k-triangle textured GLB (4096 px PBR, 55 MB, 515 non-manifold edges) that leans by the camera's elevation. The TRELLIS.2 branch (`--set 316.value=true`) ran in 377 s of GPU time: upright, one part, 699k triangles, 4096 px PBR, the best detail of the three models tried; Hunyuan3D-2 took 99 s for shape only.
 - track: testing
