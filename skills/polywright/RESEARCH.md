@@ -45,6 +45,11 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
+- Subject: Blender 5.3 due November 2026 (5.1 March, 5.2 LTS July); no operator change found that affects pw.py. Testing: new agentic Blender benchmarks BlenderWorld (arXiv 2610.23986) and SceneActBench (arXiv 2607.22393) render submissions from several views and grade with binary rubrics, which matches pw.py sheet + judge. Tooling: mcp-printable (PyPI, alpha, Blender and OpenSCAD backends, ships Claude Code skills) noted, not adopted. Practice: nothing new.
+- sources: https://arxiv.org/abs/2610.23986, https://arxiv.org/pdf/2607.22393, https://pypi.org/project/mcp-printable/
+- magnitude: 0.2 · applied: note only
+
 ### R-20261025-1 · 2026-10-25 · Subject: rendering principles for blockout passes and photo textures (round 2 books track)
 - Summary: a pass used as a mask is a label image, so filtering (anti-aliasing) and dither make colours that belong to neither side (CGPP 3e §17.5); albedo is a material map separate from lighting, so light baked into a photo has to be divided out (§27.11, §17.4.5 on linear light). Checked on Blender 5.2.1: `scene.display.render_aa` takes OFF, FXAA, 5, 8, 11, 16, 32 (default 8); the remaining off-colour pixels after AA off were +-1 values from `render.dither_intensity`.
 - Track: subject

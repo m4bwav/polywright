@@ -40,6 +40,11 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
+- Subject: CharacterSheet TripleView/QuadView LoRAs for FLUX.2 Klein 9B and Krea 2 (comfyui-wiki 2026-07-31, workflow JSON, no custom nodes; licence follows the Civitai listing) are an option for front/side/back sheets; known weak on asymmetric designs and accessories. Nothing newer found for October. Tooling, practice, testing: nothing new.
+- sources: https://comfyui-wiki.com/en/news/2026-07-31-charactersheet-multiview-loras, https://huggingface.co/Alissonerdx/CharacterSheet
+- magnitude: 0.2 · applied: note only
+
 ### R-20261017-1 · 2026-10-17 · Subject: what image-to-3D generators need from a picture
 - summary: Input rules gathered for the mesh side. ComfyUI's Pixal3D tutorial: BiRefNet removes the background and the workflow crops the subject to a centred canvas; MoGe estimates depth and field of view for pixel-aligned back-projection (front matches the input 1:1); a separate multi-view model (`pixal3d_multiview_int8_convrot`) takes a front/side/back turnaround on one image, which settles generators.md's "multi-view reported 2026-09" (updated there). Hunyuan3D-2mv: front, left, back, right as separate images, front alone allowed, background pre-removed. Meshy docs: at least 512x512, evenly lit (shadows give black patches), near-orthographic or telephoto, front/side/back/3-4 under one light, clutter merges into one mesh; A-pose and T-pose are output options for humanoids. TRELLIS.2 and Hunyuan3D-2 READMEs give no input rules. Thin, transparent and reflective parts remain failure cases (sub-voxel parts smoothed by sparse voxels and the Hunyuan ShapeVAE; flat-colour illustrations come out paper-thin). Tripo's blog favours a three-quarter view (vendor content).
 - track: subject
