@@ -41,6 +41,11 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
+- Subject: no new open-weights image-to-3D release since StableGen 0.4.0 (R-20261029-1); TRELLIS.2 (MIT) and Pixal3D stay the open picks, Hunyuan3D 3.x hosted-only (open weights stop at 2.1). Testing: 3DCodeBench (Blender 5.0 procedural code, Uni3D scores) noted. Tooling and practice: nothing new.
+- sources: https://microsoft.github.io/TRELLIS.2, https://app.cinevva.com/guides/ai-3d-model-generation-timeline-2026 (third party)
+- magnitude: 0.1 · applied: note only
+
 ### R-20261029-1 · 2026-10-29 · Subject: StableGen 0.4.0
 - StableGen 0.4.0 (Blender add-on, ComfyUI backend): prompt to preview gallery to TRELLIS.2 mesh; texturing by projecting Qwen Image 2.1 from 10 cameras (RTX 4080 16 GB in the maker's video) with Marigold V2 PBR maps; new masked edit (regenerate a painted region through the cameras that see it) and SkinTokens auto-rigging with FBX/BVH retargeting; experimental MOSS Image and FIBO 2.0 Edit. Licences per the maker: Qwen Image 2.1 and FIBO 2.0 Edit non-commercial, MOSS Image Apache-2.0. Found in the everscout indie-ai-games scan; not run here.
 - Sources: https://www.reddit.com/r/StableDiffusion/comments/1xiolct/qwen_image_21_trellis2_in_blender_from_a_prompt/, https://github.com/sakalond/StableGen
