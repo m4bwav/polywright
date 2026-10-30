@@ -13,9 +13,9 @@
   "source": null,
   "topic": "Reference images, multi-view sets, turnarounds, textures and blockouts that 3D models are built from",
   "tier": "fast",
-  "interval_days": 14,
-  "last_checked": "2026-10-11",
-  "next_due": "2026-10-25",
+  "interval_days": 14.0,
+  "last_checked": "2026-10-30",
+  "next_due": "2026-11-15",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
@@ -32,12 +32,18 @@
       "m": null,
       "interval_after": 14,
       "note": "created"
+    },
+    {
+      "date": "2026-10-30",
+      "m": 0.2,
+      "interval_after": 14.0,
+      "note": "quiet; CharacterSheet LoRAs noted; cost: searches 6 (shared) · fetches 0 · tool calls ~12"
     }
   ],
   "counts": {
     "learnings": 1,
     "changes": 2,
-    "research": 2,
+    "research": 3,
     "tests": 6
   },
   "consolidate_every": 25,

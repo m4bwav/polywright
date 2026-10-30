@@ -13,9 +13,9 @@
   "source": null,
   "topic": "Routing 3D model work for agents: brief, route choice (find, code, place, capture, generate), the asset contract and manifest, the inspect-render-check loop, pw.py",
   "tier": "fast",
-  "interval_days": 14,
-  "last_checked": "2026-10-11",
-  "next_due": "2026-10-25",
+  "interval_days": 14.0,
+  "last_checked": "2026-10-30",
+  "next_due": "2026-11-13",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
@@ -32,12 +32,18 @@
       "m": null,
       "interval_after": 14,
       "note": "created"
+    },
+    {
+      "date": "2026-10-30",
+      "m": 0.2,
+      "interval_after": 14.0,
+      "note": "quiet; BlenderWorld/SceneActBench, mcp-printable noted; cost: searches 6 (shared) · fetches 0 · tool calls ~12"
     }
   ],
   "counts": {
     "learnings": 2,
     "changes": 2,
-    "research": 3,
+    "research": 4,
     "tests": 6
   },
   "consolidate_every": 25,

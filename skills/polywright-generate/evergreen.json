@@ -13,9 +13,9 @@
   "source": null,
   "topic": "Imagined 3D models: open and hosted image-to-3D and text-to-3D generators, code and procedural modelling, AI texturing, licences",
   "tier": "fast",
-  "interval_days": 14,
-  "last_checked": "2026-10-11",
-  "next_due": "2026-10-25",
+  "interval_days": 14.0,
+  "last_checked": "2026-10-30",
+  "next_due": "2026-11-12",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
@@ -32,12 +32,18 @@
       "m": null,
       "interval_after": 14,
       "note": "created"
+    },
+    {
+      "date": "2026-10-30",
+      "m": 0.1,
+      "interval_after": 14.0,
+      "note": "quiet; no new open weights; cost: searches 6 (shared) · fetches 0 · tool calls ~12"
     }
   ],
   "counts": {
     "learnings": 1,
     "changes": 2,
-    "research": 2,
+    "research": 3,
     "tests": 6
   },
   "consolidate_every": 25,
