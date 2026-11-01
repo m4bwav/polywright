@@ -4,6 +4,10 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+## 0.5.2 (2026-11-01)
+
+- polywright-finish Step 5: animation clip rules (shared core poses, matching loop ends, root motion per clip, separate additive clips), after Gregory, Game Engine Architecture 2e (2014), sec. 11.6.
+
 ## 0.5.1 (2026-10-26)
 
 - `pw.py crowd`: restore `--size` and `--frames` in size-refusal messages. The regression test now runs without Blender; `duel` still names JSON keys without dashes.

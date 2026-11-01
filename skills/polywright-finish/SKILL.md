@@ -57,6 +57,10 @@ off (feet slide) and AccuRIG importing once at 0.01 scale: check scale and pivot
 4 bone influences per vertex, root at the origin. A Rigify rig exports far more bones than its deform set (278 of
 706 with deform-only on): for games build a deform-only skeleton or use the routes above.
 
+Animation clips: start and end each clip on one of a few shared core poses so clips chain without a blend; a loop's
+first frame equals its last; decide root motion or in place per clip and write it down; keep additive clips (aim,
+look, lean) as separate actions over a base pose (Gregory, Game Engine Architecture 2e (2014), sec. 11.6).
+
 ## Step 6: export and verify
 
 `pw.py convert` writes GLB, FBX, OBJ, USD/USDZ, STL. Per target:
