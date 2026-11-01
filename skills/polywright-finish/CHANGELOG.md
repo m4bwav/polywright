@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261101-1 · 2026-11-01 · Step 5: animation clip rules
+- because: owner request (book learnings, Gregory, Game Engine Architecture 2e (2014), sec. 11.6 and 11.6.4)
+- files: SKILL.md (Step 5, one paragraph)
+- Shared core start and end poses, loops whose first frame equals the last, root motion or in place chosen per clip, additive aim, look and lean clips kept separate. No trigger or decision change, so the evals were not re-run.
+
 ### C-20261025-1 · 2026-10-25 · When to switch LOD levels
 - because: R-20261025-1 (hub), CGPP 3e §25.4
 - files: references/web-threejs.md (LOD bullet), references/engines.md (Unity), references/unity.md (LODs)
