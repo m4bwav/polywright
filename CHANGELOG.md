@@ -4,6 +4,10 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+## 0.5.3 (2026-11-02)
+
+- polywright-blender: context, selection and re-runnable-script traps; 5.x key reads through the slot channelbag; auto-exec and drivers; parent-keep-transform, F-modifier motion, drivers (new bpy-recipes-motion.md) and armature-bind recipes; image-map colour space and node layout; temp_override and modal rules for live sessions. After Acampora, Python Scripting in Blender (2023); every API claim probed on Blender 5.2.1.
+
 ## 0.5.2 (2026-11-01)
 
 - polywright-finish Step 5: animation clip rules (shared core poses, matching loop ends, root motion per clip, separate additive clips), after Gregory, Game Engine Architecture 2e (2014), sec. 11.6.

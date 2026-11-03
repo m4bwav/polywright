@@ -113,7 +113,7 @@ These come from real runs, not from a model's say-so:
 - `tests/test_pw.py`: 69 tests: geometry, file formats, manifest, an offline `place`, and Blender-backed inspect,
   render, convert, printable, union and the bpy runner. They pass with the Blender executable and with the PyPI
   `bpy` 5.2.2 wheel.
-- `tests/test_recipes.py`: all 20 recipes in three `polywright-blender` reference files run in Blender. The test caught two 5.x API
+- `tests/test_recipes.py`: all 24 recipes in four `polywright-blender` reference files run in Blender. The test caught two 5.x API
   changes the research had missed (`show_shadows`, and the multilayer EXR media type).
 - The fountain and Central Park runs above, and a 540 x 420 m neighbourhood park (249 buildings). The park run
   caught and fixed four bugs: roads outside the box, an inside-out terrain block that made the Manifold union

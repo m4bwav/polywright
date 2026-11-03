@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261102-1 · 2026-11-02 · Context traps, key reads, motion and driver recipes
+- because: user request (books track: Acampora, *Python Scripting in Blender*, 2023); R-20261102-1, T-20261102-1
+- files: references/bpy-api-traps.md (Running row, Animation key reads, new section "Context, selection, hierarchy", Modifiers and operators), references/bpy-recipes-motion.md (new: parent-keep-transform, procedural-motion, drivers), references/bpy-recipes-physics.md (armature-bind), references/bpy-recipes.md (material-5x image-map note), SKILL.md (Step 4 links, Step 5 temp_override and modal rule)
+- New recipes went to their own file because bpy-recipes.md was already past the 3,500-token reference line.
+
 ### C-20261022-1 · 2026-10-22 · 2.7x-era traps, two recipe files, bake and output rules
 - because: books track 7 (Conlan, *The Blender Python API*; Packt Geometry Nodes; Pearson, *Learn Blender Simulations the Right Way*; van Gumster, *Blender All-in-One For Dummies*; Simonds, *Blender Master Class*; *Blender 3D By Example*; Brito); L-007, L-008
 - files: references/bpy-api-traps.md (new section "Code from 2.7x-era books and tutorials"), references/bpy-recipes-scenes.md (new: gn-scatter, passes-one-render, clay-override, line-art, encode-mp4), references/bpy-recipes-physics.md (new: rigidbody-bake, cloth-bake, rigify-export, volume-remesh), SKILL.md (Depth links, Step 2 bake rule, Step 3 two rows, Step 4), tests/test_recipes.py (reads every bpy-recipes*.md)

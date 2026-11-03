@@ -13,6 +13,7 @@ says otherwise. The developer docs sat behind a browser check that day; these co
 | `--python-expr` with quotes on Windows | write a script file; pass arguments after `--` |
 | bpy wheel on the wrong Python | `pip install bpy` works only on the Python Blender bundles (3.13 for 5.2); macOS wheels are arm64 only, Linux x86_64 only |
 | `gpu.platform.*` in background | call `gpu.init()` first |
+| drivers dead in an opened file | auto-run is off by default (`preferences.filepaths.use_scripts_auto_execute` False): scripted expressions that are not simple (`driver.is_simple_expression`) do not run. Pass `-y` / `--enable-autoexec` only for files you built yourself |
 
 ## Import and export
 
@@ -55,6 +56,19 @@ in 5.0 (new materials have node trees).
 
 `action.fcurves` is gone since 5.0: actions have `layers`, `slots` and channelbags. Use
 `anim_utils`-style helpers or keyframe through `obj.keyframe_insert(data_path=..., frame=...)`.
+Reading keys (probed on 5.2.1): `bpy_extras.anim_utils.action_get_channelbag_for_slot(action, ad.action_slot)`
+(the same object as `action.layers[0].strips[0].channelbag(slot)`), then `.fcurves` (`find(path, index=i)`,
+`data_path`, `array_index`, `keyframe_points[i].co`). `keyframe_insert` returns False instead of raising, so
+check it; `index=-1` (the default) keys every channel of a vector.
+
+## Context, selection, hierarchy
+
+- `bpy.context` is read-only: change state through data (`view_layer.objects.active = o`, `o.select_set(True)`,
+  `window.scene = s`). The active object can be unselected or None; check `context.object` before use.
+- `context.selected_objects` comes in creation order, not click order (Blender keeps none): sort it yourself.
+- Matrices and vectors read from an object are live: `.copy()` before keeping one across edits or a re-parent.
+- Make scripts re-runnable: look up collections, objects and constraints by name before creating them; around
+  `collection.objects.link` catch only RuntimeError (already linked); check `o.constraints` before adding one.
 
 ## Geometry Nodes
 
@@ -78,6 +92,8 @@ between versions: introspect `bpy.types` rather than recall.
   inspect does), or every closed mesh looks open.
 - `object.mode_set`, `mesh.select_all`, `uv.smart_project`, `object.quadriflow_remesh`, `object.bake` work
   headless with an active object.
+- Operator keyword arguments switch off prompts (`object.delete(confirm=False)`); list them with
+  `bpy.ops.object.delete.get_rna_type().properties`.
 - mathutils `Vector` is float32: compare its components to float64 bounds with a tolerance.
 
 ## Code from 2.7x-era books and tutorials

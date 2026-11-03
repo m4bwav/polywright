@@ -1,6 +1,6 @@
 # bpy recipes for physics, rigs and volumes (Blender 5.2)
 
-Rigid-body and cloth bakes, why a Rigify rig is not a game skeleton, and volume remeshing. Back to
+Rigid-body and cloth bakes, why a Rigify rig is not a game skeleton, binding by hand, and volume remeshing. Back to
 [SKILL.md](../SKILL.md); also [bpy-recipes.md](bpy-recipes.md) and [bpy-recipes-scenes.md](bpy-recipes-scenes.md).
 Every block is run by `tests/test_recipes.py` in Blender 5.2.1, asserts its own result and prints
 `[pw] ok ...`. Ideas credited to the books they came from; the code is new.
@@ -126,4 +126,31 @@ for v in bm.verts:                                                 # connected p
                     seen.add(w); stack.append(w)
 assert open_edges == 0 and parts == 1, (open_edges, parts)
 print("[pw] ok volume remesh", len(bm.faces), "faces, one closed piece")
+```
+
+## Bind a mesh to an armature by hand
+
+Without automatic weights: one vertex group per bone, named exactly like the bone, filled with
+`vg.add(indices, weight, "REPLACE")`, and an ARMATURE modifier whose `.object` is the rig. Build bones in edit
+mode (`edit_bones.new`) and leave edit mode before binding.
+
+```python
+# recipe: armature-bind
+import bpy
+bpy.ops.wm.read_factory_settings(use_empty=True)
+arm = bpy.data.objects.new("rig", bpy.data.armatures.new("rig")); bpy.context.scene.collection.objects.link(arm)
+bpy.context.view_layer.objects.active = arm
+bpy.ops.object.mode_set(mode="EDIT")
+b = arm.data.edit_bones.new("arm"); b.head, b.tail = (0, 0, 0), (0, 0, 1)
+bpy.ops.object.mode_set(mode="OBJECT")
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.5)); me = bpy.context.active_object
+vg = me.vertex_groups.new(name="arm")
+vg.add([v.index for v in me.data.vertices], 1.0, "REPLACE")
+me.modifiers.new("rig", "ARMATURE").object = arm
+arm.pose.bones["arm"].location = (0, 0.5, 0)           # bone-local: moves along the bone's Y, i.e. world Z
+bpy.context.view_layer.update()
+ev = me.evaluated_get(bpy.context.evaluated_depsgraph_get()).data
+z = [v.co.z for v in ev.vertices]
+assert abs(min(z)) < 1e-4, min(z)                      # mesh-local: the bottom rose from -0.5 to 0
+print("[pw] ok armature bind, lowest vertex z", round(min(z), 3))
 ```
