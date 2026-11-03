@@ -42,6 +42,12 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261102-1 · 2026-11-02 · Subject: scripting habits from Acampora, probed on 5.2.1
+- summary: Context and selection rules, parenting inverse, channelbag key reads (`anim_utils.action_get_channelbag_for_slot` exists and equals `layers[0].strips[0].channelbag(slot)`), `keyframe_insert` returns a bool, F-modifier and driver-variable enums, `driver.is_simple_expression`, auto-exec off by default, `object.delete(confirm=)`. Book written for Blender 3.3; every API claim re-probed in a running 5.2.1.
+- track: subject
+- sources: Acampora, *Python Scripting in Blender* (Packt, 2023); probe script run in Blender 5.2.1 LTS, 2026-11-02
+- magnitude: minor
+
 ### R-20261011-2 · 2026-10-11 · Tooling: MCP bridges and per-OS tools
 - summary: Official and community MCP compared; per-OS table of 30 tools with versions.
 - track: tooling

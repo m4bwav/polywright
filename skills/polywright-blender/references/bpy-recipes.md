@@ -149,6 +149,10 @@ bsdf.inputs["Emission Strength"].default_value = 0.0     # with "Emission Color"
 print("[pw] ok material sockets", len(bsdf.inputs))
 ```
 
+Image maps: set `image.colorspace_settings.name = "Non-Color"` on roughness, metallic and normal images, and run
+a normal map through a `ShaderNodeNormalMap` before the Principled Normal input. Place nodes with `node.location`
+in fixed steps of about 300 along x; node height and dimensions read from a script are not reliable.
+
 ## A designed prop from a written description: lathe, sweep, mirror
 
 For a prop someone describes in words (a weapon, a staff, a lamp): turned parts by revolving a profile, bent

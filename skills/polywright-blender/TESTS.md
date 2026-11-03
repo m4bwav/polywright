@@ -8,6 +8,9 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261102-1 · 2026-11-02 · tests/test_recipes.py · Windows 11, Blender 5.2.1 · 24/24
+- New: parent-keep-transform, procedural-motion, drivers (bpy-recipes-motion.md), armature-bind (bpy-recipes-physics.md). armature-bind failed first on a world-versus-mesh-local z assertion, fixed.
+
 ### T-20261022-1 · 2026-10-22 · tests/test_recipes.py · Windows 11, Blender 5.2.1 · 20/20
 - Nine new recipes in bpy-recipes-scenes.md and bpy-recipes-physics.md pass; mutations of three (reversed depth range, unlinked scatter gap, applying location with scale) each fail their recipe.
 - led to: C-20261022-1, L-007

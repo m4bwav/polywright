@@ -76,7 +76,8 @@ exports per engine, and a designed prop from a written description (lathe, sweep
 [references/bpy-recipes-scenes.md](references/bpy-recipes-scenes.md): Geometry Nodes scatter, inverse depth,
 masks, Mist and normals from one render, clay by material override, Line Art, MP4 through Blender's own FFmpeg.
 Physics and rigs: [references/bpy-recipes-physics.md](references/bpy-recipes-physics.md): rigid-body and cloth
-bakes, why a Rigify rig is not a game skeleton, volume remesh. Sheets of
+bakes, why a Rigify rig is not a game skeleton, binding to an armature by hand, volume remesh. Parenting, F-modifier
+motion and drivers: [references/bpy-recipes-motion.md](references/bpy-recipes-motion.md). Sheets of
 a model with mirror-image parts: raise the side camera 10 to 15 degrees, or one part hides the other (L-005).
 
 ## Step 5: live sessions (MCP)
@@ -85,7 +86,8 @@ Two servers exist: Blender Lab's official MCP (v1.0.3, Blender 5.1+, scene analy
 community mcp-for-blender (formerly blender-mcp; asset search and generator hooks). Both run any Python the
 model sends, with no sandbox, on port 9876. Use one, never both; only when the user is watching Blender and
 wants live edits; never paste text from downloaded files into its code. Setup and failure modes:
-[references/mcp-bridges.md](references/mcp-bridges.md).
+[references/mcp-bridges.md](references/mcp-bridges.md). In a live session, wrap editor-bound operators in
+`context.temp_override(window=w, area=a, region=r)`; modal operators and `bpy.app.timers` run only there, never under `-b`.
 
 ## Other tools
 
