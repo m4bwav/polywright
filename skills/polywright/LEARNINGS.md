@@ -188,3 +188,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: 17-frame crowd at 320x192, Blender 5.2.1, before and after the Mist pass: every pass pixel-identical, no file hash equal
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+
+### L-014 · 2026-10-23 · `pw.py bpy` swallows a script flag that shares a name with its own options
+- Trigger: `pw.py bpy build_sets.py -- --blend` never saved the .blend; the script saw no `--blend`, though `--people` passed through.
+- Hypothesis: argparse in `pw.py bpy` matches `--blend` (its own "open this .blend first") even after the script name, so the flag is consumed before it reaches the script.
+- Rule: give script flags names `pw.py bpy` does not own (`--save-blend`, not `--blend`; avoid `--timeout`, `--lines`); when a flag seems ignored, print `sys.argv` in the script.
+- Evidence: siege-news blockout (D:/ComfyUI/output/video/siege_news/sets/blockout/build_sets.py), 2026-10-23: `--blend` wrote nothing, `--save-blend` wrote four .blend files.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23

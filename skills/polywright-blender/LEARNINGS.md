@@ -69,3 +69,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: C-20261022-1; unapplied Smooth by Angle gave 64 in glTF, FBX and OBJ.
 - Scope: global
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-009 · 2026-10-23 · Workbench shadows on a big coarse terrain streak it with acne that Canny reads as lines
+- Trigger: a 3 km terrain (10 m grid) in a Workbench clay pass with `show_shadows` on came out covered in long diagonal streaks.
+- Hypothesis: Workbench's shadow volumes on long thin terrain faces self-shadow at grazing angles; the streaks are hard edges, so a Canny control takes them as geometry.
+- Rule: for clay passes meant for Canny or edge control, keep Workbench shadows off and let cavity carry the edges; put the sun's shadows in a separate lit pass (Cycles with a sun lamp) when they are wanted.
+- Evidence: siege-news blockout 2026-10-23, Blender 5.2.1: streaks gone with `show_shadows=False`; the Cycles colour guide carried the shadows.
+- Scope: global
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
