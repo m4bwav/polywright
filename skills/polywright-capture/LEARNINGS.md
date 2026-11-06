@@ -43,6 +43,6 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Trigger: `pw.py place` for Jerusalem's Old City (terrarium z14, 10 m grid): the ground inside the walls rose about 9 m within 120 m of the north wall, and house blocks placed on it stood above the wall-walk and hid every landmark from it.
 - Hypothesis: terrarium tiles are SRTM-derived, a surface model, so in a packed city of flat roofs they measure roofs, not streets; open spaces (the Haram esplanade) read true.
 - Rule: before placing building blocks on a terrarium or SRTM grid inside a dense built-up area, smooth it 3x3 and take off an estimated building height inside the built area, feathered from its edge, but not on open squares; level a known platform at its true height; say in the hand-over that the figure is an estimate. Lidar DEMs (USGS 3DEP) are bare earth and need none of this.
-- Evidence: D:/ComfyUI/output/video/siege_news/sets/blockout/build_sets.py (5 m off, feathered over 25 m): from the wall-walk the Dome of the Rock and the citadel then showed over the roofs as the plan expects.
+- Evidence: D:/<folder>/siege_news/sets/blockout/build_sets.py (5 m off, feathered over 25 m): from the wall-walk the Dome of the Rock and the citadel then showed over the roofs as the plan expects.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
