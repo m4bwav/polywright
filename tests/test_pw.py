@@ -753,6 +753,19 @@ class WithBlender(unittest.TestCase):
         self.assertEqual(frame(plain, names[0]), frame(stab, names[0]))  # same layout on frame 1
         self.assertNotEqual(frame(plain, names[-1]), frame(stab, names[-1]))  # figures fell and spears moved
 
+    def test_crowd_spears_down_levels_spears_from_frame_one(self):
+        args = ["--size", "320x192", "--frames", "9", "--ranks", "2", "--cols", "4", "--action", "clash",
+                "--kit", "spear", "--gap", "20", "--passes", "mask", "--preview", "--seed", "3"]
+        up, down = os.path.join(self.tmp, "sd_up"), os.path.join(self.tmp, "sd_down")
+        self.assertEqual(run("crowd", "--out", up, *args)[0], 0)
+        self.assertEqual(run("crowd", "--out", down, *args, "--spears-down")[0], 0)
+
+        def frame(folder):
+            name = sorted(os.listdir(os.path.join(folder, "mask")))[0]
+            with open(os.path.join(folder, "mask", name), "rb") as f:
+                return pw.png_decode(f.read())[3]
+        self.assertNotEqual(frame(up), frame(down))  # raised spears on frame 1 without it, levelled with it
+
     def test_crowd_mist_pass_beside_unchanged_depth(self):
         args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--preview"]
         code, plain = run("crowd", "--out", os.path.join(self.tmp, "nomist"), "--passes", "depth", *args)

@@ -1442,7 +1442,7 @@ def crowd_pose(fig, t):
     if "helmet" in fig["kit"]:
         parts["helmet"] = base @ Matrix.Translation(L["head"] + Rt @ Vector((0, 0, 0.12)))
     if "spear" in fig["kit"]:
-        levelled = fig["action"] == "charge" or stopped
+        levelled = fig["action"] == "charge" or stopped or fig.get("spears_down")
         sd = (Rt @ Vector((1, 0, 0.08))).normalized() if levelled else Vector((0.05, 0, 1)).normalized()
         parts["spear"] = base @ seg(L["rwrist"] + sd * 1.0, -sd)
         hand = base @ L["rwrist"]
@@ -1503,6 +1503,10 @@ def crowd_layout(p):
                              "phase": rng.uniform(0, 2 * math.pi), "speed": rng.uniform(0.9, 1.1),
                              "scale": size * rng.uniform(0.94, 1.06),
                              "delay": rng.uniform(0, stagger) if action == "charge" else 0.0})
+    if p.get("spears_down"):
+        for f in figs:
+            if f["side"] == "a":
+                f["spears_down"] = True
     if p.get("stab"):
         crowd_plan_stabs(figs, float(p["stab"]), int(p.get("stab_max") or 6), int(p.get("fps", 16)), int(p.get("frames", 81)))
     return figs
