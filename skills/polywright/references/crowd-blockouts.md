@@ -35,6 +35,8 @@ against 10 creatures (2026-10-25): the swarm read as no formation in the depth v
 at 0.6 and 0.8 strength; the smaller blockout height did not carry into the render at either strength, so say the
 height in words as well and check it.
 
+**Spears that go in** (`--stab 2.4`, `--stab-max`, default 6): a side A spearman aims at a side B figure that comes within reach; the point drives through its chest or head and stays in while the figure hangs on it and falls. Starting positions match the same seed without the flag.
+
 **Reserves behind the lines** (`--scatter N`): about N standing figures per side, Poisson-scattered behind the
 last rank with at least `--scatter-gap` (1.2 m) between them over `--scatter-depth` (25 m), drawn from three
 variants (heights 0.95 to 1.05, one without a helmet, one without a shield) with random yaw and scale. They are

@@ -1307,9 +1307,90 @@ def seg(top, d):
     return Matrix.Translation(top) @ d.normalized().to_track_quat("-Z", "Y").to_matrix().to_4x4()
 
 
+def crowd_fall(fig, t):
+    """Backward pitch in radians of a figure a spear has hit: it hangs on the spear a moment, then drops."""
+    if fig.get("hit") is None:
+        return 0.0
+    u = min(1.0, max(0.0, (t - fig["hit"] - 0.25) / 0.7))
+    return -1.45 * u * u
+
+
+def crowd_target(fig, t, height):
+    """World point `height` metres above a figure's feet, following its run and its fall."""
+    _, speed, _, _ = CROWD_ACTIONS[fig["action"]]
+    run_t = min(t, fig["hit"]) if fig.get("hit") is not None else t
+    travel = speed * fig["speed"] * max(0.0, run_t - fig["delay"])
+    if fig["stop"] is not None:
+        travel = min(travel, fig["stop"])
+    yaw = Matrix.Rotation(fig["yaw"], 3, "Z")
+    tilt = Matrix.Rotation(crowd_fall(fig, t), 3, "Y")
+    return Vector(fig["pos"]) + yaw @ (Vector((travel, 0, 0)) + tilt @ Vector((0, 0, height * fig["scale"])))
+
+
+STAB_WINDUP, STAB_DRIVE, STAB_HOLD, STAB_DRAW = 0.3, 0.1, 0.6, 0.3  # seconds around the moment the point goes in
+
+
+def crowd_plan_stabs(figs, reach, limit, fps, frames):
+    """Pair spearmen with enemies at the moment one comes within reach. Uses no random numbers, so a layout with
+    stabs keeps every starting position of the same seed without them. Each enemy is hit once; strikes go to
+    chest and head in turn."""
+    spears = [f for f in figs if f["side"] == "a" and "spear" in f["kit"]]
+    free = [f for f in figs if f["side"] == "b"]
+    busy = {id(f): 0.0 for f in spears}
+    count = 0
+    for k in range(frames):
+        t = k / fps
+        for f in spears:
+            if count >= limit or busy[id(f)] > t:
+                continue
+            hand = crowd_target(f, t, 1.3)
+            best, best_d = None, reach
+            for e in free:
+                pt = crowd_target(e, t + STAB_WINDUP, 1.35)
+                d = (pt - hand).length
+                ahead = pt.x - hand.x
+                if ahead > 0.5 and abs(pt.y - hand.y) < ahead * 1.2 and d < best_d:
+                    best, best_d = e, d
+            if best is None:
+                continue
+            hit = t + STAB_WINDUP
+            f.setdefault("stabs", []).append({"target": best, "t": hit, "height": 1.35 if count % 2 == 0 else 1.62})
+            best["hit"] = hit
+            free.remove(best)
+            busy[id(f)] = hit + STAB_HOLD + STAB_DRAW
+            count += 1
+    return count
+
+
+def crowd_stab_spear(fig, t, hand, level):
+    """(direction, tip) of a spear during a stab, or None. The point stops short, drives through the body, stays
+    in while the enemy hangs on it, then draws out as the spear swings back to level."""
+    for st in fig.get("stabs", ()):
+        rel = t - st["t"]
+        if not -STAB_WINDUP <= rel <= STAB_HOLD + STAB_DRAW:
+            continue
+        pt = crowd_target(st["target"], t, st["height"])
+        aim = (pt - hand).normalized()
+        k = min(1.0, (rel + STAB_WINDUP) / 0.12, (STAB_HOLD + STAB_DRAW - rel) / 0.12)
+        d = level.lerp(aim, max(0.0, k)).normalized()
+        if rel < -STAB_DRIVE:
+            off = -0.7
+        elif rel < 0:
+            off = -0.7 + 1.05 * (rel + STAB_DRIVE) / STAB_DRIVE
+        elif rel < STAB_HOLD:
+            off = 0.35
+        else:
+            off = 0.35 - 1.05 * (rel - STAB_HOLD) / STAB_DRAW
+        return d, pt + d * off
+    return None
+
+
 def crowd_pose(fig, t):
     """World matrices of each part and the 18 OpenPose joints of one figure at time t (seconds)."""
     cad, speed, amp, lean = CROWD_ACTIONS[fig["action"]]
+    wall_t, fall = t, crowd_fall(fig, t)
+    if fig.get("hit") is not None:  # struck: it stops where the spear caught it
+        t = min(t, fig["hit"])
     t = max(0.0, t - fig["delay"])
     travel = speed * fig["speed"] * t
     stopped = fig["stop"] is not None and travel >= fig["stop"]
@@ -1350,7 +1431,8 @@ def crowd_pose(fig, t):
         L[side + "elbow"] = sh + up_d * 0.30
         L[side + "wrist"] = L[side + "elbow"] + fo_d * 0.30
     lift = 0.06 - min(L["rankle"].z, L["lankle"].z)  # the lower foot stays on the ground
-    base = Matrix.Translation(root) @ yaw @ Matrix.Diagonal((s, s, s, 1.0)) @ Matrix.Translation((0, 0, lift))
+    base = (Matrix.Translation(root) @ yaw @ Matrix.Rotation(fall, 4, "Y") @ Matrix.Diagonal((s, s, s, 1.0))
+            @ Matrix.Translation((0, 0, lift)))
     parts = {"torso": base @ Rt.to_4x4(), "head": base @ Matrix.Translation(L["head"])}
     for side in "rl":
         parts[side + "thigh"] = base @ seg(L[side + "hip"], L[side + "thigh_d"])
@@ -1363,6 +1445,10 @@ def crowd_pose(fig, t):
         levelled = fig["action"] == "charge" or stopped
         sd = (Rt @ Vector((1, 0, 0.08))).normalized() if levelled else Vector((0.05, 0, 1)).normalized()
         parts["spear"] = base @ seg(L["rwrist"] + sd * 1.0, -sd)
+        hand = base @ L["rwrist"]
+        stab = crowd_stab_spear(fig, wall_t, hand, (base.to_3x3() @ Vector((1, 0, 0.08))).normalized())
+        if stab:  # world space: this part follows its target, not the figure's own frame
+            parts["spear"] = seg(stab[1], -stab[0])
     if "shield" in fig["kit"]:
         parts["shield"] = base @ (Matrix.Translation(L["lwrist"] + Rt @ Vector((0.08, 0.1, 0.25))) @ Rt.to_4x4())
     fwd, hd = Rt @ Vector((1, 0, 0)), L["head"]
@@ -1417,6 +1503,8 @@ def crowd_layout(p):
                              "phase": rng.uniform(0, 2 * math.pi), "speed": rng.uniform(0.9, 1.1),
                              "scale": size * rng.uniform(0.94, 1.06),
                              "delay": rng.uniform(0, stagger) if action == "charge" else 0.0})
+    if p.get("stab"):
+        crowd_plan_stabs(figs, float(p["stab"]), int(p.get("stab_max") or 6), int(p.get("fps", 16)), int(p.get("frames", 81)))
     return figs
 
 

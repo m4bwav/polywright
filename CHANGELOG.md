@@ -4,6 +4,8 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## Unreleased
 
+- crowd: `--stab` and `--stab-max`, spears that enter side B figures, which then fall.
+
 ## 0.5.3 (2026-11-02)
 
 - polywright-blender: context, selection and re-runnable-script traps; 5.x key reads through the slot channelbag; auto-exec and drivers; parent-keep-transform, F-modifier motion, drivers (new bpy-recipes-motion.md) and armature-bind recipes; image-map colour space and node layout; temp_override and modal rules for live sessions. After Acampora, Python Scripting in Blender (2023); every API claim probed on Blender 5.2.1.

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261107-1 · 2026-11-07 · crowd: --stab, spears that enter bodies and figures that fall
+- because: user request (spearmen should visibly stab; words alone did not move the spears)
+- files: scripts/pw_bpy.py (crowd_plan_stabs, crowd_stab_spear, crowd_pose), scripts/pw.py (crowd flags), references/crowd-blockouts.md, tests/test_pw.py
+- Adds no random draws, so the same seed keeps its starting layout.
+
 ### C-20261026-1 · 2026-10-26 · Restore crowd refusal flag names; document existing result semantics
 - because: user request; wiki findings of 2026-10-26
 - files: scripts/pw.py (cmd_crowd, VERSION), references/cli.md (result semantics), tests/test_pw.py
