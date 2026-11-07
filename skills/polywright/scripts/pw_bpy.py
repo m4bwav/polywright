@@ -1286,14 +1286,14 @@ def sphere(r, u=8, v=6):
     return lambda bm: bmesh.ops.create_uvsphere(bm, u_segments=u, v_segments=v, radius=r)
 
 
-def crowd_meshes(kit):
+def crowd_meshes(kit, spear_r=0.018):
     """Low-poly parts shared by every figure. Limbs hang from their origin along -Z."""
     m = {"torso": make("pw_torso", box(0.24, 0.40, 0.55)),
          "head": make("pw_head", sphere(0.12)),
          "thigh": make("pw_thigh", cyl(0.075, 0.46)), "shin": make("pw_shin", cyl(0.06, 0.46)),
          "upper": make("pw_upper", cyl(0.055, 0.30)), "fore": make("pw_fore", cyl(0.05, 0.30))}
     if "spear" in kit:
-        m["spear"] = make("pw_spear", cyl(0.018, 2.6, 5))
+        m["spear"] = make("pw_spear", cyl(spear_r, 2.6, 5))
     if "shield" in kit:
         m["shield"] = make("pw_shield", box(0.05, 0.55, 0.75, -0.375))
     if "helmet" in kit:
@@ -1703,7 +1703,7 @@ def act_crowd(p):
     out = os.path.abspath(p["out"])
     kit = set(p.get("kit", ["spear", "shield", "helmet"]))
     figs = crowd_layout(p)
-    meshes = crowd_meshes(kit)
+    meshes = crowd_meshes(kit, p.get("spear_radius") or 0.018)
     col = bpy.data.collections.new("pw_crowd")
     sc.collection.children.link(col)
     objs = []  # (figure index, part, object)

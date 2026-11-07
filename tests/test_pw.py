@@ -766,6 +766,19 @@ class WithBlender(unittest.TestCase):
                 return pw.png_decode(f.read())[3]
         self.assertNotEqual(frame(up), frame(down))  # raised spears on frame 1 without it, levelled with it
 
+    def test_crowd_spear_radius_thickens_spears(self):
+        args = ["--size", "320x192", "--frames", "9", "--ranks", "2", "--cols", "4", "--action", "clash",
+                "--kit", "spear", "--gap", "20", "--passes", "mask", "--preview", "--seed", "3", "--spears-down"]
+        thin, thick = os.path.join(self.tmp, "sr_thin"), os.path.join(self.tmp, "sr_thick")
+        self.assertEqual(run("crowd", "--out", thin, *args)[0], 0)
+        self.assertEqual(run("crowd", "--out", thick, *args, "--spear-radius", "0.06")[0], 0)
+
+        def lit(folder):
+            name = sorted(os.listdir(os.path.join(folder, "mask")))[0]
+            with open(os.path.join(folder, "mask", name), "rb") as f:
+                return sum(1 for v in pw.png_decode(f.read())[3] if v)
+        self.assertGreater(lit(thick), lit(thin))  # thicker shafts cover more pixels
+
     def test_crowd_mist_pass_beside_unchanged_depth(self):
         args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--preview"]
         code, plain = run("crowd", "--out", os.path.join(self.tmp, "nomist"), "--passes", "depth", *args)
