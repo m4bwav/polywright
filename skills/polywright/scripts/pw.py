@@ -2727,7 +2727,7 @@ def cmd_crowd(a):
               "cam": pt(a.cam), "aim": pt(a.aim), "move": a.move, "seed": a.seed, "passes": passes,
               "pose_min_px": a.pose_min_px, "samples": a.samples, "gpu": a.gpu, "far": a.far,
               "preview": a.preview, "save_blend": a.save_blend, "scatter": a.scatter, "scatter_gap": a.scatter_gap,
-              "scatter_depth": a.scatter_depth}
+              "scatter_depth": a.scatter_depth, "stab": a.stab, "stab_max": a.stab_max}
     res = bpy_action("crowd", params, timeout=a.timeout)
     if not res.get("ok"):
         return emit(res, 1)
@@ -3276,6 +3276,8 @@ def main(argv=None):
     p.add_argument("--kit-b", help="side B's own kit (default: --kit); empty for bare figures")
     p.add_argument("--scale-b", type=float, default=1.0, help="side B's height against side A (0.8 = shoulder-high)")
     p.add_argument("--stagger-b", type=float, default=0.4, help="side B charge: seconds of random start delay per figure")
+    p.add_argument("--stab", type=float, help="spearmen on side A aim at side B figures that come within this reach in metres (2.4 suits the 2.6 m spear): the point goes through the chest or head and stays in while the figure falls. Starting positions match the same seed without it")
+    p.add_argument("--stab-max", type=int, default=6, help="most stabs in the shot")
     p.add_argument("--kit", default="spear,shield,helmet", help="any of spear, shield, helmet; empty for bare figures")
     p.add_argument("--view", choices=["side", "behind", "high"], default="side")
     p.add_argument("--lens", type=float, default=50.0, help="mm on a 36 mm sensor; long lenses stack the ranks")

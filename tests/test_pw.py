@@ -739,6 +739,20 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(plain and loose)
         self.assertLess(min(plain), min(loose))  # shorter bodies and no spear tips: side B's top sits lower
 
+    def test_crowd_stab_keeps_the_start_and_changes_the_end(self):
+        args = ["--size", "320x192", "--frames", "73", "--fps", "24", "--ranks", "2", "--cols", "4", "--action", "clash",
+                "--action-b", "charge", "--gap", "6", "--passes", "mask", "--preview", "--seed", "3"]
+        plain, stab = os.path.join(self.tmp, "s_plain"), os.path.join(self.tmp, "s_stab")
+        self.assertEqual(run("crowd", "--out", plain, *args)[0], 0)
+        self.assertEqual(run("crowd", "--out", stab, *args, "--stab", "2.4")[0], 0)
+
+        def frame(folder, name):
+            with open(os.path.join(folder, "mask", name), "rb") as f:
+                return pw.png_decode(f.read())[3]  # pixels only: the file embeds its render time
+        names = sorted(os.listdir(os.path.join(plain, "mask")))
+        self.assertEqual(frame(plain, names[0]), frame(stab, names[0]))  # same layout on frame 1
+        self.assertNotEqual(frame(plain, names[-1]), frame(stab, names[-1]))  # figures fell and spears moved
+
     def test_crowd_mist_pass_beside_unchanged_depth(self):
         args = ["--size", "320x192", "--frames", "17", "--ranks", "2", "--cols", "4", "--preview"]
         code, plain = run("crowd", "--out", os.path.join(self.tmp, "nomist"), "--passes", "depth", *args)
