@@ -65,6 +65,9 @@ then rethink.
 
 ## Step 4: textures for a generated or coded mesh
 
+TRELLIS.2 meshes can carry hidden interior shells (`pw.py inspect --interior`); drop them with
+`pw.py convert --drop-interior` before rigging, baking or printing.
+
 TRELLIS.2 and Pixal3D bake PBR textures in their workflow. For an untextured mesh: TRELLIS.2's
 shape-conditioned texture stage, StableGen (Blender add-on on a ComfyUI backend, GPLv3) projecting SDXL, Flux or
 Qwen Image 2.1 from cameras (0.4.0 adds masked regional re-texturing and SkinTokens auto-rigging; Qwen Image 2.1

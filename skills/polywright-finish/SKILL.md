@@ -34,6 +34,7 @@ before and after every destructive step (`pw.py render`).
 | Fewer triangles, static prop | `pw.py convert --max-tris N` (collapse decimation keeps the silhouette); LODs with `pw.py lods` (about half per level) |
 | Fewer triangles, mesh that bends | not decimation: merge loops where nothing bends, keep the loops around joints ([references/topology.md](references/topology.md)) |
 | Clean quads for deformation or sculpting | voxel remesh first (closes it), then QuadriFlow (recipe in polywright-blender), Instant Meshes, Quad Remesher (paid), or a hosted quad remesh; characters: by hand |
+| Hidden shells inside a generated mesh (`pw.py inspect --interior` counts them) | drop them before rigging, baking or printing: `pw.py convert --drop-interior` keeps UVs and skin weights |
 | Generated mesh (dense, lumpy, soft edges) | static prop: decimate and re-bake; hero or animated: retopology and re-bake; or regenerate with better references |
 | Many parts that should be one | `--join`; for a solid, `pw.py union` |
 | Collision | a box, capsule or convex hull per part; Unreal UCX_ prefix; Roblox CollisionFidelity Box or Hull; never the render mesh for moving objects |
