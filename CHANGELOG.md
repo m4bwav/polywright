@@ -2,8 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
-## Unreleased
+## 0.6.0 (2026-11-09)
 
+- `pw.py inspect --interior` counts faces no path from outside reaches (the hidden shells image-to-3D meshes carry); `pw.py convert --drop-interior` deletes them by an exterior voxel flood fill, keeping UVs and skin weights. polywright-finish and polywright-generate say to drop them before rigging, baking or printing. Idea after StableGen's "Make Solid" (GPL-3.0); re-implemented, no code copied.
+- polywright Step 4: list look defects region by region (reference, model, difference, fix); passing checks never close a look defect; cap fix rounds and deliver the best checkpoint with what is left. After blender-asset-studio (MIT).
 - crowd: `--stab` and `--stab-max`, spears that enter side B figures, which then fall.
 
 ## 0.5.3 (2026-11-02)

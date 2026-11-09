@@ -150,3 +150,11 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - The local plugin install stays blocked by another session's uncommitted shared-clone edits, which were left untouched. Hub research remains due since 2026-10-25; no unsupported freshness claim or registry publishing.
 ## [2026-10-26] index | rebuilt (8 entries)
 ## [2026-10-26] index | rebuilt (8 entries)
+
+## 2026-11-09: 0.6.0 interior shells and critique rules
+
+- `pw.py inspect --interior` and `convert --drop-interior` (pw_bpy `interior_faces`, `drop_interior`): one voxel grid (256 along the longest side) over every face, flood from the border through empty cells, a face is interior when none of its samples lies within two cells of the outside. bmesh deletes those faces, so UVs and vertex groups stay. Idea from StableGen's "Make Solid" (GPL-3.0), re-implemented with no code copied.
+- Measured on three TRELLIS.2 outputs of about 0.7M triangles: a figure 697,900 -> 581,265 (116,635 interior), a hammer 698,861 -> 691,388 (7,473), claws 675,903 -> 661,108 (14,795); 1.1 to 1.9 s for the count, 4 to 5 s for the whole convert. Six-view renders before and after differ in under 70 pixels per view; the sheets looked the same.
+- Dead end: sealing gaps by one cell (dilating the surface before the flood), or reaching only one cell, removed visible outer faces (speckled holes on shoulders, 313k to 470k faces dropped). Gaps are left open now: a hole lets the flood in, so an open mesh keeps its faces.
+- Large faces need dense samples (k up to 2 x grid per edge) or the flood leaks through them; the nested-cube test caught it.
+- polywright Step 4 critique: region by region reference -> model -> difference -> fix, checks never close a look defect, four fix rounds then deliver the best checkpoint (after blender-asset-studio, MIT). Part-interpenetration check parked in the plugin backlog.

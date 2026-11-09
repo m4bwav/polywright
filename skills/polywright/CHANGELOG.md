@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-1 · 2026-11-09 · inspect --interior and convert --drop-interior; critique rules
+- because: user request (technique harvest: exterior flood fill after StableGen's "Make Solid", re-implemented from the idea, no code copied; critique rules after blender-asset-studio, MIT)
+- files: scripts/pw_bpy.py (interior_faces, drop_interior, act_inspect, act_convert), scripts/pw.py (flags), tests/test_pw.py, SKILL.md (Step 4 critique paragraph)
+- A voxel flood from outside marks faces no path reaches; bmesh deletes them, keeping UVs and vertex groups. On three generated meshes (about 0.7M triangles each) it removed 7k to 117k faces in 2 to 3 s, with under 70 changed pixels per 6-view render. Sealing gaps by one cell removed visible faces, so gaps are not sealed.
+
 ### C-20261107-1 · 2026-11-07 · crowd: --stab, spears that enter bodies and figures that fall
 - because: user request (spearmen should visibly stab; words alone did not move the spears)
 - files: scripts/pw_bpy.py (crowd_plan_stabs, crowd_stab_spear, crowd_pose), scripts/pw.py (crowd flags), references/crowd-blockouts.md, tests/test_pw.py

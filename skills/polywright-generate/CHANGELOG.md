@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-1 · 2026-11-09 · Step 4: TRELLIS.2 interior shells
+- because: user request (technique harvest; measured on three TRELLIS.2 meshes, hub C-20261109-1)
+- files: SKILL.md (Step 4, two lines)
+
 ### C-20261017-3 · 2026-10-17 · Pixal3D multi-view model named
 - because: user request (each plugin carries 3D modelling knowledge for its topic and points to polywright); ../polywright-references R-20261017-1
 - files: references/generators.md Open weights (Pixal3D row), Known output problems (link to images-for-3d.md)

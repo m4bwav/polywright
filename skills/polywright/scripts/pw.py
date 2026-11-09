@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.5.3"
+VERSION = "0.6.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -747,12 +747,13 @@ def trimesh_inspect(path):
     return res
 
 
-def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000, topology=False):
+def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000, topology=False, interior=False, interior_grid=256):
     if not os.path.isfile(path):
         return {"ok": False, "error": "file not found: %s" % path}
     ext = os.path.splitext(path)[1].lower()
     if backend() and ext != ".3mf":
-        params = {"file": os.path.abspath(path), "deep": not fast, "topology": topology}
+        params = {"file": os.path.abspath(path), "deep": not fast, "topology": topology, "interior": interior,
+                  "interior_grid": interior_grid}
         if thickness_min:
             params.update(thickness_min=thickness_min, thickness_samples=thickness_samples)
         res = bpy_action("inspect", params)
@@ -776,12 +777,15 @@ def inspect_file(path, fast=False, thickness_min=None, thickness_samples=20000, 
         if topology:
             res["topology"] = None
             res["topology_note"] = "the topology report needs Blender (pw.py doctor)"
+        if interior:
+            res["interior_faces"] = None
+            res["interior_note"] = "the interior-face count needs Blender (pw.py doctor)"
     res["file_bytes"] = os.path.getsize(path)
     return res
 
 
 def cmd_inspect(a):
-    res = inspect_file(a.file, a.fast, topology=a.topology)
+    res = inspect_file(a.file, a.fast, topology=a.topology, interior=a.interior, interior_grid=a.interior_grid)
     return emit(res, 0 if res.get("ok") else 1)
 
 
@@ -925,7 +929,8 @@ def cmd_convert(a):
     params = {"file": os.path.abspath(a.input), "out": os.path.abspath(a.output), "scale": a.scale, "size_m": a.size_m,
               "ground": a.ground, "center": a.center, "join": a.join, "max_tris": a.max_tris, "ratio": a.ratio,
               "apply": a.apply, "uv": a.uv, "draco": a.draco, "export_scale": a.export_scale, "fbx_bake_axes": a.fbx_bake_axes,
-              "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg, "fix_winding": a.fix_winding}
+              "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg, "fix_winding": a.fix_winding,
+              "drop_interior": a.drop_interior, "interior_grid": a.interior_grid}
     res = bpy_action("convert", params)
     return emit(res, 0 if res.get("ok") else 1)
 
@@ -2973,6 +2978,8 @@ def main(argv=None):
     p.add_argument("file")
     p.add_argument("--fast", action="store_true", help="skip topology checks (edges, parts, volume)")
     p.add_argument("--topology", action="store_true", help="also report quads, poles, flipped and stacked faces, loose parts, UV texel spread (Blender)")
+    p.add_argument("--interior", action="store_true", help="count faces no path from outside reaches: hidden shells image-to-3D meshes carry (Blender)")
+    p.add_argument("--interior-grid", type=int, default=256, help="voxels along the longest side for --interior")
     p.set_defaults(fn=cmd_inspect)
 
     p = sub.add_parser("render", help="orthographic views and a contact sheet")
@@ -3076,6 +3083,8 @@ def main(argv=None):
     p.add_argument("--ratio", type=float, help="decimate ratio 0..1")
     p.add_argument("--uv", action="store_true", help="Smart UV Project every mesh (generated meshes have no UVs)")
     p.add_argument("--fix-winding", action="store_true", help="flip faces that wind against their neighbours (the flipped faces inspect --topology counts), keeping UVs")
+    p.add_argument("--drop-interior", action="store_true", help="delete faces no path from outside reaches (exterior voxel flood fill), keeping UVs and skin weights; before rigging, baking or printing")
+    p.add_argument("--interior-grid", type=int, default=256, help="voxels along the longest side for --drop-interior")
     p.add_argument("--draco", action="store_true")
     p.add_argument("--export-scale", type=float, default=1.0, help="global scale for OBJ/STL/PLY export (1000 for metres to mm)")
     p.add_argument("--fbx-bake-axes", action="store_true", help="FBX: bake the axis change into the mesh (Unity likes this)")

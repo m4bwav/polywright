@@ -62,7 +62,10 @@ most of an image-to-3D result.
    `--add-source <url> --licence <l> --author <a>`, then `--validate`.
 
 Plan, act and critique are separate passes: after building, look at the sheet as a critic would and list
-defects before claiming done. Two rounds of fixing a traceback are worth it; past that, rethink the approach.
+defects before claiming done. List them region by region as reference -> model -> difference -> fix, after a
+look at the whole silhouette. A passing inspect, check or export match never closes a look defect. Cap fix rounds
+at four; then deliver the best numbered `.blend` and list what is still wrong (after blender-asset-studio, MIT).
+Two rounds of fixing a traceback are worth it; past that, rethink the approach.
 Save a numbered `.blend` per milestone (`work/<name>_v03.blend`) so a long job can restart from disk.
 
 ## Compose a model into a picture

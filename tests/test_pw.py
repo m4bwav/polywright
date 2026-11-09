@@ -941,6 +941,35 @@ class WithBlender(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(d, "depth.png")))
         self.assertLess(out["near_m"], out["far_m"])
 
+    def test_drop_interior_keeps_the_outer_shell_uvs_and_weights(self):
+        src, dst = os.path.join(self.tmp, "nested.blend"), os.path.join(self.tmp, "solid.blend")
+        make, look = os.path.join(self.tmp, "nested.py"), os.path.join(self.tmp, "look.py")
+        with open(make, "w") as f:
+            f.write("import bpy, bmesh, sys\n"
+                    "bpy.ops.wm.read_factory_settings(use_empty=True)\n"
+                    "bm = bmesh.new()\n"
+                    "bmesh.ops.create_cube(bm, size=2.0)\n"
+                    "bmesh.ops.create_cube(bm, size=1.0)\n"
+                    "me = bpy.data.meshes.new('m'); bm.to_mesh(me); me.uv_layers.new(name='UVMap')\n"
+                    "o = bpy.data.objects.new('m', me); bpy.context.scene.collection.objects.link(o)\n"
+                    "o.vertex_groups.new(name='spine').add(list(range(16)), 0.5, 'REPLACE')\n"
+                    "bpy.ops.wm.save_as_mainfile(filepath=sys.argv[-1])\n")
+        with open(look, "w") as f:
+            f.write("import bpy, sys\nbpy.ops.wm.open_mainfile(filepath=sys.argv[-1])\no = bpy.data.objects['m']\n"
+                    "print('[pw] faces=%d uv=%d groups=%s w=%d' % (len(o.data.polygons), len(o.data.uv_layers), "
+                    "[g.name for g in o.vertex_groups], sum(1 for v in o.data.vertices if v.groups)))\n")
+        code, out = run("bpy", make, "--", src)
+        self.assertEqual(code, 0, out)
+        code, out = run("inspect", src, "--interior")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["interior_faces"], 6)
+        code, out = run("convert", src, dst, "--drop-interior")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["interior_removed"], 6)
+        code, out = run("bpy", look, "--", dst)
+        self.assertEqual(code, 0, out)
+        self.assertIn("faces=6 uv=1 groups=['spine'] w=8", "\n".join(out["output"]))
+
     def test_bpy_runner_reports_tracebacks(self):
         s = os.path.join(self.tmp, "bad.py")
         with open(s, "w") as f:

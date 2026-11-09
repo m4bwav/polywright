@@ -488,6 +488,11 @@ def act_inspect(p):
     res["object_rows"] = rows[: p.get("max_rows", 25)]
     if p.get("topology"):
         res["topology"] = topology_total(topo)
+    if p.get("interior"):
+        t1 = time.time()
+        flags, vox = interior_faces(objs, int(p.get("interior_grid", 256)))
+        res["interior_faces"] = int(sum(int(f.sum()) for f in flags.values()))
+        res["interior_note"] = "faces no path from outside reaches (voxel %.4g, %.2f s); convert --drop-interior removes them" % (vox, time.time() - t1)
     if p.get("thickness_min"):
         res["thickness"] = wall_thickness(objs, float(p["thickness_min"]), int(p.get("thickness_samples", 20000)))
     return res
@@ -934,6 +939,12 @@ def act_convert(p):
             n = len(o.data.loop_triangles)
             target = int(n * float(p["ratio"])) if p.get("ratio") else int(n * min(1.0, float(p["max_tris"]) / max(total, 1)))
             decimate_to(o, max(target, 4))
+    if p.get("drop_interior"):
+        objs = [o for o in objs if o.type == "MESH"] or mesh_objects()
+        t1 = time.time()
+        n = drop_interior(objs, int(p.get("interior_grid", 256)))
+        notes.append("%d interior face(s) removed (%.2f s)" % (n, time.time() - t1))
+        p["_interior"] = n
     if p.get("fix_winding"):
         n = sum(fix_winding(o) for o in objs)
         notes.append("%d face(s) flipped to agree with their neighbours" % n)
@@ -957,6 +968,8 @@ def act_convert(p):
         res["level"] = p["_level"]
     if "_flipped" in p:
         res["faces_flipped"] = p["_flipped"]
+    if "_interior" in p:
+        res["interior_removed"] = p["_interior"]
     return res
 
 
@@ -1104,6 +1117,88 @@ def _flood_outside(free):
         if int(out.sum()) == before:
             break
     return out
+
+
+def interior_faces(objs, grid=256):
+    """Faces no path from outside reaches (hidden shells inside a generated mesh). Voxelise every face of every
+    object in one world grid, flood the empty cells from the grid's border, and call a face interior when none of
+    its sample points lies within two cells of that outside region. Gaps are not sealed: a hole lets the flood
+    in, so an open mesh keeps its faces (sealing gaps by one cell removed visible faces on a generated figure). Returns ({object name: boolean array, True = interior}, voxel size)."""
+    data = []
+    for o in objs:
+        me = o.data
+        me.calc_loop_triangles()
+        nt = len(me.loop_triangles)
+        if not nt:
+            continue
+        tv = np.empty(nt * 3, dtype=np.int64)
+        tp = np.empty(nt, dtype=np.int64)
+        me.loop_triangles.foreach_get("vertices", tv)
+        me.loop_triangles.foreach_get("polygon_index", tp)
+        data.append((o, world_coords(o, me)[tv.reshape(-1, 3)], tp, len(me.polygons)))
+    if not data:
+        return {}, 0.0
+    allp = np.concatenate([d[1].reshape(-1, 3) for d in data])
+    lo, hi = allp.min(0), allp.max(0)
+    vox = float((hi - lo).max()) / max(grid - 6, 8) or 1.0
+    lo = lo - 3 * vox
+    shape = tuple(int(v) for v in np.ceil((hi - lo) / vox).astype(int) + 4)
+
+    def samples(T):  # points on each triangle no further apart than half a voxel; (points, triangle index)
+        e = np.maximum(np.linalg.norm(T[:, 1] - T[:, 0], axis=1), np.linalg.norm(T[:, 2] - T[:, 0], axis=1))
+        e = np.maximum(e, np.linalg.norm(T[:, 2] - T[:, 1], axis=1))
+        k = np.clip(np.ceil(e / (0.5 * vox)).astype(int), 1, 2 * grid)  # a gap in a big face would let the flood in
+        pts, idx = [], []
+        for kk in np.unique(k):
+            u, w = np.meshgrid(np.arange(kk + 1), np.arange(kk + 1))
+            m = (u + w) <= kk
+            u = np.concatenate([u[m] / kk, [1 / 3]])
+            w = np.concatenate([w[m] / kk, [1 / 3]])
+            all_sel = np.nonzero(k == kk)[0]
+            step = max(1, 4_000_000 // len(u))
+            for j in range(0, len(all_sel), step):
+                sel = all_sel[j:j + step]
+                A = T[sel, 0][:, None]
+                P = A + u[None, :, None] * (T[sel, 1] - T[sel, 0])[:, None] + w[None, :, None] * (T[sel, 2] - T[sel, 0])[:, None]
+                pts.append(P.reshape(-1, 3))
+                idx.append(np.repeat(sel, len(u)))
+        return np.concatenate(pts), np.concatenate(idx)
+
+    occ = np.zeros(shape, dtype=bool)
+    cells = []
+    for o, T, tp, nf in data:
+        P, ti = samples(T)
+        c = np.clip(np.floor((P - lo) / vox).astype(np.int64), 0, np.array(shape) - 1)
+        occ[c[:, 0], c[:, 1], c[:, 2]] = True
+        cells.append((c, tp[ti]))
+    out = _flood_outside(~occ)
+    near = _shift_or(out, 2)  # one cell missed the surface on 2-5% of a generated figure's faces (speckled holes)
+    res = {}
+    for (o, T, tp, nf), (c, fi) in zip(data, cells):
+        seen = np.bincount(fi, weights=near[c[:, 0], c[:, 1], c[:, 2]], minlength=nf)
+        res[o.name] = seen == 0
+    return res, vox
+
+
+def drop_interior(objs, grid=256):
+    """Delete the faces interior_faces finds, with the edges and vertices only they used. bmesh keeps every
+    other face's UVs, colours and vertex-group (skin) weights. Returns faces removed."""
+    flags, _ = interior_faces(objs, grid)
+    n = 0
+    for o in objs:
+        f = flags.get(o.name)
+        if f is None or not f.any():
+            continue
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bm.faces.ensure_lookup_table()
+        kill = [bm.faces[i] for i in np.nonzero(f)[0].tolist()]
+        bmesh.ops.delete(bm, geom=kill, context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.update()
+        n += len(kill)
+    return n
 
 
 def fill_cavities(obj, seal_mm=1.0, max_cells=12_000_000):
