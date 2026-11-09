@@ -7,5 +7,6 @@ The first research pass for polywright, 2026-10-11: five notes written by resear
 - [2026-10-11-blender-and-tooling.md](2026-10-11-blender-and-tooling.md): read for Blender 5.x API facts probed locally, MCP bridges, and the 3D tools per OS with versions.
 - [2026-10-11-craft-and-academics.md](2026-10-11-craft-and-academics.md): read for modelling paradigms, topology, UVs and PBR, target checklists (games, print, video, business), and the 2024-2026 research front.
 - [2026-10-11-ai-agents-and-3d.md](2026-10-11-ai-agents-and-3d.md): read for existing agent 3D tools and MCP servers, agentic 3D benchmarks, practitioner reaction, store AI-disclosure rules and the design recommendations polywright follows.
+- [2026-11-09-technique-harvest.md](2026-11-09-technique-harvest.md): read for the game-ground review question, Idol (one image to a splat) and Effigy de-lighting.
 
 Related: [../INDEX.md](../INDEX.md)

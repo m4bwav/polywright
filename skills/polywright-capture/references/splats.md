@@ -2,6 +2,7 @@
 
 Back to [SKILL.md](../SKILL.md). Source: polywright research note `2026-10-11-reality-capture.md` section 2
 (seen 2026-10-11).
+From one image: see [generators.md](../../polywright-generate/references/generators.md).
 
 ## When
 

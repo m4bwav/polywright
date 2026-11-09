@@ -45,6 +45,7 @@ before and after every destructive step (`pw.py render`).
   (recipe); consistent texel density across a kit; trim sheets and atlases to cut materials and draw calls.
 - Bake from the dense mesh to the low one: normal, AO, colour (recipe `bake-high-to-low`). Retopology destroys
   UVs, so always re-bake.
+- De-light the base colour (untested): divide out what the baked AO explains, amount 0.5, raw AO. After Effigy (MIT).
 - PBR metal-rough: metalness 0 or 1, roughness carries the look, albedo never pure black or white; glTF packs
   occlusion, roughness, metalness into R, G, B (ORM).
 - Normal maps: OpenGL (Y+) for Blender, Unity, Godot, glTF, three.js, Roblox; DirectX (Y-) for Unreal. Fix a

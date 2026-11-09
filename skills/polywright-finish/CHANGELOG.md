@@ -8,6 +8,11 @@ Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (ID
 - because: user request (technique harvest; pw.py convert --drop-interior, hub C-20261109-1)
 - files: SKILL.md (Step 3 table, one row)
 
+### C-20261109-2 · 2026-11-09 · Bake: de-light the base colour step (untested)
+- because: R-20261109-1 (technique harvest, Effigy, MIT)
+- files: SKILL.md (Step 3 bake bullets, one line)
+- Marked untested; a pw.py command waits on a GPU test. No trigger or decision change, so the evals were not re-run.
+
 ### C-20261101-1 · 2026-11-01 · Step 5: animation clip rules
 - because: owner request (book learnings, Gregory, Game Engine Architecture 2e (2014), sec. 11.6 and 11.6.4)
 - files: SKILL.md (Step 5, one paragraph)
