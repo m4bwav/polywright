@@ -955,7 +955,7 @@ class WithBlender(unittest.TestCase):
                     "o.vertex_groups.new(name='spine').add(list(range(16)), 0.5, 'REPLACE')\n"
                     "bpy.ops.wm.save_as_mainfile(filepath=sys.argv[-1])\n")
         with open(look, "w") as f:
-            f.write("import bpy\no = bpy.data.objects['m']\n"
+            f.write("import bpy, sys\nbpy.ops.wm.open_mainfile(filepath=sys.argv[-1])\no = bpy.data.objects['m']\n"
                     "print('[pw] faces=%d uv=%d groups=%s w=%d' % (len(o.data.polygons), len(o.data.uv_layers), "
                     "[g.name for g in o.vertex_groups], sum(1 for v in o.data.vertices if v.groups)))\n")
         code, out = run("bpy", make, "--", src)
@@ -966,7 +966,7 @@ class WithBlender(unittest.TestCase):
         code, out = run("convert", src, dst, "--drop-interior")
         self.assertEqual(code, 0, out)
         self.assertEqual(out["interior_removed"], 6)
-        code, out = run("bpy", look, "--blend", dst)
+        code, out = run("bpy", look, "--", dst)
         self.assertEqual(code, 0, out)
         self.assertIn("faces=6 uv=1 groups=['spine'] w=8", "\n".join(out["output"]))
 
