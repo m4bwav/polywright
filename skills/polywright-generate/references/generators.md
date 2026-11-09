@@ -19,6 +19,7 @@ where it says tested). Re-check versions and licences at each refresh: this tabl
 | PartCrafter | 1 image | several part meshes | MIT | 8 GB | not found | objects in parts |
 | SF3D / SPAR3D (Stability) | 1 image | UV-unwrapped textured mesh in about a second | Stability community (free under USD 1M) | 6 to 7 GB | community | quick drafts |
 | SAM 3D Objects (Meta) | photo plus mask | splat PLY | SAM licence | not stated | not checked | objects in cluttered real photos |
+| Idol (speridlabs) | 1 image | splat PLY + camera | Apache-2.0; gated DINOv3 (Meta), FLUX.2-dev VAE (non-commercial) | 7.2 GB | no node | untested |
 
 Avoid in shipped work: PartPacker (NVIDIA non-commercial), CraftsMan3D (AGPL), Roblox Cube 3D weights (research
 RAIL), anything research-only.

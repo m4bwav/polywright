@@ -42,6 +42,10 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261109-1 · 2026-11-09 · Tooling: Idol, one image to a splat (not tested)
+- sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
+- magnitude: minor
+
 ### R-20261017-1 · 2026-10-17 · Subject: OSM Simple 3D Buildings (heights, parts, roofs)
 - summary: `height` runs from the lowest ground point to the roof top and includes the roof; `min_height` is the clearance under a part and `building:min_level` its levels form; facade height is height minus `roof:height`; `roof:levels` are not counted in `building:levels`; when a building has `building:part` areas its outline is not used for 3D; ridges run along the longest side unless `roof:orientation` says otherwise; `roof:direction` is where the roof's front faces. The page gives no default storey height or roof height (polywright uses 3.2 m and a 30 degree pitch, labelled as its own).
 - track: subject

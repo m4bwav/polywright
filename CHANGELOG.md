@@ -2,6 +2,12 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.1 (2026-11-09)
+
+- polywright-finish: "de-light the base colour" bake step, marked untested (after Effigy, MIT).
+- polywright-generate: Idol row (one image to a splat, Apache-2.0, gated deps); polywright-capture splats.md points to it.
+- Research notes: review on the game ground (open question), Idol, Effigy.
+
 ## 0.6.0 (2026-11-09)
 
 - `pw.py inspect --interior` counts faces no path from outside reaches (the hidden shells image-to-3D meshes carry); `pw.py convert --drop-interior` deletes them by an exterior voxel flood fill, keeping UVs and skin weights. polywright-finish and polywright-generate say to drop them before rigging, baking or printing. Idea after StableGen's "Make Solid" (GPL-3.0); re-implemented, no code copied.

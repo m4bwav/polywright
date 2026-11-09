@@ -40,6 +40,10 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261109-1 · 2026-11-09 · Tooling: Effigy de-light of the base colour (untested on real bakes)
+- sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
+- magnitude: minor
+
 ### R-20261017-3 · 2026-10-17 · Subject: making and finishing models for Unity 6.6 (formats, FBX axes, LODs, lightmap UVs, collision, texture sets, Humanoid)
 - summary: Unity 6.6 manual (built 2026-10-16): FBX is Unity's import chain; `.blend` imports only with Blender installed. LOD Group from `_LOD0.._LODn` siblings in one FBX. Mesh LOD (import-time, index-buffer LODs, at least 256 triangles, about half per level; not for skinned deformation, static batching draws LOD0). Lightmap UVs go in `Mesh.uv2` ("UV1"): 0-1, no overlaps, margins, proportional. Convex MeshColliders at most 255 triangles. Humanoid needs at least 15 bones; Standard skin weights are 4 bones. URP Lit: smoothness in the Metallic map's alpha by default; HDRP mask map R metallic, G occlusion, B detail mask, A smoothness, sRGB off. glTFast 6.14.1 is the default .gltf/.glb importer; editor import uses its own shaders, not the default Lit, and its shaders read two UV sets. Blender FBX option values are long-standing practice, not re-read this pass; polywright's own FBX exporter writes FBX Units Scale; targets.json game-unity now says so and leaves the choice to a 1 m cube import test.
 - track: subject
