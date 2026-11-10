@@ -21,6 +21,10 @@ where it says tested). Re-check versions and licences at each refresh: this tabl
 | SAM 3D Objects (Meta) | photo plus mask | splat PLY | SAM licence | not stated | not checked | objects in cluttered real photos |
 | Idol (speridlabs) | 1 image | splat PLY + camera | Apache-2.0; gated DINOv3 (Meta), FLUX.2-dev VAE (non-commercial) | 7.2 GB | no node | untested |
 
+Orbit-video splat (r/StableDiffusion 1wothsh): image as first and last frame of MiniMax H3 with an orbit LoRA
+(r/StableDiffusion 1wuzyq0), frames to COLMAP and Brush. Pseudo-views, not geometrically consistent: a person
+holds, props morph (tested 2026-11-10). Compare with a direct image-to-splat model before relying on it.
+
 Avoid in shipped work: PartPacker (NVIDIA non-commercial), CraftsMan3D (AGPL), Roblox Cube 3D weights (research
 RAIL), anything research-only.
 
