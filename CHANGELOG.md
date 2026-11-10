@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.3 (2026-11-10)
+
+- polywright-generate: orbit-video splat route (H3 orbit LoRA, COLMAP, Brush); pseudo-views only, props morph.
+
 ## 0.6.2 (2026-11-10)
 
 - polywright-finish: de-light tested on TRELLIS.2 with no gain (no pw.py delight); drop interior shells before any AO bake.

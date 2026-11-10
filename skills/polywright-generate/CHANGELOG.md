@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261110-1 · 2026-11-10 · Orbit-video splat route
+- because: user request (technique harvest, posts 1wothsh and 1wuzyq0; orbit LoRA GPU-tested 2026-11-10)
+- files: references/generators.md (paragraph under Open weights)
+
 ### C-20261109-1 · 2026-11-09 · Step 4: TRELLIS.2 interior shells
 - because: user request (technique harvest; measured on three TRELLIS.2 meshes, hub C-20261109-1)
 - files: SKILL.md (Step 4, two lines)
