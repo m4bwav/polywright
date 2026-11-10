@@ -44,8 +44,8 @@ before and after every destructive step (`pw.py render`).
 - UVs: `pw.py convert --uv` (Smart UV Project) for props; a second non-overlapping set for baked lightmaps
   (recipe); consistent texel density across a kit; trim sheets and atlases to cut materials and draw calls.
 - Bake from the dense mesh to the low one: normal, AO, colour (recipe `bake-high-to-low`). Retopology destroys
-  UVs, so always re-bake.
-- De-light the base colour (untested): divide out what the baked AO explains, amount 0.5, raw AO. After Effigy (MIT).
+  UVs, so always re-bake. Drop interior shells (`pw.py convert --drop-interior`) before an AO bake (left in: 84% black).
+- De-light: no gain on TRELLIS.2 (tested 2026-11-10; seams worse); skip it.
 - PBR metal-rough: metalness 0 or 1, roughness carries the look, albedo never pure black or white; glTF packs
   occlusion, roughness, metalness into R, G, B (ORM).
 - Normal maps: OpenGL (Y+) for Blender, Unity, Godot, glTF, three.js, Roblox; DirectX (Y-) for Unreal. Fix a
