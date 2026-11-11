@@ -106,6 +106,18 @@ Needs: Python 3.9+ and Blender 4.5 or newer (5.2 LTS tested) for most commands. 
 `crowd` and `duel` draw poses and contact sheets with Pillow; their videos use ffmpeg on PATH, or Blender's
 own FFmpeg when ffmpeg is absent.
 
+## Works with
+
+Each of these plugins works on its own. Together:
+
+- **[artwright](https://github.com/m4bwav/artwright)**: Concept art and turnarounds go to artwright-judge, and renders are checked against artwright's coverage floor.
+- **[threewright](https://github.com/m4bwav/threewright)**: Target `web-threejs`: polywright delivers GLB with meshopt or Draco, KTX2 textures and real size, and threewright loads and budgets it.
+- **[cinewright](https://github.com/m4bwav/cinewright)**: Target `video-blockout`: blockout GLB or .blend, turntable and camera-path renders, and depth and normal passes for the video model. Shot planning stays with cinewright.
+- **[historywright](https://github.com/m4bwav/historywright)**: A historywright research pack feeds polywright-references: references filtered by object date, non-commercial images kept out of commercial work, and views checked for anachronisms.
+- **[grindwright](https://github.com/m4bwav/grindwright)**: grindwright's models-and-blockouts lane runs polywright and uses its render sheet as the gate.
+
+More on each pairing, with an example flow: [Works with](https://github.com/m4bwav/polywright/wiki/Works-with) on the wiki.
+
 ## Verified (through 2026-10-26, Windows 11, Blender 5.2.1, RTX 5060 Ti 16 GB)
 
 These come from real runs, not from a model's say-so:

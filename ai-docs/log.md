@@ -158,3 +158,7 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 - Dead end: sealing gaps by one cell (dilating the surface before the flood), or reaching only one cell, removed visible outer faces (speckled holes on shoulders, 313k to 470k faces dropped). Gaps are left open now: a hole lets the flood in, so an open mesh keeps its faces.
 - Large faces need dense samples (k up to 2 x grid per edge) or the flood leaks through them; the nested-cube test caught it.
 - polywright Step 4 critique: region by region reference -> model -> difference -> fix, checks never close a look defect, four fix rounds then deliver the best checkpoint (after blender-asset-studio, MIT). Part-interpenetration check parked in the plugin backlog.
+
+## 2026-11-11: Works with section
+
+Added a README "Works with" section and a wiki Works-with page covering artwright, threewright, cinewright, historywright, grindwright, taken from the real handoffs in both plugins' skills (askwright and tokenwright added where they fit). Part of a cross-plugin pass on Mark's request that each pairing be described from both sides.
