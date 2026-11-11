@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "targets": [
+    {
+      "kind": "reddit",
+      "sub": "aigamedev",
+      "keep": "AI 3D model, retopology and texturing workflows for games"
+    },
+    {
+      "kind": "reddit",
+      "sub": "StableDiffusion",
+      "weight": "low",
+      "keep": "3D and TRELLIS posts only"
+    },
+    {
+      "kind": "web",
+      "url": "https://huggingface.co/papers",
+      "weight": "low",
+      "keep": "new image-to-3D and mesh methods"
+    }
+  ]
+}
