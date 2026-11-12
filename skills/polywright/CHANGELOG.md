@@ -2,12 +2,16 @@
 
 Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261112-1 · 2026-11-12 · place prefers LoD2 CityGML and 1 m DGM where published
+Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
+
+### C-20261112-2 · 2026-11-12 · 3DREAL clay-to-real note in crowd-blockouts
+- because: user request (technique harvest post 1ugg4tb, GPU test 2026-11-12)
+- files: references/crowd-blockouts.md (Driving the video model; Open trimmed)
+
+### C-20261112-1 · 2026-11-12 · place prefers LoD2 CityGML and 1 m DGM where published
 - because: user request (technique harvest 2026-11-12, C-20261112-C)
 - files: references/cli.md (place row)
 - A note only; pw.py unchanged.
-
-### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
 ### C-20261110-1 · 2026-11-10 · harvest.json: technique-harvest targets for this unit
 - because: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json)
