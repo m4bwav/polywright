@@ -1317,6 +1317,27 @@ class SceneWithBlender(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+class OverlapTests(unittest.TestCase):
+    def test_filler_crossing_a_door_and_a_clash(self):
+        boxes = [
+            {"name": "Door", "min": [0, 0, 0], "max": [2, 4, 0.2]},
+            {"name": "Pilaster", "center": [1, 3, 0.1], "size": [0.4, 6, 0.2], "filler": True},
+            {"name": "Crate", "min": [1.5, 0, 0], "max": [3, 1.5, 1.5]},
+            {"name": "DoorJamb", "min": [-0.2, 0, 0], "max": [0.1, 4, 0.2], "group": "door"},
+            {"name": "DoorHeader", "min": [-0.2, 3.9, 0], "max": [2.2, 4.2, 0.2], "group": "door"},
+            {"name": "Poster", "min": [5, 2, 0], "max": [6, 3, 0.1]},
+        ]
+        clashes, filler = pw.box_overlaps(boxes)
+        self.assertEqual(sorted(h["crosses"] for h in filler), ["Door", "DoorHeader"])
+        self.assertIn({"a": "Door", "b": "Crate"}, clashes)
+        self.assertNotIn({"a": "DoorJamb", "b": "DoorHeader"}, clashes)
+        self.assertFalse(any("Poster" in c.values() for c in clashes))
+
+    def test_touching_is_not_a_clash(self):
+        boxes = [{"name": "A", "min": [0, 0, 0], "max": [1, 1, 1]}, {"name": "B", "min": [1, 0, 0], "max": [2, 1, 1]}]
+        self.assertEqual(pw.box_overlaps(boxes), ([], []))
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.3"
+VERSION = "0.6.4"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -2963,6 +2963,54 @@ def cmd_duel(a):
     return emit(res)
 
 
+# ------------------------------------------------------------------------------------------ overlaps
+
+def box_overlaps(boxes, shrink=0.02):
+    """Pairs of axis-aligned boxes that intersect. Each box: name, min [x,y,z], max [x,y,z] (or center + size),
+    optional group (pairs in one group are intended layering) and filler (true: decoration that should yield).
+    Returns (clashes, filler_hits): feature-vs-feature pairs, and filler boxes that cross a feature."""
+    norm = []
+    for b in boxes:
+        if "min" in b:
+            lo, hi = list(b["min"]), list(b["max"])
+        else:
+            lo = [c - s / 2 for c, s in zip(b["center"], b["size"])]
+            hi = [c + s / 2 for c, s in zip(b["center"], b["size"])]
+        norm.append((b, [v + shrink for v in lo], [v - shrink for v in hi]))
+
+    def hit(p, q):
+        return all(p[1][k] < q[2][k] and q[1][k] < p[2][k] for k in range(3))
+
+    clashes, filler = [], []
+    for i in range(len(norm)):
+        for j in range(i + 1, len(norm)):
+            a, b = norm[i][0], norm[j][0]
+            if a.get("group") is not None and a.get("group") == b.get("group"):
+                continue
+            if not hit(norm[i], norm[j]):
+                continue
+            fa, fb = bool(a.get("filler")), bool(b.get("filler"))
+            if fa and fb:
+                continue
+            if fa or fb:
+                filler.append({"filler": (a if fa else b)["name"], "crosses": (b if fa else a)["name"]})
+            else:
+                clashes.append({"a": a["name"], "b": b["name"]})
+    return clashes, filler
+
+
+def cmd_overlaps(a):
+    with open(a.boxes, encoding="utf-8") as fh:
+        data = json.load(fh)
+    boxes = data["boxes"] if isinstance(data, dict) else data
+    clashes, filler = box_overlaps(boxes, a.shrink)
+    res = {"ok": not clashes and not filler, "boxes": len(boxes), "clashes": clashes, "filler_hits": filler}
+    if not res["ok"]:
+        res["next"] = ("Remove or move each filler piece that crosses a feature (doors, windows, signs); fix each clash "
+                       "by moving one piece, or give intended layers one group")
+    return emit(res)
+
+
 # ------------------------------------------------------------------------------------------ main
 
 def main(argv=None):
@@ -3326,6 +3374,10 @@ def main(argv=None):
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_duel)
 
+    p = sub.add_parser("overlaps", help="find intersecting boxes in a scene dump (doors crossed by struts, props in doorways)")
+    p.add_argument("boxes", help="JSON: a list (or {boxes: [...]}) of {name, min, max | center, size, group?, filler?}")
+    p.add_argument("--shrink", type=float, default=0.02, help="shrink every box by this much first, so touching is not a clash")
+    p.set_defaults(fn=cmd_overlaps)
     p = sub.add_parser("texture", help="quick height, normal and roughness maps from a photo")
     p.add_argument("image")
     p.add_argument("--out", required=True)
