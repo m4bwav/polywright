@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.5 · 2026-11-12
+
+- polywright-references: ISO 17840 rescue sheets in the vehicle row. references/cli.md: `place` prefers LoD2 CityGML and a 1 m DGM where a state publishes them. Reason: technique harvest 2026-11-12.
+
 ## 0.6.4 · 2026-11-11
 
 - `pw.py overlaps`: intersecting boxes in a scene dump (JSON of name, min/max or center/size, group, filler). Filler that crosses a feature and feature-vs-feature clashes are reported apart; touching is not a clash. First user: madnesswright's generated Project Nexus rooms (struts across doors, crates in doorways).
