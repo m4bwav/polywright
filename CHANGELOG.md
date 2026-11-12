@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.4 · 2026-11-11
+
+- `pw.py overlaps`: intersecting boxes in a scene dump (JSON of name, min/max or center/size, group, filler). Filler that crosses a feature and feature-vs-feature clashes are reported apart; touching is not a clash. First user: madnesswright's generated Project Nexus rooms (struts across doors, crates in doorways).
+
 ## 0.6.3 (2026-11-10)
 
 - polywright-generate: orbit-video splat route (H3 orbit LoRA, COLMAP, Brush); pseudo-views only, props morph.
