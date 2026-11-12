@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261112-1 · 2026-11-12 · Rescue sheets in the vehicle row
+- because: user request (technique harvest 2026-11-12, C-20261112-C)
+- files: SKILL.md (vehicle row)
+- Cars: ISO 17840 rescue sheets give outline and structure.
+
 ### C-20261025-1 · 2026-10-25 · Delight route and the limits of photo normal maps
 - because: R-20261025-1 (hub), CGPP 3e §27.11; Gambetta, normal mapping
 - files: SKILL.md Step 4 (the baked-light bullet)

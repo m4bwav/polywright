@@ -17,7 +17,7 @@ Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Prompt templa
 | Model | Collect (real) | Generate (imagined or missing) |
 |---|---|---|
 | Real object | photos from 6 sides with a ruler in the plane, close-ups, real dimensions (maker's sheet, Wikipedia, a tape) | orthographic clean-ups only if photos are poor |
-| Vehicle, product, furniture | blueprints or CAD drawings (check one known dimension), maker's dimensions | front, side, top elevations in technical-drawing style |
+| Vehicle, product, furniture | blueprints or CAD drawings (check one known dimension), maker's dimensions; for cars, the public rescue sheet (ISO 17840, carmaker or Euro NCAP PDF) shows outline and structure | front, side, top elevations in technical-drawing style |
 | Building | footprint (OSM), height or floor count, photos of each face, roof shape | elevations per face, roof plan |
 | Real place | map extract, elevation, aerial photo, ground photos of landmarks | none: places come from data (polywright-capture) |
 | Imagined prop | style references | a three-quarter hero image, then front/left/back/right at the same scale |
