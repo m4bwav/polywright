@@ -83,8 +83,12 @@ the reserves fall outside the frame unless the camera is widened (`--cam-dist`, 
    figures (crop, low-denoise V2V, paste back).
 
 Hosted models that take a reference or driving video (Runway Aleph, Luma Modify, Kling) can take `clay.mp4` the
-same way. One practitioner rule for those: coarse proxies work better than detailed ones, and name each group by
+same way. Coarse proxies work better than detailed ones, and name each group by
 role in the prompt rather than by its blockout colour.
+
+Clay-to-real IC-LoRA (fal LTX-2.3 3DREAL, 2026-11-12 test): use strong-v2, not light (layout kept 0.75 / 0.66
+vs 0.68 / 0.46). Describe only what is in the render or it adds people. Tiny crowd figures stayed clay in one
+distilled stage, so crowds keep the depth route; not yet a route.
 
 ## Extending it
 
@@ -140,13 +144,9 @@ Check also that each end state is inside the shot's own frame (L-005).
 
 ## Open
 
-- Animation principles not yet tried on a video model (after Hess, *Tradigital Blender*, in our words; `duel`
-  smoothsteps between held keys today): a wind-up key 2 to 6 frames before each strike, since a pose change with
-  no anticipation can read as a jump cut; hands and feet starting one or two frames apart instead of together; a
-  small drift (1 to 2 cm, 1 to 2 degrees) through a hold, since a frozen mannequin may freeze the person; hand
-  paths bent through an arc instead of a straight line; cloak and blade tip lagging the hand by 2 to 4 frames on
-  fast moves; quick light blades, longer settles after heavy blows, a sharp contact key with an ease out after.
-  Test one at a time against the same take.
+- Animation principles not yet tried on a video model (after Hess, *Tradigital Blender*): a wind-up key 2 to 6
+  frames before each strike; hands and feet one or two frames apart; a 1 to 2 cm drift through holds; arced hand
+  paths; cloak and blade tip lagging 2 to 4 frames. Test one at a time against the same take.
 
 - Control strength (H3, 2026-10-13): 0.8 released at 60% of the steps gave the exact formation with uniform,
   slightly clone-like soldiers; 0.6 released at 40% kept the layout and timing with more varied figures, and a

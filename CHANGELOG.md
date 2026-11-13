@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.6 · 2026-11-12
+
+- crowd-blockouts: LTX-2.3 3DREAL clay-to-real note (strong-v2 over light; crowds stay on the depth route). Reason: technique harvest 2026-11-12.
+
 ## 0.6.5 · 2026-11-12
 
 - polywright-references: ISO 17840 rescue sheets in the vehicle row. references/cli.md: `place` prefers LoD2 CityGML and a 1 m DGM where a state publishes them. Reason: technique harvest 2026-11-12.
