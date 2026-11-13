@@ -17,6 +17,11 @@
       "url": "https://huggingface.co/papers",
       "weight": "low",
       "keep": "new image-to-3D and mesh methods"
+    },
+    {
+      "kind": "reddit",
+      "sub": "ClaudeGameDev",
+      "keep": "3D model and Blender MCP workflows for game assets with Claude; drop showcases and how-do-I-start questions"
     }
   ]
 }
