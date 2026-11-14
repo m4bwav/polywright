@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.7 · 2026-11-14
+
+- polywright-blender: curve-array and edge-wear-mask recipes (tested in 5.2.1), cutter normals before a boolean, Sky Texture plus sun warning, scatter vertex budget. polywright-finish: bevels as baked normals. Hub routes: scatter pointer. Reason: books track (two Blender modelling books).
+
 ## 0.6.6 · 2026-11-12
 
 - crowd-blockouts: LTX-2.3 3DREAL clay-to-real note (strong-v2 over light; crowds stay on the depth route). Reason: technique harvest 2026-11-12.

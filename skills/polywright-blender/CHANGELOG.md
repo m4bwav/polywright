@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261114-1 · 2026-11-14 · Curve repeats, edge-wear bake, sky-plus-sun and cutter-normals lines
+- because: user request (books track blender-books-2026-11-14: *Blender 3D Environment Design*; Belec, *Blender: Create Incredible Models*); R-20261114-1, T-20261114-1
+- files: references/bpy-recipes-motion.md (new: curve-array, edge-wear-mask), references/bpy-recipes.md (boolean-fallback recalcs cutter normals; material-5x note on Sky Texture plus sun), references/bpy-recipes-scenes.md (gn-scatter per-instance budget line), SKILL.md (Step 4 link text)
+- Both new recipes run in 5.2.1; the edge-wear bake read zero edge texels on a smooth-shaded cube and works flat-shaded. 3.x-era claims (particle scatter, MixRGB, Filmic, Auto Smooth) left out.
+
 ### C-20261102-1 · 2026-11-02 · Context traps, key reads, motion and driver recipes
 - because: user request (books track: Acampora, *Python Scripting in Blender*, 2023); R-20261102-1, T-20261102-1
 - files: references/bpy-api-traps.md (Running row, Animation key reads, new section "Context, selection, hierarchy", Modifiers and operators), references/bpy-recipes-motion.md (new: parent-keep-transform, procedural-motion, drivers), references/bpy-recipes-physics.md (armature-bind), references/bpy-recipes.md (material-5x image-map note), SKILL.md (Step 4 links, Step 5 temp_override and modal rule)

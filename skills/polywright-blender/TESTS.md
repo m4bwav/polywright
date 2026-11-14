@@ -8,6 +8,9 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261114-1 · 2026-11-14 · tests/test_recipes.py · Windows 11, Blender 5.2.1 · 26/26
+- New: curve-array, edge-wear-mask (bpy-recipes-motion.md); boolean-fallback now recalcs cutter normals. edge-wear-mask found 0 edge texels smooth-shaded, 1425 of 16384 flat-shaded.
+
 ### T-20261102-1 · 2026-11-02 · tests/test_recipes.py · Windows 11, Blender 5.2.1 · 24/24
 - New: parent-keep-transform, procedural-motion, drivers (bpy-recipes-motion.md), armature-bind (bpy-recipes-physics.md). armature-bind failed first on a world-versus-mesh-local z assertion, fixed.
 

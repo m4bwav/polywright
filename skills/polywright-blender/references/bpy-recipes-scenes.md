@@ -11,7 +11,8 @@ new.
 Poisson points on a surface, one variant from a collection per point, random yaw and scale (after the Packt
 *Procedural 3D Modeling Using Geometry Nodes*, the scatter chapters). Instances render cheaply and survive a glTF
 export with `export_gpu_instances`; add a Realize Instances node before applying when one mesh is needed (a print,
-a boolean, a measurement). `pw.py crowd --scatter` uses this tree for background figures.
+a boolean, a measurement). `pw.py crowd --scatter` uses this tree for background figures. Budget per instance: points times the variant's
+vertex count is what the engine draws, so check that product against the target before raising the density.
 
 ```python
 # recipe: gn-scatter

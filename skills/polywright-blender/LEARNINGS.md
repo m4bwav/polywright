@@ -77,3 +77,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: siege-news blockout 2026-10-23, Blender 5.2.1: streaks gone with `show_shadows=False`; the Cycles colour guide carried the shadows.
 - Scope: global
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+
+### L-010 · 2026-11-14 · Candidate: warm and cool two-sided light for sheet renders
+- Trigger: a modelling book lights review renders with a warm key on one side and a cool fill on the other.
+- Hypothesis: it may read better than the current flat sheet light.
+- Rule: not adopted; adopt only after a side-by-side judged test on real sheets.
+- Evidence: none yet (books track 2026-11-14).
+- Scope: global
+- Status: candidate · helpful 0 · harmful 0 · last_confirmed 2026-11-14

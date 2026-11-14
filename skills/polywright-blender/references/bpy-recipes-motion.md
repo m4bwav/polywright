@@ -1,6 +1,7 @@
-# bpy recipes for hierarchy and motion (Blender 5.2)
+# bpy recipes for hierarchy, motion and repeats (Blender 5.2)
 
-Parenting without a jump, procedural motion with F-modifiers, and drivers. Back to [SKILL.md](../SKILL.md);
+Parenting without a jump, procedural motion with F-modifiers, drivers, a unit repeated along a curve and an
+edge-wear mask bake. Back to [SKILL.md](../SKILL.md);
 also [bpy-recipes.md](bpy-recipes.md). Every block is run by `tests/test_recipes.py` in Blender 5.2.1, asserts
 its own result and prints `[pw] ok ...`. Ideas after Acampora, *Python Scripting in Blender* (2023); the code is new.
 
@@ -85,4 +86,67 @@ print("simple expression:", d.is_simple_expression)    # True: runs without Pyth
 sc.frame_set(16)
 assert abs(o.rotation_euler.x - 0.5 * math.sin(1.6)) < 1e-4, o.rotation_euler.x
 print("[pw] ok driver", round(o.rotation_euler.x, 4))
+```
+
+## Repeat a unit along a curve (tracks, chains, belts, fences)
+
+Model one unit with its origin at its centre and both it and the curve at the world origin. Array with Fit Curve
+comes before the Curve modifier in the stack; the other order bends one unit and then copies it straight. After
+Belec, *Blender: Create Incredible Models*; the code is new.
+
+```python
+# recipe: curve-array
+import bpy
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.ops.curve.primitive_bezier_circle_add(radius=3); path = bpy.context.active_object
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0)); link = bpy.context.active_object
+link.scale = (0.3, 0.6, 0.1)                                       # one track plate, origin at its centre, at the world origin
+with bpy.context.temp_override(object=link, active_object=link, selected_objects=[link]):
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+arr = link.modifiers.new("array", "ARRAY"); arr.fit_type = "FIT_CURVE"; arr.curve = path
+arr.relative_offset_displace = (1.15, 0, 0)                        # gap between plates along local X
+crv = link.modifiers.new("curve", "CURVE"); crv.object = path; crv.deform_axis = "POS_X"
+assert [m.type for m in link.modifiers] == ["ARRAY", "CURVE"]       # Array first, or one bent plate
+ev = link.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
+xs = [v.co.x for v in ev.vertices]; ys = [v.co.y for v in ev.vertices]
+assert len(ev.vertices) > 8 * 40 and max(xs) - min(xs) > 5 and max(ys) - min(ys) > 5, (len(ev.vertices), max(xs) - min(xs))
+print("[pw] ok curve array, plates", len(ev.vertices) // 8)
+```
+
+## Edge-wear mask baked from the Bevel node
+
+The Bevel shader node rounds normals near hard edges; one minus its dot with the true normal is bright only on
+the edges. Bevel is Cycles-only, so bake it as Emit into a Non-Color float image, then use it (through a Power
+or ColorRamp) to mix worn paint into the base colour, in any engine. Flat-shaded input; the same source.
+
+```python
+# recipe: edge-wear-mask
+import bpy, os, tempfile
+OUT = os.environ.get("PW_OUT", tempfile.gettempdir())
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.ops.mesh.primitive_cube_add(size=2); ob = bpy.context.active_object
+# flat shading: Bevel rounds the hard edges; the primitive cube already has non-overlapping UVs
+img = bpy.data.images.new("wear", 128, 128, float_buffer=True)
+img.colorspace_settings.name = "Non-Color"                        # a mask is data, not colour
+mat = bpy.data.materials.new("wear"); ob.data.materials.append(mat)
+N, L = mat.node_tree.nodes, mat.node_tree.links
+for n in list(N):
+    N.remove(n)
+bev, geo = N.new("ShaderNodeBevel"), N.new("ShaderNodeNewGeometry")
+bev.samples = 8; bev.inputs["Radius"].default_value = 0.1
+dot = N.new("ShaderNodeVectorMath"); dot.operation = "DOT_PRODUCT"
+inv = N.new("ShaderNodeMath"); inv.operation = "SUBTRACT"; inv.inputs[0].default_value = 1.0
+emit, out = N.new("ShaderNodeEmission"), N.new("ShaderNodeOutputMaterial")
+tex = N.new("ShaderNodeTexImage"); tex.image = img; N.active = tex   # the bake target is the active image node
+L.new(bev.outputs["Normal"], dot.inputs[0]); L.new(geo.outputs["Normal"], dot.inputs[1])
+L.new(dot.outputs["Value"], inv.inputs[1]); L.new(inv.outputs[0], emit.inputs["Color"])
+L.new(emit.outputs[0], out.inputs["Surface"])
+sc = bpy.context.scene; sc.render.engine = "CYCLES"; sc.cycles.samples = 4; sc.cycles.device = "CPU"
+with bpy.context.temp_override(object=ob, active_object=ob, selected_objects=[ob]):
+    bpy.ops.object.bake(type="EMIT")                              # Bevel only works in Cycles, so bake it
+px = list(img.pixels); vals = px[0::4]
+hi = sum(1 for v in vals if v > 0.02)
+assert 0 < hi < len(vals) * 0.9, (hi, len(vals))                 # edges light up, faces stay dark
+img.filepath_raw = os.path.join(OUT, "edge_wear.exr"); img.file_format = "OPEN_EXR"; img.save()
+print("[pw] ok edge wear mask, edge texels", hi, "of", len(vals))
 ```

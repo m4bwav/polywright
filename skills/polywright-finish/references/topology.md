@@ -55,6 +55,8 @@ judged until these pass.
   sharp edges into the mesh with `mesh.set_sharp_from_angle(angle=...)`. Unapplied, the exporters drop it and the
   whole mesh comes out smooth: a 32-sided cylinder left 64 distinct corners instead of 128 (5.2.1, 2026-10-22).
 - On flat panels, loops that carry no shape only cost triangles: remove them.
+- Rounded edges without the triangles: bevel a high copy, then bake its normals onto the sharp low mesh
+  (polywright-blender `bake-high-to-low`). Book rule, unverified here.
 - No coplanar overlapping faces in a kitbashed set or a blockout: they flicker in renders and in clay, depth and
   edge passes. Nudge one surface, delete the hidden one, or build without the overlap.
 

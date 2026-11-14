@@ -77,7 +77,7 @@ exports per engine, and a designed prop from a written description (lathe, sweep
 masks, Mist and normals from one render, clay by material override, Line Art, MP4 through Blender's own FFmpeg.
 Physics and rigs: [references/bpy-recipes-physics.md](references/bpy-recipes-physics.md): rigid-body and cloth
 bakes, why a Rigify rig is not a game skeleton, binding to an armature by hand, volume remesh. Parenting, F-modifier
-motion and drivers: [references/bpy-recipes-motion.md](references/bpy-recipes-motion.md). Sheets of
+motion, drivers, Array-then-Curve repeats and an edge-wear bake: [references/bpy-recipes-motion.md](references/bpy-recipes-motion.md). Sheets of
 a model with mirror-image parts: raise the side camera 10 to 15 degrees, or one part hides the other (L-005).
 
 ## Step 5: live sessions (MCP)
