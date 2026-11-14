@@ -42,6 +42,12 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261114-1 · 2026-11-14 · Subject: two Blender modelling books, checked on 5.2.1
+- summary: Array (Fit Curve) before Curve repeats a unit along a path; the Bevel shader node baked as Emit in Cycles gives an edge mask (needs flat shading); `ShaderNodeTexSky` exists with SINGLE_SCATTERING, MULTIPLE_SCATTERING, PREETHAM, HOSEK_WILKIE and `sun_disc`. The double-light warning (sky sun plus a lamp) and cutter normals before a boolean are book rules, unverified here.
+- track: subject
+- sources: *Blender 3D Environment Design*; Belec, *Blender: Create Incredible Models*; probe scripts in Blender 5.2.1 LTS, 2026-11-14
+- magnitude: minor
+
 ### R-20261102-1 · 2026-11-02 · Subject: scripting habits from Acampora, probed on 5.2.1
 - summary: Context and selection rules, parenting inverse, channelbag key reads (`anim_utils.action_get_channelbag_for_slot` exists and equals `layers[0].strips[0].channelbag(slot)`), `keyframe_insert` returns a bool, F-modifier and driver-variable enums, `driver.is_simple_expression`, auto-exec off by default, `object.delete(confirm=)`. Book written for Blender 3.3; every API claim re-probed in a running 5.2.1.
 - track: subject

@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261114-1 · 2026-11-14 · Hard surfaces: bevels as baked normals
+- because: user request (books track blender-books-2026-11-14: Belec, *Blender: Create Incredible Models*); book rule, unverified
+- files: references/topology.md (Hard surfaces)
+- One line pointing at polywright-blender's bake-high-to-low recipe.
+
 ### C-20261110-1 · 2026-11-10 · Bake: de-light tested, no gain; drop interior shells first
 - because: user request (technique-harvest GPU test, 1x652rz); replaces C-20261109-2 (R-20261109-1)
 - files: SKILL.md (Step 3 bake bullets). No pw.py delight.

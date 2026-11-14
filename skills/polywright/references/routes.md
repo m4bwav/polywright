@@ -52,6 +52,9 @@ The manifest's `tools` list (model and version) is what answers these.
   outputs may not train other models. 2.5 and 3.x are hosted only.
 - Hosted (Meshy, Tripo, Rodin): their terms per plan; record the plan.
 
+Scattering many copies (rocks, trees, crowds) is Geometry Nodes, not hair particles: polywright-blender
+`gn-scatter`, with its per-instance vertex budget.
+
 ## Never
 
 - Export, cache or trace Google Photorealistic 3D Tiles: their terms forbid it, and new EEA-billed projects

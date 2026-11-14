@@ -52,10 +52,12 @@ print("[pw] ok modifiers applied, faces", len(obj.data.polygons))
 
 ```python
 # recipe: boolean-fallback
-import bpy
+import bpy, bmesh
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.mesh.primitive_cube_add(size=2); base = bpy.context.active_object
 bpy.ops.mesh.primitive_cylinder_add(radius=0.5, depth=3); cutter = bpy.context.active_object
+bm = bmesh.new(); bm.from_mesh(cutter.data)                 # a modelled cutter: normals outward first, or it cuts nothing
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(cutter.data); bm.free()
 def bounds(o):
     xs = [(o.matrix_world @ v.co) for v in o.data.vertices]
     return [min(v[i] for v in xs) for i in range(3)], [max(v[i] for v in xs) for i in range(3)]
@@ -151,7 +153,9 @@ print("[pw] ok material sockets", len(bsdf.inputs))
 
 Image maps: set `image.colorspace_settings.name = "Non-Color"` on roughness, metallic and normal images, and run
 a normal map through a `ShaderNodeNormalMap` before the Principled Normal input. Place nodes with `node.location`
-in fixed steps of about 300 along x; node height and dimensions read from a script are not reliable.
+in fixed steps of about 300 along x; node height and dimensions read from a script are not reliable. Light a scene
+with a Sky Texture (`ShaderNodeTexSky`, sun disc on) or a sun lamp, not both at full strength: the sky already
+carries its sun, so a second one doubles the key light and its shadows.
 
 ## A designed prop from a written description: lathe, sweep, mirror
 
