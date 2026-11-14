@@ -22,6 +22,22 @@
       "kind": "reddit",
       "sub": "ClaudeGameDev",
       "keep": "3D model and Blender MCP workflows for game assets with Claude; drop showcases and how-do-I-start questions"
+    },
+    {
+      "kind": "reddit",
+      "sub": "blender",
+      "weight": "core",
+      "keep": "bpy scripting, geometry nodes, retopology, baking and export techniques"
+    },
+    {
+      "kind": "reddit",
+      "sub": "3Dmodeling",
+      "keep": "modelling workflows, topology and game-ready asset techniques"
+    },
+    {
+      "kind": "reddit",
+      "sub": "functionalprint",
+      "keep": "print design rules: tolerances, clearances, splitting, orientation"
     }
   ]
 }
