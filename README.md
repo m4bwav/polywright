@@ -115,6 +115,7 @@ Each of these plugins works on its own. Together:
 - **[cinewright](https://github.com/m4bwav/cinewright)**: Target `video-blockout`: blockout GLB or .blend, turntable and camera-path renders, and depth and normal passes for the video model. Shot planning stays with cinewright.
 - **[historywright](https://github.com/m4bwav/historywright)**: A historywright research pack feeds polywright-references: references filtered by object date, non-commercial images kept out of commercial work, and views checked for anachronisms.
 - **[grindwright](https://github.com/m4bwav/grindwright)**: grindwright's models-and-blockouts lane runs polywright and uses its render sheet as the gate.
+- **[fractalwright](https://github.com/m4bwav/fractalwright)**: polywright meshes fractalwright's 3D fractals and fractal terrain for games and 3D print.
 
 More on each pairing, with an example flow: [Works with](https://github.com/m4bwav/polywright/wiki/Works-with) on the wiki.
 
