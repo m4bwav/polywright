@@ -38,6 +38,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
+- OrcaSlicer 2.5.0 then 2.5.1 (2026-11-14): plug-ins, parametric CAD, texture mapping, Bambu H2C/A2L; 2.5.1 slicing fixes. CLI/3MF changes unverified. Bambu Studio: nothing past 2.8.4 beta. Track: tooling. Source: https://github.com/OrcaSlicer/OrcaSlicer/releases . m 0.3. applied: none (note).
+
 ### R-20261017-2 · 2026-10-17 · Subject: supports and slicing from the modeller's side
 - summary: Bambu Studio defaults (BambuHub, 2026-10-04): supports off, Tree (auto), threshold 30 degrees from horizontal, top Z 0.2 mm (0 only with a support filament), XY 0.35 mm, style resolving to Tree Organic or Tree Hybrid; hybrid puts a grid under large flat areas. Support painting marks enforcers and blockers, paints vertical faces since 1.10.0, and blockers can be placed objects (wiki, 2026-04-16). The Cut tool has planar and dovetail modes with connectors and names reduced supports as a reason to cut (wiki, 2026-09-15). Variable layer height: 0.08 to 0.28 mm on a 0.4 nozzle, adaptive and smooth, one prime tower only when objects share a profile (wiki). Purge: the prime tower rises to the last change layer, flipping a part saved about 40%, changes per layer are colours minus one, flush into infill or objects needs the tower (wiki, 2026-02-11). PrusaSlicer organic supports touch only at branch tips. Resin: at least two drain holes, minimum hollow wall 1 mm in PrusaSlicer, cupping, tilt 30/45/60 compared (Elegoo/Chitubox), Lychee 7.5.4/7.5.5 (2025-12-17) reworked auto support. Miniatures: resin about 0.05 mm XY against 0.1 mm FDM; 32 mm figure designers list a 0.2 mm nozzle at 0.08 mm layers. Pre-supported means creator-chosen orientation and supports, often with a Lychee project.
 - track: subject

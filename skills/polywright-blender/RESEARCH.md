@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
+- Blender 5.3 (2026-11-10): native Gaussian splat import/render (PLY, SPZ, glTF), layered compositor, optional Blender Projects, Principled BSDF dispersion, DLSS 4.5 denoiser. Recipes not yet re-probed on 5.3; check https://docs.blender.org/api/current/change_log.html for 5.2 to 5.3 API breaks. Apply Transform on splats reportedly corrupts attributes (secondary source, unconfirmed). Track: subject. Source: https://developer.blender.org/docs/release_notes/5.3/core/ . m 0.4. applied: none (re-run tests/test_recipes.py on 5.3 owed).
+
 ### R-20261114-1 · 2026-11-14 · Subject: two Blender modelling books, checked on 5.2.1
 - summary: Array (Fit Curve) before Curve repeats a unit along a path; the Bevel shader node baked as Emit in Cycles gives an edge mask (needs flat shading); `ShaderNodeTexSky` exists with SINGLE_SCATTERING, MULTIPLE_SCATTERING, PREETHAM, HOSEK_WILKIE and `sun_disc`. The double-light warning (sky sun plus a lamp) and cutter normals before a boolean are book rules, unverified here.
 - track: subject

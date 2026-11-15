@@ -45,6 +45,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
+- Blender 5.3 released 2026-11-10 (not LTS; Vulkan default on Windows). pw.py verified on 5.2.1 only; re-run Blender tests on 5.3 before claiming it. Track: subject. Sources: https://developer.blender.org/docs/release_notes/5.3/core/ . m 0.3. applied: none (5.2 LTS stays the pinned default; 5.3 test run owed).
+
 ### R-20261109-1 · 2026-11-09 · Tooling: Review renders on the game ground (open question)
 - sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
 - magnitude: minor

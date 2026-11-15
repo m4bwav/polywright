@@ -14,8 +14,8 @@
   "topic": "Imagined 3D models: open and hosted image-to-3D and text-to-3D generators, code and procedural modelling, AI texturing, licences",
   "tier": "fast",
   "interval_days": 14.0,
-  "last_checked": "2026-10-30",
-  "next_due": "2026-11-12",
+  "last_checked": "2026-11-15",
+  "next_due": "2026-12-01",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
@@ -38,12 +38,18 @@
       "m": 0.1,
       "interval_after": 14.0,
       "note": "quiet; no new open weights; cost: searches 6 (shared) · fetches 0 · tool calls ~12"
+    },
+    {
+      "date": "2026-11-15",
+      "m": 0.1,
+      "interval_after": 14.0,
+      "note": "Blender 5.3 / OrcaSlicer 2.5.1 sweep; cost: searches 1 · fetches 0 · tool calls 2 (shared 6/1/8 across 7)"
     }
   ],
   "counts": {
     "learnings": 1,
     "changes": 2,
-    "research": 3,
+    "research": 4,
     "tests": 6
   },
   "consolidate_every": 25,

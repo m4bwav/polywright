@@ -40,6 +40,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Quiet check
+- Quiet (thin pass); glTF, meshopt, KTX2, Roblox, Unity import: nothing new found; tooling: nothing new; testing: nothing new. m 0.
+
 ### R-20261109-1 · 2026-11-09 · Tooling: Effigy de-light (no gain on TRELLIS.2, 2026-11-10)
 - sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
 - magnitude: minor

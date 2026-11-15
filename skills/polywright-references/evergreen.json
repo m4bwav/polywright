@@ -13,15 +13,15 @@
   "source": null,
   "topic": "Reference images, multi-view sets, turnarounds, textures and blockouts that 3D models are built from",
   "tier": "fast",
-  "interval_days": 14.0,
-  "last_checked": "2026-10-30",
-  "next_due": "2026-11-15",
+  "interval_days": 17.5,
+  "last_checked": "2026-11-15",
+  "next_due": "2026-12-03",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
   "events": [],
   "streak": {
-    "quiet": 0,
+    "quiet": 1,
     "pinned_min": 0,
     "pinned_max": 0,
     "vau_quiet": 0
@@ -38,12 +38,18 @@
       "m": 0.2,
       "interval_after": 14.0,
       "note": "quiet; CharacterSheet LoRAs noted; cost: searches 6 (shared) · fetches 0 · tool calls ~12"
+    },
+    {
+      "date": "2026-11-15",
+      "m": 0.0,
+      "interval_after": 17.5,
+      "note": "Blender 5.3 / OrcaSlicer 2.5.1 sweep; cost: searches 1 · fetches 0 · tool calls 2 (shared 6/1/8 across 7)"
     }
   ],
   "counts": {
     "learnings": 1,
     "changes": 2,
-    "research": 3,
+    "research": 4,
     "tests": 6
   },
   "consolidate_every": 25,

@@ -41,6 +41,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Quiet check
+- Quiet; hosted Meshy 7.1 and Tripo H3.1 seen only on aggregators (unconfirmed); no new open-weights model past TRELLIS.2 / Hunyuan3D 2.1. tooling: nothing new; testing: nothing new. m 0.1.
+
 ### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
 - Subject: no new open-weights image-to-3D release since StableGen 0.4.0 (R-20261029-1); TRELLIS.2 (MIT) and Pixal3D stay the open picks, Hunyuan3D 3.x hosted-only (open weights stop at 2.1). Testing: 3DCodeBench (Blender 5.0 procedural code, Uni3D scores) noted. Tooling and practice: nothing new.
 - sources: https://microsoft.github.io/TRELLIS.2, https://app.cinevva.com/guides/ai-3d-model-generation-timeline-2026 (third party)

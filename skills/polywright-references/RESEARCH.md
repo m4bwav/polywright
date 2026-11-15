@@ -40,6 +40,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Quiet check
+- Quiet; tooling: nothing new; testing: nothing new (Blender 5.3 version bump only). m 0.
+
 ### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
 - Subject: CharacterSheet TripleView/QuadView LoRAs for FLUX.2 Klein 9B and Krea 2 (comfyui-wiki 2026-07-31, workflow JSON, no custom nodes; licence follows the Civitai listing) are an option for front/side/back sheets; known weak on asymmetric designs and accessories. Nothing newer found for October. Tooling, practice, testing: nothing new.
 - sources: https://comfyui-wiki.com/en/news/2026-07-31-charactersheet-multiview-loras, https://huggingface.co/Alissonerdx/CharacterSheet

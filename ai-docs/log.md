@@ -164,3 +164,5 @@ A run that turned four photographed toy figures and five accessories into TRELLI
 Added a README "Works with" section and a wiki Works-with page covering artwright, threewright, cinewright, historywright, grindwright, taken from the real handoffs in both plugins' skills (askwright and tokenwright added where they fit). Part of a cross-plugin pass on Mark's request that each pairing be described from both sides.
 
 ## [2026-11-14] update | README Works with: fractalwright (new public plugin), mirroring its own section
+
+## [2026-11-15] refresh | evergreen upkeep of 7 skills: Blender 5.3 (2026-11-10) and OrcaSlicer 2.5.1 logged; 5.3 test re-run owed, 5.2 LTS stays default; no SKILL changes
