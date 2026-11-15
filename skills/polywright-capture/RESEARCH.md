@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
+- Blender 5.3 imports and renders Gaussian splats natively (no export yet): a local viewing route beside splat-transform. RealityScan, COLMAP: nothing new. Track: tooling. Source: https://developer.blender.org/docs/release_notes/5.3/core/ . m 0.4. applied: none (note; point in SKILL after a 5.3 probe).
+
 ### R-20261109-1 · 2026-11-09 · Tooling: Idol, one image to a splat (not tested)
 - sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
 - magnitude: minor

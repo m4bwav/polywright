@@ -13,9 +13,9 @@
   "source": null,
   "topic": "Driving Blender 5.x from agents: headless runs, API traps, tested recipes, MCP bridges, other 3D tools per OS",
   "tier": "moderate",
-  "interval_days": 30,
-  "last_checked": "2026-10-11",
-  "next_due": "2026-11-10",
+  "interval_days": 20.0,
+  "last_checked": "2026-11-15",
+  "next_due": "2026-12-03",
   "verify_at_use": false,
   "volatile_claims": [],
   "contradiction": null,
@@ -32,12 +32,18 @@
       "m": null,
       "interval_after": 30,
       "note": "created"
+    },
+    {
+      "date": "2026-11-15",
+      "m": 0.4,
+      "interval_after": 20.0,
+      "note": "Blender 5.3 / OrcaSlicer 2.5.1 sweep; cost: searches 1 · fetches 0 · tool calls 2 (shared 6/1/8 across 7)"
     }
   ],
   "counts": {
     "learnings": 2,
     "changes": 2,
-    "research": 2,
+    "research": 3,
     "tests": 6
   },
   "consolidate_every": 25,
