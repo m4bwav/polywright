@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-1 · 2026-11-17 · Previs fact-list rule, rigged-character recipe
+- because: R-20261117-1 (technique harvest)
+- files: SKILL.md (Step 4), references/bpy-recipes-motion.md (new: animate-rigged-character), references/mcp-bridges.md (When to use one)
+- Previs gets checked fact by fact from scene data; a headless recipe keys pose bones in an action.
+
 ### C-20261114-1 · 2026-11-14 · Curve repeats, edge-wear bake, sky-plus-sun and cutter-normals lines
 - because: user request (books track blender-books-2026-11-14: *Blender 3D Environment Design*; Belec, *Blender: Create Incredible Models*); R-20261114-1, T-20261114-1
 - files: references/bpy-recipes-motion.md (new: curve-array, edge-wear-mask), references/bpy-recipes.md (boolean-fallback recalcs cutter normals; material-5x note on Sky Texture plus sun), references/bpy-recipes-scenes.md (gn-scatter per-instance budget line), SKILL.md (Step 4 link text)

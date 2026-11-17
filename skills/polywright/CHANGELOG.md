@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261117-1 · 2026-11-17 · patch.gg row in routes.md, unverified
+- because: R-20261117-1
+- files: references/routes.md
+
 ### C-20261114-1 · 2026-11-14 · routes.md: scatter is Geometry Nodes
 - because: user request (books track blender-books-2026-11-14: *Blender 3D Environment Design*)
 - files: references/routes.md

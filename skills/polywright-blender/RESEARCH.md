@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261117-1 · 2026-11-17 · Previs fact lists and live rig animation
+- VibePrevisBench (https://arxiv.org/abs/2611.15789): agents pass staging but miss spatial and camera errors they could see in their own renders; assert facts from scene data. A Reddit demo (https://www.reddit.com/r/aigamedev/comments/1xtgir8/) animated a rigged character through Blender MCP; video only. Track: subject. applied: SKILL Step 4 line, recipe animate-rigged-character, mcp-bridges line.
+
 ### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
 - Blender 5.3 (2026-11-10): native Gaussian splat import/render (PLY, SPZ, glTF), layered compositor, optional Blender Projects, Principled BSDF dispersion, DLSS 4.5 denoiser. Recipes not yet re-probed on 5.3; check https://docs.blender.org/api/current/change_log.html for 5.2 to 5.3 API breaks. Apply Transform on splats reportedly corrupts attributes (secondary source, unconfirmed). Track: subject. Source: https://developer.blender.org/docs/release_notes/5.3/core/ . m 0.4. applied: none (re-run tests/test_recipes.py on 5.3 owed).
 

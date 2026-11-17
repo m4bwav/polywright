@@ -27,6 +27,7 @@ free Sketchfab model in one evening where scratch modelling would still look gen
 | Sketchfab | everything; many downloadable | per model (CC-BY, CC-BY-NC, CC0, store licences) | login to download; game models are thin shells that need work for printing; ToS bars scraping for AI training |
 | Printables, MakerWorld, Thingiverse, Cults3D | printable models | per model, often non-commercial | already solid and print-tested; first stop for print jobs |
 | Fab (Epic), Unity Asset Store | game assets | store EULA | check engine and redistribution terms |
+| patch.gg toolbox (unverified) | ~50k models, textures, splats, audio, mostly aggregated from open stores; CLI and MCP search | per asset, from its source store | sign-in to download; verify each asset's origin and licence ([post](https://www.reddit.com/r/aigamedev/comments/1xt0uwn/)) |
 | Objaverse / Objaverse-XL | research datasets | ODC-By dataset, per-object licences in metadata | filter by licence before use |
 
 Record every download: `pw.py manifest <dir> --add-source <url> --what <what> --author <a> --licence <l>`.

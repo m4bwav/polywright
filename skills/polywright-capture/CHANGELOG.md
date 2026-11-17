@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-1 · 2026-11-17 · Blender 5.3 marked released
+- because: R-20261117-1
+- files: references/splats.md (tools table)
+
 ### C-20261017-1 · 2026-10-17 · place builds min_height, building parts and roof shapes
 - because: R-20261017-1, HANDOFF owed item 4
 - files: SKILL.md (What place gives you); references/places.md (notes from runs); ../polywright/scripts/pw.py building_mesh, roof_solid, min_rect, place
