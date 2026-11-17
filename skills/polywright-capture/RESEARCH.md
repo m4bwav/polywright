@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261117-1 · 2026-11-17 · Blender 5.3 released
+- Release announcement https://www.blender.org/download/releases/5-3/ (2026-11-10; page 403 to a script fetch, claim via HN and the 5.3 notes): splat import native. applied: splats.md row marked released.
+
 ### R-20261115-1 · 2026-11-15 · Blender 5.3 and point releases
 - Blender 5.3 imports and renders Gaussian splats natively (no export yet): a local viewing route beside splat-transform. RealityScan, COLMAP: nothing new. Track: tooling. Source: https://developer.blender.org/docs/release_notes/5.3/core/ . m 0.4. applied: none (note; point in SKILL after a 5.3 probe).
 

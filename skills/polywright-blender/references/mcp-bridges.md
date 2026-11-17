@@ -20,6 +20,8 @@ a vendor with a competing product, so treat dates as approximate).
 
 - The user is watching Blender and wants live, conversational edits: yes.
 - Batch work, repeatable pipelines, CI, anything on a file the user cares about: no; use `pw.py bpy` on a copy.
+- Animation tuned by eye (a rigged character's moves) suits a live session; once the moves are right, move the keys
+  into a script for `pw.py bpy` (recipe: animate-rigged-character in [bpy-recipes-motion.md](bpy-recipes-motion.md)).
 - The official server's docs search is worth using to look up an API before writing a script, even when the
   script then runs headless.
 

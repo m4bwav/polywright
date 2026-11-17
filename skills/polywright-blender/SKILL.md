@@ -79,6 +79,9 @@ Physics and rigs: [references/bpy-recipes-physics.md](references/bpy-recipes-phy
 bakes, why a Rigify rig is not a game skeleton, binding to an armature by hand, volume remesh. Parenting, F-modifier
 motion, drivers, Array-then-Curve repeats and an edge-wear bake: [references/bpy-recipes-motion.md](references/bpy-recipes-motion.md). Sheets of
 a model with mirror-image parts: raise the side camera 10 to 15 degrees, or one part hides the other (L-005).
+Previs or blockout from a brief: write the brief as a fact list per shot (who stands where, facing, what moves, camera path),
+assert each fact from scene data in bpy after the build, then check the render fact by fact; a glance at a render is not a check
+(VibePrevisBench, [arXiv 2611.15789](https://arxiv.org/abs/2611.15789): agents look at their renders but miss their errors).
 
 ## Step 5: live sessions (MCP)
 

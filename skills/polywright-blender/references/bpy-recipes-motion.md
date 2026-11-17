@@ -1,6 +1,6 @@
 # bpy recipes for hierarchy, motion and repeats (Blender 5.2)
 
-Parenting without a jump, procedural motion with F-modifiers, drivers, a unit repeated along a curve and an
+Parenting without a jump, procedural motion with F-modifiers, drivers, keyframing a rigged character, a unit repeated along a curve and an
 edge-wear mask bake. Back to [SKILL.md](../SKILL.md);
 also [bpy-recipes.md](bpy-recipes.md). Every block is run by `tests/test_recipes.py` in Blender 5.2.1, asserts
 its own result and prints `[pw] ok ...`. Ideas after Acampora, *Python Scripting in Blender* (2023); the code is new.
@@ -150,3 +150,35 @@ assert 0 < hi < len(vals) * 0.9, (hi, len(vals))                 # edges light u
 img.filepath_raw = os.path.join(OUT, "edge_wear.exr"); img.file_format = "OPEN_EXR"; img.save()
 print("[pw] ok edge wear mask, edge texels", hi, "of", len(vals))
 ```
+
+## Animate an imported rigged character
+
+For a downloaded rig (FBX, glTF, .blend in a zip): import it, find the armature, key pose bones in an action,
+then render a few frames as a sheet before tuning. A live MCP session suits tuning by eye; this runs headless.
+Source of the idea: a live Blender MCP run that animated a rigged character from one prompt
+([r/aigamedev](https://www.reddit.com/r/aigamedev/comments/1xtgir8/)). The test builds its own two-bone rig.
+
+```python
+# recipe: animate-rigged-character
+import bpy, math
+bpy.ops.wm.read_factory_settings(use_empty=True)
+# after a real import: arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
+ad = bpy.data.armatures.new("rig"); arm = bpy.data.objects.new("rig", ad); bpy.context.scene.collection.objects.link(arm)
+bpy.context.view_layer.objects.active = arm
+bpy.ops.object.mode_set(mode="EDIT")
+b1 = ad.edit_bones.new("root"); b1.head, b1.tail = (0, 0, 0), (0, 0, 1)
+b2 = ad.edit_bones.new("arm"); b2.head, b2.tail = (0, 0, 1), (0, 0, 2); b2.parent = b1
+bpy.ops.object.mode_set(mode="POSE")
+sc = bpy.context.scene; sc.frame_start, sc.frame_end = 1, 48
+pb = arm.pose.bones["arm"]; pb.rotation_mode = "XYZ"
+for f, deg in ((1, 0), (24, 60), (48, 0)):                      # pose bones, not edit bones, carry animation
+    pb.rotation_euler = (math.radians(deg), 0, 0); pb.keyframe_insert("rotation_euler", frame=f)
+bpy.ops.object.mode_set(mode="OBJECT")
+act = arm.animation_data.action; act.name = "wave"
+sc.frame_set(24); bpy.context.view_layer.update()
+assert abs(arm.pose.bones["arm"].rotation_euler.x - math.radians(60)) < 1e-4
+print("[pw] ok rigged character keyed, action", act.name)
+```
+
+Bone names differ per rig (Mixamo `mixamorig:`, Rigify `DEF-`/`ORG-`): list `arm.pose.bones.keys()` first and key
+the control bones, never the deform bones of a Rigify rig.

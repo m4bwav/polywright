@@ -20,7 +20,7 @@ photogrammetry, or extract one and expect cleanup.
 | gsplat (nerfstudio) | Apache-2.0 | Python library behind many trainers |
 | SuperSplat (PlayCanvas) | MIT | browser editor: crop, floaters, compress |
 | splat-transform | MIT | `npm i -g @playcanvas/splat-transform`: PLY, SPZ, SOG, KSPLAT in; GLB (KHR) out; filters, decimation, collision |
-| Blender 5.3 (alpha, Sept 2026) | GPL | native PLY and SPZ v4 import reported |
+| Blender 5.3 (released 2026-11-10) | GPL | native splat import and render (PLY, SPZ, glTF), no export; per the [5.3 release announcement](https://www.blender.org/download/releases/5-3/), not yet run here |
 
 ComfyUI also has `File3DToSplat`, `SplatToFile3D` and `SplatToMesh` nodes (seen on a 0.38 host, 2026-10-11).
 
