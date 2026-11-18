@@ -42,7 +42,10 @@ python ../polywright/scripts/pw.py place --center LAT,LON --size-m 500 --out ass
 
 Then: render (`pw.py render work/place/scene.glb --out renders/place --color material`) and compare with an
 aerial photo; hand-model or capture the landmarks the data cannot give (a bandstand, a playground structure);
-replace default-height buildings that matter. Engine heightmaps, imagery terms and the park checklist are in
+replace default-height buildings that matter. For a wide surround, ring the terrain resolution (about 1 m near
+the subject, 8 m further out, 20 m at the horizon) instead of one grid. Check a real-object model against a point
+cloud (lidar, scan) by nearest distance from points to mesh: report the median and the 95th percentile, since a
+good median can hide large local errors. Engine heightmaps, imagery terms and the park checklist are in
 [references/places.md](references/places.md).
 
 ## Objects from photos (photogrammetry)

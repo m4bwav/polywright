@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-1 · 2026-11-18 · Motion blur for beauty turntables
+- because: user request (technique harvest 2026-11-18, Reddit posts 1xum86v and 1xxqbuw)
+- files: references/bpy-recipes-scenes.md (passes-one-render)
+- Beauty renders turn motion blur on (shutter 0.5) and match scene fps to export fps; no recipe code changed.
+
 ### C-20261117-4 · 2026-11-17 · palette-atlas and rigid-skin-boxes recipes
 - because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
 - files: references/bpy-recipes-scenes.md, references/bpy-recipes-motion.md

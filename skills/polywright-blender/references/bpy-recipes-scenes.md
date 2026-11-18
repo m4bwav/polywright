@@ -71,7 +71,9 @@ File Output node. Inverse depth comes from a shader AOV (1 / view depth mapped o
 it is the same signal `pw.py crowd` renders, not Mist: Mist maps plain distance through its falloff, which gives
 the near ranks fewer tones. Shader AOVs and the Mist pass after van Gumster, *Blender All-in-One For Dummies*
 (rendering in passes). Keep depth of field and motion blur off in control passes; record lens and focus in
-`camera.json` instead.
+`camera.json` instead. Beauty renders are the opposite: Blender ships with motion blur off, and a camera orbiting a
+fine lattice strobes at 24 or 25 fps, so turn it on (`scene.render.use_motion_blur = True`, shutter 0.5), slow
+the orbit and set the scene fps to the export fps.
 
 ```python
 # recipe: passes-one-render
