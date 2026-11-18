@@ -50,7 +50,9 @@ static and skeletal meshes, foliage and tessellation; not translucent materials 
 [verified]. Collision pieces prefixed UCX_. DirectX normals (or Flip Green Channel). Turn off Generate Lightmap
 UVs when lighting is fully dynamic.
 
-**Godot.** glTF first-class; +Y up; imported assets face +Z.
+**Godot.** glTF first-class; +Y up; imported assets face +Z. glTF animations import without a loop flag: set it in
+the Advanced Import Settings, name the action with a `-loop` suffix, or set `loop_mode = Animation.LOOP_LINEAR` in
+code (Back To Code, Godot 4.7, YouTube B-vI6rRxfIk).
 
 **three.js and the web.** GLB with meshopt or Draco geometry and KTX2 (Basis) textures; real size; origin at the
 bottom centre. The threewright plugin checks the page and the model in a browser. The full route (topology,

@@ -256,3 +256,32 @@ print("[pw] ok rigged character keyed, action", act.name)
 
 Bone names differ per rig (Mixamo `mixamorig:`, Rigify `DEF-`/`ORG-`): list `arm.pose.bones.keys()` first and key
 the control bones, never the deform bones of a Rigify rig.
+
+## Rigid box character, one NLA strip per action
+
+Each part is skinned to one bone at weight 1 (no weight painting); each action goes on its own NLA track, because
+the glTF exporter otherwise ships only the active action. Idea from Back To Code (YouTube B-vI6rRxfIk).
+
+```python
+# recipe: rigid-skin-boxes
+import bpy, math
+bpy.ops.wm.read_factory_settings(use_empty=True)
+ad = bpy.data.armatures.new("rig"); arm = bpy.data.objects.new("rig", ad); bpy.context.scene.collection.objects.link(arm)
+bpy.context.view_layer.objects.active = arm; bpy.ops.object.mode_set(mode="EDIT")
+for n, z in (("body", 0.5), ("head", 1.2)):
+    b = ad.edit_bones.new(n); b.head, b.tail = (0, 0, z - 0.3), (0, 0, z + 0.3)
+bpy.ops.object.mode_set(mode="OBJECT")
+for n, z in (("body", 0.5), ("head", 1.2)):                     # one box per bone, weight 1.0, armature modifier
+    bpy.ops.mesh.primitive_cube_add(size=0.5, location=(0, 0, z)); box = bpy.context.object; box.name = n
+    box.vertex_groups.new(name=n).add([v.index for v in box.data.vertices], 1.0, "REPLACE")
+    box.modifiers.new("rig", "ARMATURE").object = arm; box.parent = arm
+arm.animation_data_create(); pb = arm.pose.bones["head"]; pb.rotation_mode = "XYZ"
+for name, amp in (("idle", 5), ("walk", 20)):
+    act = bpy.data.actions.new(name); arm.animation_data.action = act
+    for f in range(1, 25, 3):                                     # sine keyed every third frame
+        pb.rotation_euler = (math.radians(amp) * math.sin(f / 24 * 2 * math.pi), 0, 0); pb.keyframe_insert("rotation_euler", frame=f)
+    act.use_fake_user = True
+    arm.animation_data.nla_tracks.new().strips.new(name, 1, act); arm.animation_data.action = None
+assert sorted(t.strips[0].action.name for t in arm.animation_data.nla_tracks) == ["idle", "walk"]
+print("[pw] ok rigid boxes, NLA strips", len(arm.animation_data.nla_tracks))
+```

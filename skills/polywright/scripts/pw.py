@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.10"
+VERSION = "0.6.11"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -1586,6 +1586,12 @@ def cmd_texture(a):
         p = os.path.join(a.out, stem + "_seamless.png")
         Image.fromarray((img * 255).astype("uint8")).save(p)
         out["albedo_seamless"] = p
+    def seam_rank(a):  # % of column boundaries whose mean jump is below the wrap edge's; ~100 = visible seam
+        j = np.abs(a - np.roll(a, -1, 1)).mean(axis=(0, 2))
+        return round(float((j < j[-1]).mean() * 100), 1)
+    seam = {"h": seam_rank(img), "v": seam_rank(img.transpose(1, 0, 2))}
+    if max(seam.values()) > 90:
+        seam["warning"] = "the wrap edge is among the sharpest jumps in the image: it will show a seam when tiled; try --seamless"
     lum = img @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
     hgt = (lum - lum.min()) / max(float(lum.max() - lum.min()), 1e-6)
     p = os.path.join(a.out, stem + "_height.png")
@@ -1602,7 +1608,7 @@ def cmd_texture(a):
     p = os.path.join(a.out, stem + "_roughness.png")
     Image.fromarray((rough * 255).astype("uint8")).save(p)
     out["roughness"] = p
-    return emit({"ok": True, "maps": out, "convention": a.convention,
+    return emit({"ok": True, "maps": out, "seam_rank": seam, "convention": a.convention,
                  "note": "luminance-derived approximations (the classic CrazyBump trick), fine for props and terrain, wrong for measured materials; OpenGL = glTF, Blender, Unity; DirectX = Unreal"})
 
 

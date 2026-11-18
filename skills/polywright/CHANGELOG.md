@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261117-2 · 2026-11-17 · pw.py texture prints seam_rank
+- because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
+- files: scripts/pw.py (cmd_texture), tests/test_pw.py
+- Every texture run reports the seam rank (h, v) and warns above 90%. Triggers unchanged, evals not re-run.
+
 ### C-20261117-1 · 2026-11-17 · patch.gg row in routes.md, unverified
 - because: R-20261117-1
 - files: references/routes.md
