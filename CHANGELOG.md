@@ -4,7 +4,7 @@ Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG
 
 ## 0.6.13 · 2026-11-18
 
-- polywright-references: prefer per-view renders over one-prompt sheets (6/24 vs 10/24 wrong views, FLUX.3), name one-sided features with their side, render the side view from the side that shows it or write "not visible from this side", check every view, mirror a wrong view instead of re-rolling. Reason: technique-harvest GPU test.
+- polywright-references: prefer per-view renders over one-prompt sheets (6/24 vs 10/24 wrong views, FLUX.3), name one-sided features with their side, render the side view from the side that shows it or write "not visible from this side", check every view, mirror a wrong view instead of re-rolling. Hub: three long learnings moved out of the install to stay under the size budget. Reason: technique-harvest GPU test.
 
 ## 0.6.12 · 2026-11-18
 
