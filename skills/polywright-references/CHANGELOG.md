@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-2 · 2026-11-18 · One-sided features: per-view renders, side view from the showing side, mirror wrong views
+- because: user request (technique-harvest GPU test 2026-11-18, post 1xum86v: sheet 10/24 vs per-view 6/24 wrong views, FLUX.3 Klein)
+- files: SKILL.md (scale reference)
+- Extends the asymmetric-feature rule. Triggers unchanged, evals not re-run.
+
 ### C-20261118-1 · 2026-11-18 · Asymmetric features named and checked per view
 - because: user request (technique harvest 2026-11-18, Reddit posts 1xum86v and 1xxqbuw)
 - files: SKILL.md (scale reference)

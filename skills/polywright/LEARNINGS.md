@@ -46,28 +46,13 @@ Archived 2026-11-17 to save install size (full text in the repo at ai-docs/notes
 - archived 2026-11-17: [ai-docs/archive/polywright-learnings-2026-10.md](../../ai-docs/archive/polywright-learnings-2026-10.md)
 
 ### L-010 · 2026-10-22 · Recalculating normals fixes AI meshes' flipped faces, but only on welded topology
-- Trigger: `inspect --topology` found winding mismatches in 9 of 13 image-to-3D meshes; Blender's recalculation cleared them only after merging split vertices, which loses UV seams and split normals.
-- Hypothesis: glTF splits vertices per face, so a face has no neighbours to agree with until positions are welded.
-- Rule: orient faces on welded positions and flip the minority per connected part, keeping the vertices (`convert --fix-winding`).
-- Evidence: C-20261022-4; 288 and 1,030 faces flipped on two real meshes, mismatches to 0, UV spread unchanged.
-- Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+- moved 2026-11-18 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
 
 ### L-011 · 2026-10-22 · A scatter behind the far side shows only in some framings
-- Trigger: `crowd --scatter 200` changed no mask pixels in the side and high views; in the behind view side A's reserves crowded the lens.
-- Hypothesis: the default cameras frame the armies tightly; the behind camera stands inside side A's rear.
-- Rule: reserves read from the behind view (the enemy's) or a widened camera; skip a side whose rear holds the camera.
-- Evidence: C-20261022-4; blue mask pixels 13,710 to 24,587 behind, red unchanged after the skip.
-- Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+- moved 2026-11-18 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
 
 ### L-012 · 2026-10-23 · crowd.blend holds only the last frame's pose: render extra passes inside the frame loop
-- Trigger: a Mist pass rendered afterwards from `crowd --save-blend` came out as 73 copies of the last frame. `crowd` poses every figure from Python frame by frame; nothing is keyframed, and the saved file keeps the final pose and the default 250-frame range.
-- Hypothesis: the crowd's motion lives in pw_bpy's loop, not in the .blend.
-- Rule: for a pass `crowd` does not write (Mist), run the crowd action with that pass added inside the per-frame render: a wrapper that replaces `pw_bpy.render_depth` with one that also enables the Mist pass and a File Output node at the shot's near and far, renames `m_Mist.png` to the frame's name after each render, then calls `pw_bpy.main()`. The depth frames stayed identical byte for byte. A built-in `--passes mist` is the cleaner fix.
-- Evidence: depth test 2026-10-23 (73 frames, 608x352, Blender 5.2.1, 29 s for depth and Mist together)
-- Scope: skill
-- Status: applied · `crowd --passes mist` (C-20261023-2) · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+- moved 2026-11-18 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
 
 ### L-013 · 2026-10-23 · crowd PNGs differ byte for byte between identical runs: compare decoded pixels
 - Trigger: two runs of the same `crowd` command on the same build gave different SHA-256 for every depth, mask and clay frame; 30 bytes differed in the header chunks (Blender writes an eXIf chunk), while the decoded pixels were equal.

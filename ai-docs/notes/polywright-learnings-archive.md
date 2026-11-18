@@ -81,3 +81,27 @@ Full text of hub learnings moved out of the installed skills folder on 2026-11-1
 - Evidence: the 2026-10-22 preview in pw-eval-mr7nfrh6/reserves (the README there has the commands and the review). Second run the same day (pw-eval-l64xbjxo/reserves): a lower, closer framing also works when your own ranks should loom large, `--gap 16 --cam=-21,16.5,4.5 --aim 14,16.5,0 --lens 45` (horizon at about a quarter from the top, enemy line across the full width). But there the reserves sit flush on the last rank and read as a deeper formation; 6.5 m high from 22 m back showed only helmets and almost black enemy depth. 450 asked gave 240. A `--scatter-offset` (space between the last rank and the reserves) is worth adding. Third run (pw-eval-ybkwc8ep/reserves, same day): `--gap 18 --cam=-24,16.5,6.5 --aim=16,16.5,-1 --lens 35 --far 60` put helmeted backs across the bottom third and the loose reserves visibly behind the enemy's formed line in clay; aiming below the ground (z -1) is what brought our ranks back in. Enemy and reserves still sit at grey 30 to 50 of 255 in depth: inverse depth spends the range on the near ranks. 450 asked gave 221.
 - Scope: skill (pw.py crowd behind view and --scatter)
 - Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-22
+
+### L-010 · 2026-10-22 · Recalculating normals fixes AI meshes' flipped faces, but only on welded topology
+- Trigger: `inspect --topology` found winding mismatches in 9 of 13 image-to-3D meshes; Blender's recalculation cleared them only after merging split vertices, which loses UV seams and split normals.
+- Hypothesis: glTF splits vertices per face, so a face has no neighbours to agree with until positions are welded.
+- Rule: orient faces on welded positions and flip the minority per connected part, keeping the vertices (`convert --fix-winding`).
+- Evidence: C-20261022-4; 288 and 1,030 faces flipped on two real meshes, mismatches to 0, UV spread unchanged.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-011 · 2026-10-22 · A scatter behind the far side shows only in some framings
+- Trigger: `crowd --scatter 200` changed no mask pixels in the side and high views; in the behind view side A's reserves crowded the lens.
+- Hypothesis: the default cameras frame the armies tightly; the behind camera stands inside side A's rear.
+- Rule: reserves read from the behind view (the enemy's) or a widened camera; skip a side whose rear holds the camera.
+- Evidence: C-20261022-4; blue mask pixels 13,710 to 24,587 behind, red unchanged after the skip.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-22
+
+### L-012 · 2026-10-23 · crowd.blend holds only the last frame's pose: render extra passes inside the frame loop
+- Trigger: a Mist pass rendered afterwards from `crowd --save-blend` came out as 73 copies of the last frame. `crowd` poses every figure from Python frame by frame; nothing is keyframed, and the saved file keeps the final pose and the default 250-frame range.
+- Hypothesis: the crowd's motion lives in pw_bpy's loop, not in the .blend.
+- Rule: for a pass `crowd` does not write (Mist), run the crowd action with that pass added inside the per-frame render: a wrapper that replaces `pw_bpy.render_depth` with one that also enables the Mist pass and a File Output node at the shot's near and far, renames `m_Mist.png` to the frame's name after each render, then calls `pw_bpy.main()`. The depth frames stayed identical byte for byte. A built-in `--passes mist` is the cleaner fix.
+- Evidence: depth test 2026-10-23 (73 frames, 608x352, Blender 5.2.1, 29 s for depth and Mist together)
+- Scope: skill
+- Status: applied · `crowd --passes mist` (C-20261023-2) · helpful 1 · harmful 0 · last_confirmed 2026-10-23
