@@ -99,6 +99,10 @@ gltfpack; solids: OpenSCAD, build123d, CadQuery, FreeCAD; slicers have CLIs. Ver
 [references/tools-by-os.md](references/tools-by-os.md). On macOS, Blender 5.x and the bpy wheel are Apple
 Silicon only; the bpy wheel needs exactly the Python Blender bundles (3.13 for 5.2).
 
+## YouTube videos
+
+Blender tutorials give working bpy recipes (one was followed headless in Blender 5.2 and passed); check the tutorial's Blender version against the traps above. Use fetchwright's `yt.py read URL` (captions, chapters, `&t=` links; opt-in route) and `yt.py clip URL A-B "question"` (Gemini reads the screen for spans of 2 minutes or less). Cite the `&t=` link and check numbers against a written source: auto-captions drop decimals.
+
 ## Maintenance
 
 Evergreen unit, tier `moderate` (a Blender release every four months; check at each one). Companions:
