@@ -25,7 +25,7 @@ Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Prompt templa
 | Surfaces (walls, ground, terrain) | photo of the material, flat and evenly lit | seamless tileable albedo, then maps (Step 4) |
 
 Always add a **scale reference**: a known dimension, a 1.8 m human silhouette, a height bar on the sheet.
-Name each **asymmetric feature** with its side and count in the prompt (hair parting left, mane on the right, two exhausts on the left, sword in the right hand, scar over the left eye) and check it in every view: per-view renders flip them.
+Name each **one-sided feature** with its side and count in the prompt (hair parting on his left, mane on its right, two exhausts on the right, sword in the right hand, scar over the left eye). Prefer **per-view renders** over one-prompt sheets: measured 6/24 wrong views per-view against 10/24 for one sheet (FLUX.3 Klein, 2026-11-18). Render the side view from the side that shows the feature, or write "not visible from this side" in that view's prompt; models draw the stereotyped side otherwise. Check every view, and when only the side is wrong, mirror that view instead of re-rolling.
 
 **A history research pack** (a folder holding `answer.md`, `refs/index.json` and `anachronism.md`, made by the
 historywright plugin) is already a valid asset folder: start from it, do not search again. Read
