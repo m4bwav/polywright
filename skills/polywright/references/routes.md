@@ -30,6 +30,8 @@ free Sketchfab model in one evening where scratch modelling would still look gen
 | patch.gg toolbox (unverified) | ~50k models, textures, splats, audio, mostly aggregated from open stores; CLI and MCP search | per asset, from its source store | sign-in to download; verify each asset's origin and licence ([post](https://www.reddit.com/r/aigamedev/comments/1xt0uwn/)) |
 | Objaverse / Objaverse-XL | research datasets | ODC-By dataset, per-object licences in metadata | filter by licence before use |
 
+Before downloading or generating, search packs you already own: [AssetCat](https://github.com/digitalhobbit/assetcat) (MIT, local, read-only; link, do not vendor) finds images by meaning (`assetcat search --meaning "oak barrel" --json`); in a 2026-11-18 test on two 16 px tile packs it put 17 of 25 right hits in the top 5, weak on characters and creatures, so look at the top 10.
+
 Record every download: `pw.py manifest <dir> --add-source <url> --what <what> --author <a> --licence <l>`.
 Licence secondary-sourced for Poly Haven, Kenney and Quaternius (CC0); confirm on the site at use.
 

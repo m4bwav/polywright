@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-3 · 2026-11-18 · Depth-pass repaint: MOSS-Image depth control line
+- because: user request (technique-harvest GPU test 2026-11-18, posts 1xsh4xq and 1xuksmh)
+- files: SKILL.md (Step 3)
+
 ### C-20261118-2 · 2026-11-18 · One-sided features: per-view renders, side view from the showing side, mirror wrong views
 - because: user request (technique-harvest GPU test 2026-11-18, post 1xum86v: sheet 10/24 vs per-view 6/24 wrong views, FLUX.3 Klein)
 - files: SKILL.md (scale reference)

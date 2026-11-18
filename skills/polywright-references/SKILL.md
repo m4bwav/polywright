@@ -66,6 +66,7 @@ Build a rough blockout (primitives, or a first front-only generated mesh), rende
 model repaint each grey render in the subject's colours and detail (image-to-image with the render as the
 first reference and the front view as the second). Only the camera moves, so nothing can be re-aimed or grow
 extra limbs; the back can only show what the blockout implies. Feed the repainted set to multi-view generation.
+To paint from a blockout's depth pass instead, MOSS-Image depth control in ComfyUI (Apache-2.0) kept the layout best in a 2026-11-18 test (rank agreement 0.84 with the official adapter, 0.89 with the thedeoxen LoRA when shapes must hold exactly, against 0.72 for Z-Image with a depth ControlNet).
 
 ## Step 4: textures and materials
 
