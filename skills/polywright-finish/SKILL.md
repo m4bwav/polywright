@@ -45,7 +45,7 @@ before and after every destructive step (`pw.py render`).
   (recipe); consistent texel density across a kit; trim sheets and atlases to cut materials and draw calls.
 - Bake from the dense mesh to the low one: normal, AO, colour (recipe `bake-high-to-low`). Retopology destroys
   UVs, so always re-bake. Drop interior shells (`pw.py convert --drop-interior`) before an AO bake (left in: 84% black).
-- Hand-painted look: recipe `handpaint-base` (polywright-blender) bakes gradient, edge and face masks to one albedo.
+- Hand-painted look: recipe `handpaint-base` (polywright-blender) bakes gradient, edge and face masks to one albedo; `handpaint-ucupaint` does it through Ucupaint when installed.
 - De-light: no gain on TRELLIS.2 (tested 2026-11-10; seams worse); skip it.
 - PBR metal-rough: metalness 0 or 1, roughness carries the look, albedo never pure black or white; glTF packs
   occlusion, roughness, metalness into R, G, B (ORM).

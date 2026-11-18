@@ -129,3 +129,7 @@ with `bpy.data.orphans_purge(do_recursive=True)`.
 
 `blender --command extension list|sync|install <id>`; `bpy.app.online_access` is False by default, so a sync
 needs `--online-mode` (and the user's OK: it downloads). The 3D Print Toolbox is an extension since 4.2.
+Ucupaint 3.x in `--background`: its bakes read `context.space_data` and fail with a NoneType
+`.type` error; override with a VIEW_3D area and its screen from the factory startup.
+`wm.y_bake_channels` is unregistered in 3.x (use `y_new_bake_target` + `y_bake_all_targets`). Under `--factory-startup` enable it
+with `addon_utils.enable('bl_ext.user_default.ucupaint')`.

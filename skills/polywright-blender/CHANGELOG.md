@@ -4,6 +4,12 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-3 · 2026-11-17 · handpaint-ucupaint recipe and trap
+- because: R-20261117-3
+- files: references/bpy-recipes-motion.md, references/bpy-api-traps.md
+
+Ucupaint tested headless; recipe skips cleanly when it is absent.
+
 ### C-20261117-2 · 2026-11-17 · handpaint-base recipe
 - because: R-20261117-2
 - files: references/bpy-recipes-motion.md

@@ -1,90 +1,22 @@
 # Learnings: polywright
 
-Procedural lessons for [SKILL.md](SKILL.md). Research findings live in [RESEARCH.md](RESEARCH.md); every change is logged in [CHANGELOG.md](CHANGELOG.md); test runs in [TESTS.md](TESTS.md); state in `evergreen.json`. Format and write-time gate: MAINTENANCE.md. Retired entries go to LEARNINGS-ARCHIVE.md with a reason.
+Procedural lessons for [SKILL.md](SKILL.md). Research findings live in [RESEARCH.md](RESEARCH.md); every change is logged in [CHANGELOG.md](CHANGELOG.md); test runs in [TESTS.md](TESTS.md); state in `evergreen.json`. Format and write-time gate: MAINTENANCE.md. Retired entries go to LEARNINGS-ARCHIVE.md with a reason; long entries kept but moved out of the install go to ai-docs/notes/polywright-learnings-archive.md.
 
 Write an entry the moment a real signal happens: a user correction, the same error twice, a discovered workaround, an environment fact, a stated preference, a failed test or a failure in use. Check existing entries first. Trigger and Hypothesis are required.
 
 ## Active
 
-### L-022 · 2026-10-25 · Turning off anti-aliasing is not enough for an exact-colour pass: dither adds +-1 noise
-- Trigger: 2026-10-25, a crowd mask rendered with Workbench `render_aa = "OFF"` still had 6,322 off-colour pixels in a 320x192 frame, all one level away from red, blue or black.
-- Hypothesis: Blender's render dither (`render.dither_intensity`, default 1) adds noise when it writes 8-bit files, after anti-aliasing.
-- Rule: for any label or mask pass, set `render_aa` to OFF and `dither_intensity` to 0, restore both before passes that want them, and test by counting colours outside the expected set, not by eye.
-- Evidence: C-20261025-2; 12,098 stray pixels with the defaults, 6,322 with AA off, 0 with dither off too; depth and clay unchanged pixel for pixel.
-- Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
-
-### L-021 · 2026-10-25 · A crowd blockout cut down to two figures keeps crowd defaults that hide them
-- Trigger: a Mist-against-depth test staged a duel with `pw.py crowd --ranks 1 --cols 1 --action clash`; frame 1 was empty (the clash gap is sized for ranks to cover in two thirds of the shot) and the field behind the pair came out black (far plane just past the farthest figure). The JSON hint also said to feed pose.mp4 to Wan VACE though the run wrote no pose pass and fed H3.
-- Hypothesis: crowd's gap and depth range are tuned to deep formations seen from above, where the far rank is the farthest thing in view; at eye level the ground runs on past two figures.
-- Rule: for a duel through crowd, set `--gap` and `--far` and read the preview sheet first; for the full duel rig use `pw.py duel`. The hint now names only the passes the run wrote.
-- Evidence: <video output>/depthtest2 (608x352, 73 frames, `--gap 5 --far 30`, depth range 5.96 to 30 m); H3 at 0.6/0.4, seeds 11 and 23; test_crowd_mist_pass_beside_unchanged_depth checks the hint
-- Scope: skill (pw.py crowd)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
-
-### L-020 · 2026-10-24 · A bank or dyke along a path is one swept profile, not a row of boxes
-- Trigger: building the illustration's water path, the banks along the head race started as a row of boxes, one per path segment; the scene builder replaced them with one profile swept along the path (its comment: "one continuous bank, not a row of boxes").
-- Hypothesis: boxes meet at an angle on a bend and overlap or gap on the outside; at a low eye level the camera looks along the bank, so each joint can read as an edge in the clay, line and depth passes the painter follows.
-- Rule: build anything that follows a path (bank, dyke, kerb, wall, levee) as one 2D profile (sideways offset, height) swept along the resampled polyline, with smooth shading; a strip at a height (road, water surface) is a ribbon. `sweep` and `ribbon` in `scripts/pw_scene.py`.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/build_scene.py (`sweep`, `ribbon`; the head-race dykes as one sweep per side) and its renders under scene/renders, 2026-10-24.
-- Scope: skill (scene illustrations; any perspective blockout)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
-
-### L-019 · 2026-10-24 · An inverse-depth pass with a near limit below the nearest surface comes out flat
-- Trigger: the illustration's depth pass at a 1 m near limit was almost uniform grey: nothing in frame was nearer than about 8 m, so the white end of the range held no pixels.
-- Hypothesis: inverse depth spends most of its range just past the near limit (1/z falls fastest there); with an empty first few metres, every visible surface sits in the dark tail.
-- Rule: set the near limit just under the nearest visible surface and the far limit just past the farthest. `pw.py scene` measures both with a ray grid through the frame when the preset gives no `depth_near_m` or `depth_far_m`, and writes the range it used in `scene.json`; read the depth pass before painting with it as control.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/scene_render.py (near default raised to 6 m) and the depth passes under scene/renders, 2026-10-24.
-- Scope: skill (pw.py scene; crowd and duel depth passes take the same care, L-004)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
-
-### L-018 · 2026-10-24 · Take a UI's text bands from its layout file, not from a rule of thumb
-- Trigger: framing a loading-screen illustration, the first camera search kept the hero out of the "top third" as a rule of thumb. The game's loading UI only covers a centred band at the top (title and progress bar) and one at the bottom (hint), each about 15% deep; the rule of thumb cost half the hero's size on screen.
-- Hypothesis: a rule of thumb reserves space the UI never uses, and the search then shrinks the hero to fit what is left.
-- Rule: read the UI's own layout (USS, UXML, CSS: padding, anchors, the text's box) and pass those boxes as `bands` to `pw.py framecam`, with the hero's top and foot in `keep_out_of_bands`. Check the result over a screenshot of the real UI.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/scene/cameras.json (`pick.why`: the bands taken from the game's loading stylesheet, centred top and bottom sections; the chosen framing puts the wheel about 340 px wide at 1920, its centre at x 0.70), 2026-10-24.
-- Scope: skill (pw.py framecam; any illustration under a UI)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
-
-### L-017 · 2026-10-24 · At sprite size a thin beam crossing a cylinder's silhouette reads as going through it
-- Trigger: the sawmill's log ran level out of the log door while the two log-way rails sloped down to the ground beneath it; in the 3/4 render the far rail showed above the log and the near one below, and the reviewer read it as an optical illusion with the wood above and below the exit.
-- Hypothesis: an orthographic 3/4 view drops the depth cue that separates two crossing members; a level cylinder over sloping rails projects with the rails cutting its outline at two heights, which no painter can fix.
-- Rule: when a part rests on supports, model the supports level with it and wider than its silhouette (a deck at the same height on posts), so no thin member crosses the part on screen; check the door, ramp and deck at 4x in the beauty before painting.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/model/renders/v10_logdeck.png (fixed: level sills at floor height, 0.45 m outside the log), reviewer screenshot of the first v10 take, 2026-10-24.
-- Scope: skill (game sprites from a model)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
-
-### L-016 · 2026-10-24 · A camera fitted to ground diamonds gives the ground scale, not the building's on-screen size
-- Trigger: the sawmill rendered through the camera fitted from the game's diamonds (33 px per tile) covered 3,606 of 9,216 px, against 4,800 to 5,400 for the game's work buildings; the reviewer called it too small, and the game's style guide says large buildings fill their canvas.
-- Hypothesis: the game's sprites overflow their diamonds with tall massing and props, so the same ground scale gives a smaller building when the model is historically lean (a narrow mill with an empty yard).
-- Rule: after the camera, measure coverage at 1x against same-class neighbours; fill with massing and props first (the sawmill went 3,606 to 3,733 px), then zoom (36 px per tile, footprint centre moved to keep the box inside the canvas: 4,435 px). Record the new `px_per_tile` and centre in camera.json with the reason, and let the registry's groundBase follow sprite.json.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/camera/camera_v10.json; artwright L-011 (the coverage floor in `aw.py sprite`), 2026-10-24.
-- Scope: skill (pw.py spritecam, sprite); artwright
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
-
-### L-015 · 2026-10-23 · A 16-bit RGBA PNG from Blender reads back as 8 bits in Pillow and imageio; write data passes as TIFF
-- Trigger: the sawmill's object-position pass, written by Blender as a 16-bit RGBA PNG (header bit depth 16, colour type 6), came back from `PIL.Image.open` and `imageio.v3.imread` as uint8 with 256 levels, which made sub-centimetre body coordinates useless. Separately, setting `image_settings.file_format` after `color_depth` reset the depth to 8.
-- Hypothesis: Pillow has no 16-bit RGBA mode and imageio reads PNG through Pillow; OpenCV reads it but is not installed everywhere.
-- Rule: write 16-bit data passes (positions, precise depth) as TIFF and read them with tifffile; set `color_depth` after `file_format`. `pw.py sprite` does both for its `pos` pass.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/model/renders/L1_v04_1024_loop/frames/pos_003.tif (uint16, 43,096 distinct values in one channel) against the PNG of the same pass (255 levels), 2026-10-23.
-- Scope: skill (pw.py sprite, pos pass); polywright-blender
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
-
-### L-014 · 2026-10-23 · A game's sprite camera is in its ground diamonds; fit it, do not guess an isometric angle
-- Trigger: matching Arvum Electrum's painted building sprites for a model-first sawmill. `pw.py match` solves a perspective camera from a photo and does not fit near-orthographic game art; a guessed 2:1 isometric angle would have been 26.6 degrees of elevation.
-- Hypothesis: each 2x2 sprite's `groundBase` (front, left, right corners, hand-checked in her registry) is the image of a square under one orthographic camera, so three corners fix scale, yaw and elevation per sprite, and the median over a game's sprites is its camera.
-- Rule: run `pw.py spritecam <registry.json> --like <the sprite being replaced>`; 38 of her 43 2x2 diamonds fit within 4 px and agree on yaw 42.5 and elevation 32.6 degrees (spread 30 to 52 and 24 to 39: the art is AI-made), and the sawmill fit itself at 0.1 px. Render with `pw.py sprite`; its `groundBase` lands on the old sprite's diamond, so the registry entry can take it as is.
-- Evidence: ArvumElectrum-anim-work/sawmill-3d/camera/fit.json (per sprite) and camera.json; renders/geared_L1_v08_1024/sprite.json groundBase front (49.5, 90.1), left (0.9, 66.1), right (94.1, 63.9) against her Sawmill's (42, 90), (1, 65), (89, 68), 2026-10-23.
-- Scope: skill (pw.py spritecam, sprite)
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
-
-### L-009 · 2026-10-22 · From behind, the default camera merges the enemy line and its reserves into one band; raise it and aim past the enemy
-- Trigger: `pw.py crowd --view behind --action hold --scatter 450 --preview` put the camera 6 m high and 43 m back (30 m default gap). Side A filled the lower half of the frame, and side B with its 221 reserves was a strip about 60 px tall where the scattered reserves could not be told from the formed ranks. `--cam-height 12 --lens 45 --gap 20` separated them, but tilted so far down that the reserves touched the top edge and there was no horizon.
-- Hypothesis: the behind view aims at the battle line (x 0, z 1), so the depth behind the enemy, where `--scatter` puts the reserves, shrinks to a few rows of pixels. Height opens up that depth; aiming beyond the enemy brings the horizon back.
-- Rule: for a shot from behind one army toward enemy reserves, start from `--gap 20 --cam=-32,16.5,9 --aim=14,16.5,0 --lens 40` (y = the frontage centre the command reports). That gives a horizon near the top, your own ranks across the bottom, then the enemy's formed line and the loose reserves behind it, separated by the gap. `--scatter` yields about 40 percent of what you ask: 450 gave 221, 650 gave 259.
-- Evidence: the 2026-10-22 preview in pw-eval-mr7nfrh6/reserves (the README there has the commands and the review). Second run the same day (pw-eval-l64xbjxo/reserves): a lower, closer framing also works when your own ranks should loom large, `--gap 16 --cam=-21,16.5,4.5 --aim 14,16.5,0 --lens 45` (horizon at about a quarter from the top, enemy line across the full width). But there the reserves sit flush on the last rank and read as a deeper formation; 6.5 m high from 22 m back showed only helmets and almost black enemy depth. 450 asked gave 240. A `--scatter-offset` (space between the last rank and the reserves) is worth adding. Third run (pw-eval-ybkwc8ep/reserves, same day): `--gap 18 --cam=-24,16.5,6.5 --aim=16,16.5,-1 --lens 35 --far 60` put helmeted backs across the bottom third and the loose reserves visibly behind the enemy's formed line in clay; aiming below the ground (z -1) is what brought our ranks back in. Enemy and reserves still sit at grey 30 to 50 of 255 in depth: inverse depth spends the range on the near ranks. 450 asked gave 221.
-- Scope: skill (pw.py crowd behind view and --scatter)
-- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-22
+Archived 2026-11-17 to save install size (full text in the repo at ai-docs/notes/polywright-learnings-archive.md, not installed):
+- L-022 · 2026-10-25 · Turning off anti-aliasing is not enough for an exact-colour pass: dither adds +-1 noise
+- L-021 · 2026-10-25 · A crowd blockout cut down to two figures keeps crowd defaults that hide them
+- L-020 · 2026-10-24 · A bank or dyke along a path is one swept profile, not a row of boxes
+- L-019 · 2026-10-24 · An inverse-depth pass with a near limit below the nearest surface comes out flat
+- L-018 · 2026-10-24 · Take a UI's text bands from its layout file, not from a rule of thumb
+- L-017 · 2026-10-24 · At sprite size a thin beam crossing a cylinder's silhouette reads as going through it
+- L-016 · 2026-10-24 · A camera fitted to ground diamonds gives the ground scale, not the building's on-screen size
+- L-015 · 2026-10-23 · A 16-bit RGBA PNG from Blender reads back as 8 bits in Pillow and imageio; write data passes as TIFF
+- L-014 · 2026-10-23 · A game's sprite camera is in its ground diamonds; fit it, do not guess an isometric angle
+- L-009 · 2026-10-22 · From behind, the default camera merges the enemy line and its reserves into one band; raise it and aim past the enemy
 
 ### L-008 · 2026-10-19 · A duel's depth or Canny passes hold where the fighters stand and which way they face, but not a low pose
 - archived 2026-11-17: [ai-docs/archive/polywright-learnings-2026-10.md](../../ai-docs/archive/polywright-learnings-2026-10.md)
