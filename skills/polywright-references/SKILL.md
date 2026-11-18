@@ -25,6 +25,7 @@ Back to the hub: [../polywright/SKILL.md](../polywright/SKILL.md). Prompt templa
 | Surfaces (walls, ground, terrain) | photo of the material, flat and evenly lit | seamless tileable albedo, then maps (Step 4) |
 
 Always add a **scale reference**: a known dimension, a 1.8 m human silhouette, a height bar on the sheet.
+Name each **asymmetric feature** with its side and count in the prompt (hair parting left, mane on the right, two exhausts on the left, sword in the right hand, scar over the left eye) and check it in every view: per-view renders flip them.
 
 **A history research pack** (a folder holding `answer.md`, `refs/index.json` and `anachronism.md`, made by the
 historywright plugin) is already a valid asset folder: start from it, do not search again. Read
