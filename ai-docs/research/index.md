@@ -8,5 +8,6 @@ The first research pass for polywright, 2026-10-11: five notes written by resear
 - [2026-10-11-craft-and-academics.md](2026-10-11-craft-and-academics.md): read for modelling paradigms, topology, UVs and PBR, target checklists (games, print, video, business), and the 2024-2026 research front.
 - [2026-10-11-ai-agents-and-3d.md](2026-10-11-ai-agents-and-3d.md): read for existing agent 3D tools and MCP servers, agentic 3D benchmarks, practitioner reaction, store AI-disclosure rules and the design recommendations polywright follows.
 - [2026-11-09-technique-harvest.md](2026-11-09-technique-harvest.md): read for the game-ground review question, Idol (one image to a splat) and Effigy de-lighting.
+- [2026-11-17-hand-painted-texturing.md](2026-11-17-hand-painted-texturing.md): read for hand-painted texturing: bake margins, masks, Ucupaint, scores.
 
 Related: [../INDEX.md](../INDEX.md)

@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-2 · 2026-11-17 · handpaint-base recipe
+- because: R-20261117-2
+- files: references/bpy-recipes-motion.md
+
 ### C-20261117-1 · 2026-11-17 · Previs fact-list rule, rigged-character recipe
 - because: R-20261117-1 (technique harvest)
 - files: SKILL.md (Step 4), references/bpy-recipes-motion.md (new: animate-rigged-character), references/mcp-bridges.md (When to use one)
