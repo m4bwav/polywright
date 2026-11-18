@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261118-1 · 2026-11-18 · Find route: search owned packs with AssetCat first
+- because: user request (technique-harvest GPU test 2026-11-18, posts 1xsh4xq and 1xuksmh)
+- files: references/routes.md (find)
+
 ### C-20261117-2 · 2026-11-17 · pw.py texture prints seam_rank
 - because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
 - files: scripts/pw.py (cmd_texture), tests/test_pw.py

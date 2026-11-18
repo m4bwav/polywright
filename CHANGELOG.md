@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.14 · 2026-11-18
+
+- polywright-references: a blockout's depth pass can be painted with MOSS-Image depth control (layout agreement 0.84-0.89 vs 0.72). Find route: search owned packs with AssetCat before downloading or generating (17/25 hits in the top 5). Reason: technique-harvest GPU test.
+
 ## 0.6.13 · 2026-11-18
 
 - polywright-references: prefer per-view renders over one-prompt sheets (6/24 vs 10/24 wrong views, FLUX.3), name one-sided features with their side, render the side view from the side that shows it or write "not visible from this side", check every view, mirror a wrong view instead of re-rolling. Hub: three long learnings moved out of the install to stay under the size budget. Reason: technique-harvest GPU test.
