@@ -1,7 +1,7 @@
 # bpy recipes for hierarchy, motion and repeats (Blender 5.2)
 
 Parenting without a jump, procedural motion with F-modifiers, drivers, keyframing a rigged character, a unit repeated along a curve and an
-edge-wear mask bake. Back to [SKILL.md](../SKILL.md);
+edge-wear mask bake, hand-painted base layers. Back to [SKILL.md](../SKILL.md);
 also [bpy-recipes.md](bpy-recipes.md). Every block is run by `tests/test_recipes.py` in Blender 5.2.1, asserts
 its own result and prints `[pw] ok ...`. Ideas after Acampora, *Python Scripting in Blender* (2023); the code is new.
 
@@ -149,6 +149,47 @@ hi = sum(1 for v in vals if v > 0.02)
 assert 0 < hi < len(vals) * 0.9, (hi, len(vals))                 # edges light up, faces stay dark
 img.filepath_raw = os.path.join(OUT, "edge_wear.exr"); img.file_format = "OPEN_EXR"; img.save()
 print("[pw] ok edge wear mask, edge texels", hi, "of", len(vals))
+```
+
+## Hand-painted base layers baked to one albedo
+
+Paint over baked masks: a top-light gradient (object Z), the edge mask above, a face-selection mask (FACE
+attribute), baked as Emit to one sRGB albedo with an 8 px Extend margin; a colour variant is that image through
+Hue/Saturation, baked again. Paint with view transform Standard. Strokes and Quick Edit need a viewport
+(R-20261117-2).
+
+```python
+# recipe: handpaint-base
+import bpy, os, tempfile
+OUT = os.environ.get("PW_OUT", tempfile.gettempdir())
+bpy.ops.wm.read_factory_settings(use_empty=True)
+sc = bpy.context.scene; sc.render.engine = "CYCLES"; sc.cycles.samples = 4; sc.cycles.device = "CPU"
+sc.view_settings.view_transform = "Standard"
+bpy.ops.mesh.primitive_cube_add(); ob = bpy.context.active_object  # adapt: your prop
+att = ob.data.attributes.new("mask_top", "FLOAT", "FACE")
+att.data.foreach_set("value", [1.0 if p.normal.z > 0.9 else 0.0 for p in ob.data.polygons])
+mat = bpy.data.materials.new("hp"); ob.data.materials.append(mat); N, L = mat.node_tree.nodes, mat.node_tree.links.new
+for n in list(N):
+    N.remove(n)
+out, em = N.new("ShaderNodeOutputMaterial"), N.new("ShaderNodeEmission"); L(em.outputs[0], out.inputs["Surface"])
+tc, sp = N.new("ShaderNodeTexCoord"), N.new("ShaderNodeSeparateXYZ"); L(tc.outputs["Generated"], sp.inputs[0])
+grad = N.new("ShaderNodeMix"); grad.data_type = "RGBA"; L(sp.outputs["Z"], grad.inputs["Factor"])
+grad.inputs["A"].default_value, grad.inputs["B"].default_value = (0.2, 0.1, 0.05, 1), (0.55, 0.32, 0.15, 1)
+att_n = N.new("ShaderNodeAttribute"); att_n.attribute_name = "mask_top"
+top = N.new("ShaderNodeMix"); top.data_type = "RGBA"; top.blend_type = "SCREEN"
+L(att_n.outputs["Fac"], top.inputs["Factor"]); L(grad.outputs["Result"], top.inputs["A"])
+top.inputs["B"].default_value = (0.4, 0.3, 0.2, 1); L(top.outputs["Result"], em.inputs["Color"])
+def bake(name):
+    img = bpy.data.images.new(name, 128, 128); tex = N.new("ShaderNodeTexImage"); tex.image = img; N.active = tex
+    bpy.ops.object.bake(type="EMIT", margin=8, margin_type="EXTEND")
+    img.filepath_raw = os.path.join(OUT, name + ".png"); img.file_format = "PNG"; img.save(); return img, tex
+alb, alb_tex = bake("albedo")
+hs = N.new("ShaderNodeHueSaturation"); hs.inputs["Hue"].default_value = 0.85
+L(alb_tex.outputs["Color"], hs.inputs["Color"]); L(hs.outputs[0], em.inputs["Color"])
+var, _ = bake("albedo_variant")
+a, b = list(alb.pixels), list(var.pixels)
+assert abs(sum(a[0::4]) - sum(b[0::4])) > 1.0, "variant did not change"
+print("[pw] ok albedo + variant, red sums", round(sum(a[0::4])), round(sum(b[0::4])))
 ```
 
 ## Animate an imported rigged character

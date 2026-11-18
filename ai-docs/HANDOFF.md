@@ -49,3 +49,7 @@ The hub's evergreen research check is overdue (next_due 2026-10-25); no research
 Related: [INDEX.md](INDEX.md)
 
 Eval harness caveat (a sibling repo's lesson, 2026-10-17): loading a plugin with `--plugin-dir` instead of the installed copy changed which skill fired in one of its trigger cases. When a polywright trigger result looks odd, re-run it against the installed copy (update the marketplace and plugin first).
+
+## Hand-painted texturing (2026-11-17)
+
+Done in 0.6.9: candidates tested headless and scored in [research/2026-11-17-hand-painted-texturing.md](research/2026-11-17-hand-painted-texturing.md); recipe `handpaint-base` and a polywright-finish route line shipped. Left: Ucupaint is MAYBE until installed and its operators (`wm.y_quick_ypaint_node_setup`, `wm.y_bake_channels`) are run headless; installing an extension changes the user's Blender, so that waits on Mark's OK. Installed skills folder sits at 800 KB (yellow limit): any further addition needs a trim first (hub LEARNINGS.md, 20 KB, is the best candidate). Continue prompt: [plans/2026-11-17-hand-painted-texturing-continue-prompt.md](plans/2026-11-17-hand-painted-texturing-continue-prompt.md).

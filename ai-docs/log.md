@@ -166,3 +166,5 @@ Added a README "Works with" section and a wiki Works-with page covering artwrigh
 ## [2026-11-14] update | README Works with: fractalwright (new public plugin), mirroring its own section
 
 ## [2026-11-15] refresh | evergreen upkeep of 7 skills: Blender 5.3 (2026-11-10) and OrcaSlicer 2.5.1 logged; 5.3 test re-run owed, 5.2 LTS stays default; no SKILL changes
+
+## [2026-11-17] build | Hand-painted texturing: 11 candidates tested headless on 5.2.1 and scored; recipe handpaint-base + finish route line in 0.6.9. Ucupaint 3.0.2 operators look headless-capable from source, untested (install waits on Mark). Installed size at the 800 KB yellow limit.

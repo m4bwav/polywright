@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.9 · 2026-11-17
+
+- polywright-blender: handpaint-base recipe (gradient, edge and face masks baked to one albedo with Extend margin, hue variant). polywright-finish: route line. Reason: Craft Reaper hand-painting guide, tested on 5.2.1.
+
 ## 0.6.8 · 2026-11-17
 
 - polywright-blender: previs fact-list rule (VibePrevisBench), animate-rigged-character recipe, live-vs-headless line in mcp-bridges. polywright-capture: Blender 5.3 released with native splat import. Hub routes: patch.gg aggregator row (unverified). Reason: technique harvest 2026-11-17.

@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261117-2 · 2026-11-17 · Hand-painted texturing (Craft Reaper Ucupaint guide)
+- Tested on 5.2.1: Extend margin 8 reaches 8 px past islands; pointiness flat on low poly; `image.project_edit` fails headless. Ucupaint 3.0.2 (GPL-3, ucupumar/ucupaint, Blender >=4.2) operators run from bpy per its source, untested here. Notes: ai-docs/research/2026-11-17-hand-painted-texturing.md. applied: recipe handpaint-base.
+
 ### R-20261117-1 · 2026-11-17 · Previs fact lists and live rig animation
 - VibePrevisBench (https://arxiv.org/abs/2611.15789): agents pass staging but miss spatial and camera errors they could see in their own renders; assert facts from scene data. A Reddit demo (https://www.reddit.com/r/aigamedev/comments/1xtgir8/) animated a rigged character through Blender MCP; video only. Track: subject. applied: SKILL Step 4 line, recipe animate-rigged-character, mcp-bridges line.
 
