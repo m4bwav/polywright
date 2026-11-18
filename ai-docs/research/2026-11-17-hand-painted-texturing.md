@@ -16,7 +16,7 @@ Source video: Craft Reaper, "Complete Guide of Hand Painting Game Assets in Blen
 | Standard view transform | KEEP | one line; Standard applies no tone curve (inference; manual gives no reason). |
 | Unlit (emission) preview | MAYBE | EEVEE render of emission works; it is a preview habit, not a script. |
 | Quick Edit to Krita (`image.project_edit`) | DROP for headless | poll needs a 3D viewport; UI-only. |
-| Ucupaint | MAYBE | GPL-3.0-or-later, 3.0.2 (2026-11-16), repo ucupumar/ucupaint, Blender >= 4.2. Source shows `wm.y_quick_ypaint_node_setup`, `wm.y_new_layer`, `wm.y_new_layer_mask`, `wm.y_bake_to_layer`, `wm.y_bake_channels` run without a viewport; not installed or tested here (installing changes the user's Blender). |
+| Ucupaint | KEEP (optional) | Tested 2026-11-17 after install: see R-20261117-3 and recipe handpaint-ucupaint. Was MAYBE: | GPL-3.0-or-later, 3.0.2 (2026-11-16), repo ucupumar/ucupaint, Blender >= 4.2. Source shows `wm.y_quick_ypaint_node_setup`, `wm.y_new_layer`, `wm.y_new_layer_mask`, `wm.y_bake_to_layer`, `wm.y_bake_channels` run without a viewport; not installed or tested here (installing changes the user's Blender). |
 
 Built: recipe `handpaint-base` in skills/polywright-blender/references/bpy-recipes-motion.md and a route line in polywright-finish. No pw.py subcommand: one recipe covers it.
 

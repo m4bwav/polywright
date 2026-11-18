@@ -192,6 +192,39 @@ assert abs(sum(a[0::4]) - sum(b[0::4])) > 1.0, "variant did not change"
 print("[pw] ok albedo + variant, red sums", round(sum(a[0::4])), round(sum(b[0::4])))
 ```
 
+The same with Ucupaint 3.x (GPL extension, layer stack and baked masks in one node group): node setup,
+a layer, a curvature bake, then a bake target baked to one image. Bakes need a 3D view in the context,
+so load the factory screens and override. Skips when the extension is not installed (R-20261117-3).
+
+```python
+# recipe: handpaint-ucupaint
+import bpy, os, tempfile, addon_utils
+OUT = os.environ.get("PW_OUT", tempfile.gettempdir())
+mod = next((m.__name__ for m in addon_utils.modules() if m.__name__.endswith(".ucupaint")), None)
+if not mod:
+    print("[pw] ok skipped: Ucupaint not installed"); raise SystemExit
+addon_utils.enable(mod, default_set=True)
+bpy.ops.wm.read_homefile(use_factory_startup=True)  # its screens give bakes a 3D view
+for o in list(bpy.data.objects):
+    bpy.data.objects.remove(o)
+bpy.ops.mesh.primitive_cube_add(); ob = bpy.context.active_object  # adapt: your prop
+m = ob.modifiers.new("b", "BEVEL"); m.width, m.segments = 0.15, 3; bpy.ops.object.modifier_apply(modifier="b")
+bpy.ops.object.mode_set(mode="EDIT"); bpy.ops.uv.smart_project(island_margin=0.02); bpy.ops.object.mode_set(mode="OBJECT")
+sc = bpy.context.scene; sc.render.engine = "CYCLES"; sc.cycles.samples = 4; sc.cycles.device = "CPU"
+scr, area = next((s, a) for s in bpy.data.screens for a in s.areas if a.type == "VIEW_3D")
+ctx = dict(screen=scr, area=area, region=next(r for r in area.regions if r.type == "WINDOW"), object=ob, active_object=ob)
+with bpy.context.temp_override(**ctx):  # without it bakes fail: space_data is None
+    bpy.ops.wm.y_quick_ypaint_node_setup(type="BSDF_PRINCIPLED")
+    bpy.ops.wm.y_new_layer(name="Base", type="COLOR", uv_map="UVMap")
+    bpy.ops.wm.y_bake_to_layer(type="CURVATURE", width=128, height=128)  # also AO, CAVITY, DUST
+    bpy.ops.wm.y_new_bake_target(); bpy.ops.wm.y_bake_all_targets()  # y_bake_channels is gone in 3.x
+img = max((i for i in bpy.data.images if i.has_data), key=lambda i: i.size[0])
+r = list(img.pixels)[0::4]
+assert max(r) - min(r) > 0.2, "flat bake"
+img.filepath_raw = os.path.join(OUT, "ucupaint_color.png"); img.file_format = "PNG"; img.save()
+print("[pw] ok", img.name, tuple(img.size), "red %.2f-%.2f" % (min(r), max(r)))
+```
+
 ## Animate an imported rigged character
 
 For a downloaded rig (FBX, glTF, .blend in a zip): import it, find the armature, key pose bones in an action,

@@ -42,6 +42,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261117-3 · 2026-11-17 · Ucupaint 3.0.2 run headless
+- Installed from the GitHub release zip (no-auto-update build) into Blender 5.2.1 with the owner's OK. Headless: y_quick_ypaint_node_setup, y_new_layer, y_bake_to_layer (AO, CURVATURE) and y_bake_all_targets run under a VIEW_3D context override; y_bake_channels is deregistered (Bake.py, "Deprecated"). Source: https://github.com/ucupumar/ucupaint/releases/tag/3.0.2. applied: recipe handpaint-ucupaint, trap line. Ucupaint: MAYBE -> KEEP as an optional route.
+
 ### R-20261117-2 · 2026-11-17 · Hand-painted texturing (Craft Reaper Ucupaint guide)
 - Tested on 5.2.1: Extend margin 8 reaches 8 px past islands; pointiness flat on low poly; `image.project_edit` fails headless. Ucupaint 3.0.2 (GPL-3, ucupumar/ucupaint, Blender >=4.2) operators run from bpy per its source, untested here. Notes: ai-docs/research/2026-11-17-hand-painted-texturing.md. applied: recipe handpaint-base.
 

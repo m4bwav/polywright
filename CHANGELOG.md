@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.10 · 2026-11-17
+
+- polywright-blender: handpaint-ucupaint recipe (Ucupaint 3.0.2 layer, curvature bake and bake-all run headless under a 3D-view override) and its traps. polywright-finish: route line names it. Hub: nine long learnings moved out of the install (pointers kept) to stay under the size budget.
+
 ## 0.6.9 · 2026-11-17
 
 - polywright-blender: handpaint-base recipe (gradient, edge and face masks baked to one albedo with Extend margin, hue variant). polywright-finish: route line. Reason: Craft Reaper hand-painting guide, tested on 5.2.1.
