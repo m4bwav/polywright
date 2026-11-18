@@ -294,6 +294,25 @@ class Commands(unittest.TestCase):
         code, plain = run("texture", src, "--out", os.path.join(self.tmp, "p"))
         self.assertNotIn("albedo_delit", plain["maps"])  # off by default
 
+    def test_texture_seam_rank_flags_an_unwrapped_tile(self):
+        try:
+            import numpy as np
+            from PIL import Image
+        except ImportError:
+            self.skipTest("numpy and Pillow not installed")
+        ramp = np.tile(np.linspace(0, 255, 128)[None, :], (64, 1))  # dark left edge, bright right edge
+        src = os.path.join(self.tmp, "ramp.png")
+        Image.fromarray(np.dstack([ramp] * 3).astype("uint8")).save(src)
+        code, out = run("texture", src, "--out", os.path.join(self.tmp, "s"))
+        self.assertEqual(code, 0, out)
+        self.assertGreater(out["seam_rank"]["h"], 90)
+        self.assertIn("warning", out["seam_rank"])
+        wave = np.tile((127.5 + 127.5 * np.cos(np.arange(128) / 128 * 2 * np.pi))[None, :], (64, 1))  # periodic: tiles cleanly
+        Image.fromarray(np.dstack([wave] * 3).astype("uint8")).save(src)
+        code, out = run("texture", src, "--out", os.path.join(self.tmp, "s2"))
+        self.assertLess(out["seam_rank"]["h"], 90)
+        self.assertNotIn("warning", out["seam_rank"])
+
     def test_pose_leaves_out_hidden_joints(self):
         try:
             from PIL import Image

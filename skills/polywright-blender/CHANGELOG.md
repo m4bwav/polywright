@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-4 · 2026-11-17 · palette-atlas and rigid-skin-boxes recipes
+- because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
+- files: references/bpy-recipes-scenes.md, references/bpy-recipes-motion.md
+- Shared palette image with UVs collapsed per swatch; rigid one-bone-per-part boxes with one NLA strip per action. Both pass tests/test_recipes.py headless.
+
 ### C-20261117-3 · 2026-11-17 · handpaint-ucupaint recipe and trap
 - because: R-20261117-3
 - files: references/bpy-recipes-motion.md, references/bpy-api-traps.md

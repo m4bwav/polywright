@@ -202,3 +202,29 @@ mp4 = [f for f in os.listdir(OUT) if f.startswith("frames_") and f.endswith(".mp
 assert mp4 and os.path.getsize(os.path.join(OUT, mp4[0])) > 1000, mp4
 print("[pw] ok encoded", mp4[0])
 ```
+
+## Shared palette image, UVs collapsed per swatch
+
+Low-poly props with one material: every face's UVs sit on one swatch centre of a small palette PNG, so a whole
+set shares one texture and draws in one batch. Use Closest interpolation (and nearest filtering in the engine)
+so colours never bleed. Idea from the Back To Code video "every Godot asset from code" (YouTube B-vI6rRxfIk).
+
+```python
+# recipe: palette-atlas
+import bpy, bmesh
+bpy.ops.wm.read_factory_settings(use_empty=True)
+N = 4; cols = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)] + [(0.5, 0.5, 0.5, 1)] * 12
+img = bpy.data.images.new("palette", N, N); img.pixels = [c for col in cols for c in col]
+mat = bpy.data.materials.new("palette"); mat.use_nodes = True
+tex = mat.node_tree.nodes.new("ShaderNodeTexImage"); tex.image = img; tex.interpolation = "Closest"
+mat.node_tree.links.new(tex.outputs["Color"], mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
+me = bpy.data.meshes.new("prop"); ob = bpy.data.objects.new("prop", me); bpy.context.scene.collection.objects.link(ob)
+bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1); uv = bm.loops.layers.uv.new("UVMap")
+for f in bm.faces:
+    s = f.index % 4                                                # pick a swatch per face (by part, normal, ...)
+    for l in f.loops: l[uv].uv = ((s % N + 0.5) / N, (s // N + 0.5) / N)
+bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0, 0.5)); bm.to_mesh(me); bm.free()   # pivot at bottom centre
+me.materials.append(mat)
+assert all(abs(u * N % 1 - 0.5) < 1e-6 for d in me.uv_layers[0].data for u in d.uv)
+print("[pw] ok palette atlas, faces on", N * N, "swatches")
+```

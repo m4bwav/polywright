@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-2 · 2026-11-17 · Godot glTF loop note
+- because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
+- files: references/engines.md (Godot)
+- glTF animations import without a loop flag; three ways to set it.
+
 ### C-20261117-1 · 2026-11-17 · hand-painted route line
 - because: R-20261117-2 (polywright-blender)
 

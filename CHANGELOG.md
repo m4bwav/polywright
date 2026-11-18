@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.11 · 2026-11-17
+
+- Hub: `pw.py texture` prints `seam_rank` (h, v) and warns above 90%. polywright-blender: palette-atlas and rigid-skin-boxes recipes. polywright-finish: Godot glTF loop note. polywright-references: seam_rank named in Step 4. Reason: Back To Code video (YouTube B-vI6rRxfIk), ideas re-implemented.
+
 ## 0.6.10 · 2026-11-17
 
 - polywright-blender: handpaint-ucupaint recipe (Ucupaint 3.0.2 layer, curvature bake and bake-all run headless under a 3D-view override) and its traps. polywright-finish: route line names it. Hub: nine long learnings moved out of the install (pointers kept) to stay under the size budget.

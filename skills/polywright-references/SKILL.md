@@ -70,7 +70,8 @@ extra limbs; the back can only show what the blockout implies. Feed the repainte
 
 - Prefer a CC0 material (Poly Haven, ambientCG) over a generated one.
 - Generated tileable: ask for "seamless, tileable, top-down, flat even light" at a power of two, then
-  `pw.py texture <img> --out refs/tex --seamless` (offset-blend seams) and look at a 2x2 tiling.
+  `pw.py texture <img> --out refs/tex --seamless` (offset-blend seams) and look at a 2x2 tiling. Every run prints
+  `seam_rank` (h, v): the share of column or row boundaries softer than the wrap edge; above 90% it warns.
 - Quick maps from a photo or albedo: `pw.py texture <img> --out refs/tex [--convention opengl|directx]`
   writes height, normal and roughness derived from luminance. Fine for props and terrain, wrong for measured
   materials. Normal maps: OpenGL (Y+) for Blender, Unity, Godot, glTF, three.js, Roblox; DirectX (Y-) for Unreal.
