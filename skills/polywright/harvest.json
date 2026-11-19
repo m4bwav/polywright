@@ -1,43 +1,12 @@
-{
-  "version": 1,
-  "targets": [
-    {
-      "kind": "reddit",
-      "sub": "aigamedev",
-      "keep": "AI 3D model, retopology and texturing workflows for games"
-    },
-    {
-      "kind": "reddit",
-      "sub": "StableDiffusion",
-      "weight": "low",
-      "keep": "3D and TRELLIS posts only"
-    },
-    {
-      "kind": "web",
-      "url": "https://huggingface.co/papers",
-      "weight": "low",
-      "keep": "new image-to-3D and mesh methods"
-    },
-    {
-      "kind": "reddit",
-      "sub": "ClaudeGameDev",
-      "keep": "3D model and Blender MCP workflows for game assets with Claude; drop showcases and how-do-I-start questions"
-    },
-    {
-      "kind": "reddit",
-      "sub": "blender",
-      "weight": "core",
-      "keep": "bpy scripting, geometry nodes, retopology, baking and export techniques"
-    },
-    {
-      "kind": "reddit",
-      "sub": "3Dmodeling",
-      "keep": "modelling workflows, topology and game-ready asset techniques"
-    },
-    {
-      "kind": "reddit",
-      "sub": "functionalprint",
-      "keep": "print design rules: tolerances, clearances, splitting, orientation"
-    }
-  ]
-}
+{"version": 1, "targets": [
+  {"kind": "reddit", "sub": "aigamedev", "keep": "AI 3D model, retopology and texturing workflows for games"},
+  {"kind": "reddit", "sub": "StableDiffusion", "weight": "low", "keep": "3D and TRELLIS posts only"},
+  {"kind": "web", "url": "https://huggingface.co/papers", "weight": "low", "keep": "new image-to-3D and mesh methods"},
+  {"kind": "reddit", "sub": "ClaudeGameDev", "keep": "3D model and Blender MCP workflows for game assets with Claude; drop showcases and how-do-I-start questions"},
+  {"kind": "reddit", "sub": "blender", "weight": "core", "keep": "bpy scripting, geometry nodes, retopology, baking and export techniques"},
+  {"kind": "reddit", "sub": "3Dmodeling", "keep": "modelling workflows, topology and game-ready asset techniques"},
+  {"kind": "reddit", "sub": "functionalprint", "keep": "print design rules: tolerances, clearances, splitting, orientation"},
+  {"kind": "github", "query": "comfyui 3d", "keep": "top 10 by stars; new entries and their owners' repos become harvest targets"},
+  {"kind": "github", "url": "https://github.com/Fannovel16/comfyui_controlnet_aux", "keep": "comfyui-top10 harvest seed O5; new nodes, releases and the owner's (Fannovel16) other repos"},
+  {"kind": "github", "url": "https://github.com/MrForExample/ComfyUI-3D-Pack", "keep": "comfyui-top10 harvest seed O8; new nodes, releases and the owner's (MrForExample) other repos"}
+]}
