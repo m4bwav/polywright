@@ -38,6 +38,21 @@
       "kind": "reddit",
       "sub": "functionalprint",
       "keep": "print design rules: tolerances, clearances, splitting, orientation"
+    },
+    {
+      "kind": "github",
+      "query": "comfyui 3d",
+      "keep": "top 10 by stars; new entries and their owners' repos become harvest targets"
+    },
+    {
+      "kind": "github",
+      "url": "https://github.com/Fannovel16/comfyui_controlnet_aux",
+      "keep": "comfyui-top10 harvest seed O5; new nodes, releases and the owner's (Fannovel16) other repos"
+    },
+    {
+      "kind": "github",
+      "url": "https://github.com/MrForExample/ComfyUI-3D-Pack",
+      "keep": "comfyui-top10 harvest seed O8; new nodes, releases and the owner's (MrForExample) other repos"
     }
   ]
 }
