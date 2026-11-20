@@ -1011,6 +1011,64 @@ class WithBlender(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertIn("faces=6 uv=1 groups=['spine'] w=8", "\n".join(out["output"]))
 
+    def seamed_sphere(self):
+        """A UV-mapped sphere saved as glTF (the exporter splits vertices at UV seams, as generators' GLBs do)
+        plus 20 loose single-triangle shards: the case where plain collapse tears the seams open."""
+        src = os.path.join(self.tmp, "seamed.glb")
+        if os.path.isfile(src):
+            return src
+        make = os.path.join(self.tmp, "seamed.py")
+        with open(make, "w") as f:
+            f.write("import bpy, bmesh, math, sys\n"
+                    "bpy.ops.wm.read_factory_settings(use_empty=True)\n"
+                    "bm = bmesh.new()\n"
+                    "bmesh.ops.create_icosphere(bm, subdivisions=4, radius=1.0)\n"
+                    "for i in range(20):\n"
+                    "    a = i * 0.31; c = (1.6 * math.cos(a), 1.6 * math.sin(a), 0.05 * i - 0.5)\n"
+                    "    vs = [bm.verts.new((c[0] + dx, c[1] + dy, c[2])) for dx, dy in ((0, 0), (0.01, 0), (0, 0.01))]\n"
+                    "    bm.faces.new(vs)\n"
+                    "me = bpy.data.meshes.new('s'); bm.to_mesh(me)\n"
+                    "o = bpy.data.objects.new('s', me); bpy.context.scene.collection.objects.link(o)\n"
+                    "bpy.context.view_layer.objects.active = o; o.select_set(True)\n"
+                    "bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')\n"
+                    "bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.02); bpy.ops.object.mode_set(mode='OBJECT')\n"
+                    "bpy.ops.export_scene.gltf(filepath=sys.argv[-1], export_format='GLB')\n")
+        code, out = run("bpy", make, "--", src)
+        self.assertEqual(code, 0, out)
+        return src
+
+    def test_convert_clean_first_verify_keeps_seams_closed(self):
+        src = self.seamed_sphere()
+        code, plain = run("convert", src, os.path.join(self.tmp, "plain.glb"), "--max-tris", "400")
+        self.assertEqual(code, 0, plain)
+        before, after = plain["topology"]["before"], plain["topology"]["after"]
+        self.assertEqual(before["components"], 21)
+        self.assertGreater(after["boundary_edges"], before["boundary_edges"])  # collapse pulled the seams apart
+        self.assertIn("--clean-first --verify", plain["warnings"][0])
+        code, out = run("convert", src, os.path.join(self.tmp, "clean.glb"), "--max-tris", "400", "--clean-first", "--verify")
+        self.assertEqual(code, 0, out)
+        c = out["clean"]
+        best = c["tries"][c["chosen"]]
+        self.assertTrue(c["ok"], c)
+        self.assertEqual(best["fails"], [])
+        self.assertEqual(best["dust_faces_removed"], 20)
+        self.assertEqual(best["boundary_edges"], 0)
+        self.assertEqual(best["components"], 1)
+        self.assertLessEqual(abs(out["tris"] - 400), 80)
+        self.assertNotIn("warnings", out)
+
+    def test_verify_failure_exits_1_and_lods_take_the_flags(self):
+        src = self.seamed_sphere()
+        dst = os.path.join(self.tmp, "strict.glb")
+        code, out = run("convert", src, dst, "--max-tris", "400", "--verify", "--max-chamfer", "1e-9")
+        self.assertEqual(code, 1, out)
+        self.assertIn("verify failed", out["error"])
+        self.assertEqual(len(out["clean"]["tries"]), 5)  # the whole weld ladder was tried
+        self.assertTrue(os.path.isfile(dst))  # the best try is still written
+        code, out = run("lods", src, "--out", os.path.join(self.tmp, "lods"), "--ratios", "1,0.2", "--clean-first", "--verify")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["lods"][1]["clean"]["ok"], out["lods"][1])
+
     def test_bpy_runner_reports_tracebacks(self):
         s = os.path.join(self.tmp, "bad.py")
         with open(s, "w") as f:

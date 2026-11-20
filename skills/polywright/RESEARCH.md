@@ -56,50 +56,12 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 - sources: [2026-11-09-technique-harvest.md](../../ai-docs/research/2026-11-09-technique-harvest.md)
 - magnitude: minor
 
-### R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
-- Subject: Blender 5.3 due November 2026 (5.1 March, 5.2 LTS July); no operator change found that affects pw.py. Testing: new agentic Blender benchmarks BlenderWorld (arXiv 2610.23986) and SceneActBench (arXiv 2607.22393) render submissions from several views and grade with binary rubrics, which matches pw.py sheet + judge. Tooling: mcp-printable (PyPI, alpha, Blender and OpenSCAD backends, ships Claude Code skills) noted, not adopted. Practice: nothing new.
-- sources: https://arxiv.org/abs/2610.23986, https://arxiv.org/pdf/2607.22393, https://pypi.org/project/mcp-printable/
-- magnitude: 0.2 · applied: note only
+Archived 2026-11-20 to save install size (full text in the repo at ai-docs/archive/research-findings-2026-10.md, not installed):
+- R-20261030-1 · 2026-10-30 · Quiet check (refresh since 2026-10-11)
+- R-20261025-1 · 2026-10-25 · Subject: rendering principles for blockout passes and photo textures (round 2 books track)
+- R-20261017-1 · 2026-10-17 · Subject: building models and blockouts for film and AI video
+- R-20261013-1 · 2026-10-13 · Subject: Crowds and battles: Blender blockout drives the video model
+- R-20261011-3 · 2026-10-11 · Testing: pw.py proven end to end
+- R-20261011-2 · 2026-10-11 · Tooling: Existing agent 3D tools
+- R-20261011-1 · 2026-10-11 · Subject: Route split and the agent loop
 
-### R-20261025-1 · 2026-10-25 · Subject: rendering principles for blockout passes and photo textures (round 2 books track)
-- Summary: a pass used as a mask is a label image, so filtering (anti-aliasing) and dither make colours that belong to neither side (CGPP 3e §17.5); albedo is a material map separate from lighting, so light baked into a photo has to be divided out (§27.11, §17.4.5 on linear light). Checked on Blender 5.2.1: `scene.display.render_aa` takes OFF, FXAA, 5, 8, 11, 16, 32 (default 8); the remaining off-colour pixels after AA off were +-1 values from `render.dither_intensity`.
-- Track: subject
-- Sources: Hughes et al., Computer Graphics: Principles and Practice 3e; a probe through `pw.py bpy` on Blender 5.2.1 LTS
-- Magnitude: minor
-- Applied: C-20261025-2
-
-### R-20261017-1 · 2026-10-17 · Subject: building models and blockouts for film and AI video
-- summary: A film needs size, place and camera, not topology. Build from the shot cameras and only what they see; set detail by the largest on-screen size (an LOD ladder per shot size, EWS to ECU); far scenery as plate cards or 2.5D camera projection; kitbash hard-surface sets; splats for scouting and layout, not final pixels (a 2026 feature used them that way). For AI video the blockout is spatial reference and extra detail confuses the model, so passes stay grey. Field tests (crowd 2026-10-13, set 2026-10-15, two fighters 2026-10-16/17) supply the pass rules: one depth range per shot, pose only above about 40 px, face points left out when a head turns away, thick blades in depth only, end states checked through their camera.
-- track: subject
-- sources: https://thethirdfloorinc.com/?p=76, https://caveacademy.com/wiki/post-production-assets/modelling/model-lods/, https://www.tripo3d.ai/blog/explore/hd-model-hero-asset-requirements-for-film-vfx, https://3dart.it/camera-projection-in-nuke, https://unity.com/blog/games/realizing-rapid-conceptual-design-with-kitbashing, https://radiancefields.com/jurassic-world-rebirth-and-gaussian-splatting, https://flick.art/blog/blender-ai-filmmaking, https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-vcam-virtual-camera-settings
-- magnitude: minor (new reference)
-- applied: C-20261017-3, C-20261017-4
-
-### R-20261013-1 · 2026-10-13 · Subject: Crowds and battles: Blender blockout drives the video model
-- summary: No open video model holds more than about 4 distinct identities; practitioners build battles from layers and cuts (House of David season 2: under 200 extras, AI crowds and Unreal bases composited). The local route that scales is a 3D crowd blockout rendered to control passes (depth first, pose for the front ranks) for Wan VACE (`WanVaceToVideo`) or Wan 2.2 Fun Control: 4n+1 frames, sides divisible by 16, 81 frames at 16 fps. Paid Blender crowd add-ons (Procedural Crowds, iCrowds) document no scripting API, so plain bpy wins for an agent. Coarse proxies beat detailed ones as driving references (smixs visual-skills, idea only). Depth convention for VACE is unstated anywhere; Depth Anything outputs inverse depth, so pw.py writes that.
-- track: subject
-- sources: docs.comfy.org (wan-vace-to-video node, wan2-2-fun-control, checked 2026-10-13); github.com/ali-vilab/VACE; runcomfy.com Blender to ComfyUI AI Renderer 2.0; superhivemarket.com procedural-crowds (2026-10-13); vp-land.com House of David season 2 (2025-10-16); seedance.tv/blog/comfyui-crowd-video-workflow (2026-09-13); github.com/smixs/visual-skills; full note in cinewright ai-docs/research/2026-10-13-battle-crowd-compositing.md
-- magnitude: minor (new capability, no change to existing claims)
-- applied: C-20261013-1
-
-
-### R-20261011-3 · 2026-10-11 · Testing: pw.py proven end to end
-- summary: Park (249 buildings, 1 m lidar, watertight 150 mm tile) and fountain (Hunyuan3D-2 in 100 s, Roblox GLB 15k tris passing check, 80 mm watertight print, 3MF accepted by Bambu Studio CLI).
-- track: testing
-- sources: local runs 2026-10-11; tests/test_pw.py
-- magnitude: n/a (initial)
-- applied: C-20261011-1
-
-### R-20261011-2 · 2026-10-11 · Tooling: Existing agent 3D tools
-- summary: Two Blender MCP servers (official Blender Lab 1.0.3, community mcp-for-blender 2.1.9), ShapeWright, text-to-cad, two small meshwright repos; none writes a provenance manifest. Response: polywright is the routing and verification layer and calls them.
-- track: tooling
-- sources: [2026-10-11-ai-agents-and-3d.md](../../ai-docs/research/2026-10-11-ai-agents-and-3d.md)
-- magnitude: n/a (initial)
-- applied: C-20261011-1
-
-### R-20261011-1 · 2026-10-11 · Subject: Route split and the agent loop
-- summary: Code for dimensioned parts, generators for organic shapes; plan, act and critique as separate passes; save numbered .blend files and restart instead of long sessions.
-- track: subject
-- sources: [2026-10-11-ai-agents-and-3d.md](../../ai-docs/research/2026-10-11-ai-agents-and-3d.md)
-- magnitude: n/a (initial)
-- applied: C-20261011-1

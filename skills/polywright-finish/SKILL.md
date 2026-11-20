@@ -31,7 +31,7 @@ before and after every destructive step (`pw.py render`).
 
 | Need | Do |
 |---|---|
-| Fewer triangles, static prop | `pw.py convert --max-tris N` (collapse decimation keeps the silhouette); LODs with `pw.py lods` (about half per level) |
+| Fewer triangles, static prop | `pw.py convert --max-tris N --drop-interior --clean-first --verify` (welds UV-seam splits and drops dust before collapsing, then checks open edges, parts, budget and Chamfer; exit 1 means no weld distance passed, raise N); LODs with `pw.py lods --clean-first --verify` (about half per level) |
 | Fewer triangles, mesh that bends | not decimation: merge loops where nothing bends, keep the loops around joints ([references/topology.md](references/topology.md)) |
 | Clean quads for deformation or sculpting | voxel remesh first (closes it), then QuadriFlow (recipe in polywright-blender), Instant Meshes, Quad Remesher (paid), or a hosted quad remesh; characters: by hand |
 | Hidden shells inside a generated mesh (`pw.py inspect --interior` counts them) | drop them before rigging, baking or printing: `pw.py convert --drop-interior` keeps UVs and skin weights |

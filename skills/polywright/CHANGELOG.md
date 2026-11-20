@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261120-2 · 2026-11-20 · `pw.py convert` and `lods`: --clean-first, --verify, tear warning
+- because: user request (technique-harvest paper arXiv:2611.20533 RemeshingAgent; written fresh from the paper's description, no code was released)
+- files: scripts/pw.py, scripts/pw_bpy.py, tests/test_pw.py
+- `--clean-first` welds at `--weld` (default 0.1% of the bounding diagonal) and deletes parts under `--dust` of the faces before collapse; `--verify` measures open and non-manifold edges, parts, faces within 20% of the target and a point-to-surface Chamfer against the input, walks the weld ladder 1e-3, 3e-4, 1e-4, 1e-6, 3e-3, keeps the best and exits 1 when none passes. `--drop-interior` now runs before decimation. Plain decimation prints `warnings` when open edges or parts more than double. Triggers unchanged, evals not re-run.
+
 ### C-20261120-1 · 2026-11-20 · pw.py critique: region diff against references, capped fix rounds
 - because: user request (technique-harvest verdict #14, Reddit post 1x9z82z; method from blender-asset-studio, MIT, written fresh, no code copied)
 - files: SKILL.md (Step 4 critique paragraph), references/cli.md, scripts/pw.py (cmd_critique, Silhouette, region_diff, png_encode), tests/test_pw.py

@@ -9,8 +9,8 @@ commands that need it say so in the JSON when Blender is missing instead of cras
                                                        (--topology: quads, poles, flipped faces, stacked faces, UV spread)
   python pw.py render FILE --out DIR [--views ..] [--color clay|material|texture] [--size 640]
                                                        orthographic views + contact sheet for a vision model to judge
-  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--level | --tilt-deg D] [--join] [--max-tris N] [--fix-winding] [--draco]
-  python pw.py lods IN --out DIR [--ratios 1,0.5,0.25,0.1] [--format glb]
+  python pw.py convert IN OUT [--size-m X] [--scale F] [--ground] [--center] [--level | --tilt-deg D] [--join] [--max-tris N] [--fix-winding] [--drop-interior] [--clean-first] [--verify] [--draco]
+  python pw.py lods IN --out DIR [--ratios 1,0.5,0.25,0.1] [--format glb] [--clean-first] [--verify]
   python pw.py printable IN OUT.stl --size-mm 100 [--wall-mm 1] [--voxel-mm V] [--base-cut-mm 0.6] [--drop a,b] [--seal-mm 1] [--hollow]
   python pw.py union IN OUT.stl                        boolean-union closed parts into one solid
   python pw.py 3mf A.stl [B.stl ..] --out X.3mf        one 3MF, one object per input (AMS colours)
@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.16"
+VERSION = "0.6.17"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -931,8 +931,29 @@ def cmd_convert(a):
               "apply": a.apply, "uv": a.uv, "draco": a.draco, "export_scale": a.export_scale, "fbx_bake_axes": a.fbx_bake_axes,
               "level": a.level, "tilt_deg": a.tilt_deg, "max_tilt_deg": a.max_tilt_deg, "fix_winding": a.fix_winding,
               "drop_interior": a.drop_interior, "interior_grid": a.interior_grid}
-    res = bpy_action("convert", params)
-    return emit(res, 0 if res.get("ok") else 1)
+    params.update(clean_params(a))
+    return emit(*verified(bpy_action("convert", params)))
+
+
+def clean_params(a):
+    return {"clean_first": a.clean_first, "verify": a.verify, "weld": a.weld, "dust": a.dust, "max_chamfer": a.max_chamfer}
+
+
+def verified(res):
+    """A --verify run that kept a failing best try still writes the file, but the command fails."""
+    clean = res.get("clean") or {}
+    if res.get("ok") and clean.get("ok") is False:
+        res["ok"] = False
+        res["error"] = "verify failed on every weld distance; best try kept: " + "; ".join(clean["tries"][clean["chosen"]]["fails"])
+    return res, 0 if res.get("ok") else 1
+
+
+def add_clean_args(p):
+    p.add_argument("--clean-first", action="store_true", help="weld seam duplicates and delete dust parts before decimating (arXiv:2611.20533); stops collapse tearing UV seams open")
+    p.add_argument("--verify", action="store_true", help="measure open and non-manifold edges, parts, face count (+-20%% of target) and Chamfer against the input; retry a ladder of weld distances, keep the best, exit 1 if none passes (implies --clean-first)")
+    p.add_argument("--weld", type=float, default=0.001, help="first weld distance as a fraction of the bounding diagonal")
+    p.add_argument("--dust", type=float, default=0.001, help="delete parts with fewer faces than this fraction of the total (0 keeps all)")
+    p.add_argument("--max-chamfer", type=float, default=0.005, help="--verify: largest Chamfer distance over the bounding diagonal")
 
 
 def cmd_lods(a):
@@ -941,8 +962,14 @@ def cmd_lods(a):
     out = []
     for i, r in enumerate(float(x) for x in a.ratios.split(",")):
         path = os.path.join(os.path.abspath(a.out), "%s_LOD%d.%s" % (stem, i, a.format))
-        res = bpy_action("convert", {"file": os.path.abspath(a.input), "out": path, "ratio": r if r < 1 else None, "apply": True})
-        out.append({"lod": i, "ratio": r, "path": path, "ok": res.get("ok"), "tris": res.get("tris"), "error": res.get("error")})
+        params = {"file": os.path.abspath(a.input), "out": path, "ratio": r if r < 1 else None, "apply": True}
+        params.update(clean_params(a))
+        res, _ = verified(bpy_action("convert", params))
+        row = {"lod": i, "ratio": r, "path": path, "ok": res.get("ok"), "tris": res.get("tris"), "error": res.get("error")}
+        for k in ("clean", "warnings"):
+            if k in res:
+                row[k] = res[k]
+        out.append(row)
     return emit({"ok": all(o["ok"] for o in out), "lods": out,
                  "note": "Unity: name LOD children <name>_LOD0.. for automatic LOD groups; Unreal: import with Auto Generate LODs off and add these; three.js: THREE.LOD"})
 
@@ -3400,6 +3427,7 @@ def main(argv=None):
     p.add_argument("--draco", action="store_true")
     p.add_argument("--export-scale", type=float, default=1.0, help="global scale for OBJ/STL/PLY export (1000 for metres to mm)")
     p.add_argument("--fbx-bake-axes", action="store_true", help="FBX: bake the axis change into the mesh (Unity likes this)")
+    add_clean_args(p)
     p.set_defaults(fn=cmd_convert)
 
     p = sub.add_parser("lods", help="levels of detail by decimation")
@@ -3407,6 +3435,7 @@ def main(argv=None):
     p.add_argument("--out", required=True)
     p.add_argument("--ratios", default="1,0.5,0.25,0.1")
     p.add_argument("--format", default="glb")
+    add_clean_args(p)
     p.set_defaults(fn=cmd_lods)
 
     p = sub.add_parser("printable", help="any mesh to one watertight solid in mm")
