@@ -24,6 +24,7 @@ commands that need it say so in the JSON when Blender is missing instead of cras
   python pw.py duel DUEL.json [--out DIR] [--preview] [--check]   two fighters' clay, Canny, depth and pose controls
   python pw.py texture IMG --out DIR [--seamless] [--strength 2]   quick normal/height/roughness maps
   python pw.py framecam PROBLEM.json [--out cameras.json] [--top 3]  grid-search perspective cameras for screen rules
+  python pw.py camplan SHOT.json --check | --out DIR [--blend [ROOM.blend]]   timed, overlapping camera moves + framing check
   python pw.py scene FILE --cameras cameras.json --camera NAME --out DIR [--size 1280x720]   scene illustration passes
 
 Environment: POLYWRIGHT_BLENDER (path to blender), POLYWRIGHT_BPY_PYTHON (a Python with the bpy module),
@@ -50,7 +51,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.17"
+VERSION = "0.6.18"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -2758,6 +2759,7 @@ def cmd_crowd(a):
         return emit({"ok": False, "error": "unknown pass %s (depth, mist, mask, clay, pose)" % ",".join(bad)}, 2)
     pt = lambda t: [float(v) for v in t.split(",")] if t else None
     out = os.path.abspath(a.out)
+    cf, cf_warn = load_camera_file(a.camera_file, a.frames) if a.camera_file else (None, None)
     params = {"out": out, "size": [W, H], "frames": a.frames, "fps": a.fps, "sides": a.sides, "ranks": a.ranks,
               "cols": a.cols, "spacing": a.spacing, "rank_spacing": a.rank_spacing, "gap": a.gap, "jitter": a.jitter, "jitter_b": a.jitter_b, "scale_b": a.scale_b, "stagger_b": a.stagger_b,
               "action": a.action, "action_b": a.action_b, "kit": [k for k in a.kit.split(",") if k], "kit_b": None if a.kit_b is None else [k for k in a.kit_b.split(",") if k],
@@ -2766,10 +2768,12 @@ def cmd_crowd(a):
               "pose_min_px": a.pose_min_px, "samples": a.samples, "gpu": a.gpu, "far": a.far,
               "preview": a.preview, "save_blend": a.save_blend, "scatter": a.scatter, "scatter_gap": a.scatter_gap,
               "scatter_depth": a.scatter_depth, "stab": a.stab, "stab_max": a.stab_max, "spears_down": a.spears_down,
-              "spear_radius": a.spear_radius}
+              "spear_radius": a.spear_radius, "camera_file": cf}
     res = bpy_action("crowd", params, timeout=a.timeout)
     if not res.get("ok"):
         return emit(res, 1)
+    if cf_warn:
+        res["camera_file"] = cf_warn
     if "pose" in passes:
         try:
             res["pose"] = draw_pose_frames(os.path.join(out, "joints.json"), os.path.join(out, "pose"))
@@ -2862,7 +2866,7 @@ def bearing(a, b):
     return math.degrees(math.atan2(b[0] - a[0], b[1] - a[1])) % 360
 
 
-def duel_load(spec, base_dir=".", any_size=False):
+def duel_load(spec, base_dir=".", any_size=False, camera_file=False):
     """Check a duel file and fill its defaults. Returns (spec, problems); paths become absolute."""
     s, P = dict(spec), []
     num = lambda v, n: isinstance(v, (list, tuple)) and len(v) == n and all(isinstance(x, (int, float)) for x in v)  # noqa: E731
@@ -2887,7 +2891,7 @@ def duel_load(spec, base_dir=".", any_size=False):
                 P.append("room %s not found: %s" % (k, room[k]))
     s["room"] = room
     cam = s.get("camera") or {}
-    if not (cam.get("object") or (num(cam.get("pos"), 3) and num(cam.get("aim"), 3))):
+    if not (camera_file or cam.get("object") or (num(cam.get("pos"), 3) and num(cam.get("aim"), 3))):
         P.append("camera needs pos and aim ([x, y, z]) or the name of a camera object in the room")
     ox, oy = (s.get("origin") or [0, 0])[:2]
     pool = dict(DUEL_POSES, **s.get("poses", {}))
@@ -2957,7 +2961,8 @@ def cmd_duel(a):
     except (OSError, ValueError) as e:
         return emit({"ok": False, "error": "cannot read %s: %s" % (a.duel, e)}, 2)
     raw.setdefault("name", os.path.splitext(os.path.basename(path))[0])
-    spec, problems = duel_load(raw, os.path.dirname(path), a.any_size)
+    cf, cf_warn = load_camera_file(a.camera_file, raw.get("frames", 73)) if a.camera_file else (None, None)
+    spec, problems = duel_load(raw, os.path.dirname(path), a.any_size, bool(cf))
     if problems:
         return emit({"ok": False, "error": "; ".join(problems), "hint": "--any-size skips the size and frame-count check"}, 2)
     render, sheet = duel_frames(spec, a.preview)
@@ -2970,10 +2975,12 @@ def cmd_duel(a):
     res = {"ok": True, "name": spec["name"], "out": out, "size": [W, H], "frames": spec["frames"], "fps": fps,
            "seconds": round(spec["frames"] / fps, 2), "frames_to_render": len(render), "sheet_frames": [k + 1 for k in sheet],
            "fighters": {n: {"mark": f["mark"], "facing": round(f["facing"], 1), "keys": len(f["keys"])} for n, f in spec["fighters"].items()}}
+    if cf_warn:
+        res["camera_file"] = cf_warn
     if a.check:
         return emit(dict(res, check="valid; nothing rendered"))
     params = {"out": out, "size": [W, H], "fps": fps, "render": render, "spec": spec, "poses": poses,
-              "gpu": a.gpu, "samples": a.samples, "save_blend": a.save_blend}
+              "gpu": a.gpu, "samples": a.samples, "save_blend": a.save_blend, "camera_file": cf}
     r = bpy_action("duel", params, timeout=a.timeout)
     if not r.get("ok"):
         return emit(r, 1)
@@ -2994,6 +3001,94 @@ def cmd_duel(a):
                    "give the video model one control: depth_thick (holds a back to the camera; try 0.8 strength ending "
                    "at 0.6), canny (start and end states), or pose (nose and eyes left out when turned away)")
     return emit(res)
+
+
+# ------------------------------------------------------------------------------------------ camplan
+
+def load_camera_file(path, frames=None):
+    """Per-frame cameras from pw.py camplan's camera.json, or crowd's and duel's (matrix_world_rows): ({sensor_mm,
+    frames: [{m: 16 numbers, row by row, lens}]}, a note when the frame counts differ: the last frame holds)."""
+    with open(path, encoding="utf-8") as f:
+        doc = json.load(f)
+    if doc.get("frames"):
+        fr = [{"m": x["matrix_world"], "lens": float(x["lens_mm"])} for x in doc["frames"]]
+    else:
+        rows = doc.get("matrix_world_rows")
+        if not rows:
+            raise ValueError("%s has neither frames nor matrix_world_rows" % path)
+        rows = rows if isinstance(rows[0], list) else [rows]
+        fr = [{"m": r, "lens": float(doc.get("lens_mm", 50))} for r in rows]
+    if any(len(x["m"]) != 16 for x in fr):
+        raise ValueError("%s: every matrix needs 16 numbers" % path)
+    note = None
+    if frames and len(fr) != int(frames):
+        note = "camera file has %d frames, the shot %d: %s" % (len(fr), int(frames), "the last one holds" if len(fr) < int(frames) else "the extra ones are unused")
+    return {"sensor_mm": float(doc.get("sensor_mm", 36.0)), "frames": fr}, note
+
+
+def cmd_camplan(a):
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import pw_camplan as cp
+    path = os.path.abspath(a.shot)
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+        presets = None
+        if a.presets:
+            with open(a.presets, encoding="utf-8") as f:
+                presets = json.load(f).get("cameras") or {}
+    except (OSError, ValueError) as e:
+        return emit({"ok": False, "error": "cannot read %s" % e}, 2)
+    s, problems = cp.load(raw, presets)
+    if not a.check and not a.out:
+        problems.append("give --check (plan and framing only) or --out DIR")
+    blend = None if a.blend is None else (os.path.abspath(a.blend) if a.blend else "")
+    if blend and not os.path.isfile(blend):
+        problems.append("room not found: %s" % blend)
+    objs = [n for n, x in s["subjects"].items() if x.get("object") and not x.get("path")]
+    if objs and not blend:
+        problems.append("subjects %s are Blender objects: give --blend ROOM.blend" % ",".join(objs))
+    if problems:
+        return emit({"ok": False, "error": "; ".join(problems)}, 2)
+    n = int(round(s["duration_sec"] * s["fps"])) + 1
+    if objs:
+        tr = bpy_action("camtrack", {"blend": blend, "objects": objs, "frames": n, "fps": s["fps"]}, timeout=a.timeout)
+        if not tr.get("ok"):
+            return emit(tr, 1)
+        for name in objs:
+            s["subjects"][name]["path"] = tr["paths"][name]
+            if "height" not in raw["subjects"][name]:
+                s["subjects"][name]["height"] = tr["heights"][name]
+    frames, rows, rep = cp.plan(s)
+    ops = [{"op_id": o["op_id"], "method": o["method"], "start_sec": o["start_sec"], "end_sec": o["end_sec"]} for o in s["operations"]]
+    res = {"ok": True, "action": "camplan", "frames": n, "fps": s["fps"], "size": s["size"], "operations": ops,
+           "framing": rep, "verdict": "PASS" if rep.get("pass") else ("FAIL" if "pass" in rep else "no subject to check")}
+    if a.out:
+        out = os.path.abspath(a.out)
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "camera.json"), "w", encoding="utf-8") as f:
+            json.dump({"fps": s["fps"], "size": s["size"], "sensor_mm": s["sensor_mm"], "frames": frames}, f, separators=(",", ":"))
+        with open(os.path.join(out, "framing.json"), "w", encoding="utf-8") as f:
+            json.dump({"report": rep, "frames": rows}, f, indent=0)
+        res["files"] = {"camera": os.path.join(out, "camera.json"), "framing": os.path.join(out, "framing.json")}
+        if blend is not None:
+            sj = s["subjects"].get(s["framing"]["subject"])
+            checks = []
+            if sj:
+                for fr in frames:
+                    cam = cp.camera_at(s, fr["t"])
+                    pts = cp.subject_points(sj, fr["t"], cam)
+                    checks.append([[q, cp.project(cam, q, s["size"], s["sensor_mm"])[:2]] for q in pts[:2]])
+            br = bpy_action("camplan", {"blend": blend, "out": out, "size": s["size"], "fps": s["fps"],
+                                        "sensor_mm": s["sensor_mm"], "frames": frames, "checks": checks}, timeout=a.timeout)
+            if not br.get("ok"):
+                return emit(dict(res, ok=False, error=br.get("error"), log=br.get("log") or br.get("trace")), 1)
+            res["blend"] = {k: br[k] for k in ("blend", "camera", "frame_start", "frame_end", "max_uv_diff")}
+    res["next"] = ("FAIL: change the move (a smaller dolly, a later orbit), the lens or the start camera, or add Frame "
+                   "Subject, and run again" if res["verdict"] == "FAIL" else
+                   "Feed camera.json to `pw.py crowd` or `pw.py duel` with --camera-file, or render the .blend's camera")
+    return emit(res, 0 if res["verdict"] != "FAIL" else 1)
 
 
 # ------------------------------------------------------------------------------------------ overlaps
@@ -3652,6 +3747,7 @@ def main(argv=None):
     p.add_argument("--preview", action="store_true", help="render only the first, middle and last frame")
     p.add_argument("--save-blend", action="store_true", help="also save crowd.blend")
     p.add_argument("--any-size", action="store_true", help="skip the Wan size and frame-count check")
+    p.add_argument("--camera-file", help="camera.json from pw.py camplan (or a crowd or duel run): one camera per frame, overrides --view, --cam and --move")
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_crowd)
 
@@ -3664,8 +3760,18 @@ def main(argv=None):
     p.add_argument("--samples", type=int, default=4)
     p.add_argument("--any-size", action="store_true", help="skip the Wan and H3 size and frame-count check")
     p.add_argument("--save-blend", action="store_true", help="also save duel.blend")
+    p.add_argument("--camera-file", help="camera.json from pw.py camplan: one camera per frame instead of the file's camera")
     p.add_argument("--timeout", type=int, default=3600)
     p.set_defaults(fn=cmd_duel)
+
+    p = sub.add_parser("camplan", help="timed, overlapping camera moves (dolly, orbit, follow, pan, zoom...) to a per-frame camera, a keyframed Blender camera and a framing check")
+    p.add_argument("shot", help="SHOT.json: fps, duration_sec, size, camera {pos, aim, lens_mm} or {preset}, subjects, framing, operations")
+    p.add_argument("--check", action="store_true", help="plan and check the framing only; no files, no Blender")
+    p.add_argument("--out", help="folder for camera.json and framing.json (and camplan.blend with --blend)")
+    p.add_argument("--blend", nargs="?", const="", help="also keyframe the camera into this room .blend (none: an empty scene) and save OUT/camplan.blend; needed for subjects given as objects")
+    p.add_argument("--presets", help="cameras.json from pw.py framecam, for camera {preset: NAME}")
+    p.add_argument("--timeout", type=int, default=900)
+    p.set_defaults(fn=cmd_camplan)
 
     p = sub.add_parser("overlaps", help="find intersecting boxes in a scene dump (doors crossed by struts, props in doorways)")
     p.add_argument("boxes", help="JSON: a list (or {boxes: [...]}) of {name, min, max | center, size, group?, filler?}")

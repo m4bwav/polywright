@@ -2037,7 +2037,11 @@ def act_crowd(p):
     if move not in ("static", "push", "crane", "truck"):
         raise ValueError("unknown move %s (static, push, crane, truck)" % move)
 
+    cf = p.get("camera_file")
+
     def cam_at(k):
+        if cf:
+            return camfile_set(cam, cf, k)
         u = k / max(frames - 1, 1)
         e = u * u * (3 - 2 * u)  # ease in and out
         loc = {"static": loc0, "push": loc0 + span * 0.25 * e,
@@ -2319,7 +2323,8 @@ def act_duel(p):
     spec, poses = p["spec"], p["poses"]
     room = duel_room(p)
     sc = bpy.context.scene
-    cam = duel_camera(spec["camera"])
+    cf = p.get("camera_file")
+    cam = duel_camera(spec["camera"] if not cf else {"pos": [0, 0, 0], "aim": [1, 0, 0]})
     W, H = p["size"]
     fps, out, frames = int(p["fps"]), os.path.abspath(p["out"]), p["render"]
     figs = spec["fighters"]
@@ -2393,10 +2398,13 @@ def act_duel(p):
         for n, o in objs[fn].items():
             o.color = (0.95, 0.95, 0.95, 1) if n.endswith(("blade", "guard")) else tuple(f.get("tint", (0.6, 0.6, 0.6))[:3]) + (1,)
     cpos = cam.matrix_world.translation
-    joints_out, in_frame = [], {fn: {} for fn in figs}
+    joints_out, in_frame, cams = [], {fn: {} for fn in figs}, []
     t0 = time.time()
     for i, k in enumerate(frames):
         name = "%04d.png" % (k + 1)
+        if cf:
+            cpos = camfile_set(cam, cf, k)
+            cams.append([round(v, 5) for row in cam.matrix_world for v in row])
         sc.render.resolution_percentage = 100
         J = place(i, 0)
         render_depth(os.path.join(out, "depth", name), depth_mat, p)
@@ -2429,7 +2437,7 @@ def act_duel(p):
         json.dump({"size": [W, H], "frames": joints_out}, fh, separators=(",", ":"))
     with open(os.path.join(out, "camera.json"), "w", encoding="utf-8") as fh:
         json.dump({"lens_mm": cam.data.lens, "sensor_mm": cam.data.sensor_width, "size": [W, H], "fps": fps,
-                   "matrix_world_rows": [round(v, 5) for row in cam.matrix_world for v in row]}, fh)
+                   "matrix_world_rows": cams or [round(v, 5) for row in cam.matrix_world for v in row]}, fh)
     if p.get("save_blend"):
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "duel.blend"))
     return {"out": out, "frames_rendered": len(frames), "in_frame": in_frame, "room_objects": len(room),
@@ -3225,9 +3233,83 @@ def act_sprite(p):
             "parts": list(parts), "rings": list(rg), "frames": frames}
 
 
+def camfile_set(cam, cf, k):
+    """Put a camera on frame k (0-based) of a camera file from pw.py (camplan, crowd or duel); the last frame holds."""
+    f = cf["frames"][min(k, len(cf["frames"]) - 1)]
+    m = f["m"]
+    cam.matrix_world = Matrix([m[0:4], m[4:8], m[8:12], m[12:16]])
+    cam.data.lens, cam.data.sensor_width, cam.data.sensor_fit = f["lens"], cf.get("sensor_mm", 36.0), "HORIZONTAL"
+    bpy.context.view_layer.update()
+    return cam.matrix_world.translation.copy()
+
+
+def _open_room(p):
+    if p.get("blend"):
+        bpy.ops.wm.open_mainfile(filepath=p["blend"])
+    return bpy.context.scene
+
+
+def act_camtrack(p):
+    """Feet (bottom centre of the world bounding box) and height of named objects per shot frame, for pw.py camplan."""
+    sc = _open_room(p)
+    n, fps, f0 = int(p["frames"]), int(p["fps"]), sc.frame_start
+    paths, heights = {}, {}
+    for name in p["objects"]:
+        if bpy.data.objects.get(name) is None:
+            raise ValueError("no object %r in %s" % (name, p.get("blend")))
+    for i in range(n):
+        sc.frame_set(f0 + i)
+        dg = bpy.context.evaluated_depsgraph_get()
+        for name in p["objects"]:
+            o = bpy.data.objects[name].evaluated_get(dg)
+            c = [o.matrix_world @ Vector(v) for v in o.bound_box]
+            lo, hi = min(v.z for v in c), max(v.z for v in c)
+            paths.setdefault(name, []).append([i / fps, [sum(v.x for v in c) / 8, sum(v.y for v in c) / 8, lo]])
+            heights.setdefault(name, hi - lo)
+    return {"paths": paths, "heights": heights, "frame_start": f0}
+
+
+def act_camplan(p):
+    """Keyframe a camera from pw.py camplan frames into the room (or an empty scene), save OUT/camplan.blend, and
+    check Blender's projection of the subject points against the planner's."""
+    from bpy_extras.object_utils import world_to_camera_view
+    sc = _open_room(p)
+    W, H = p["size"]
+    cam = bpy.data.objects.new("pw_camplan", bpy.data.cameras.new("pw_camplan"))
+    sc.collection.objects.link(cam)
+    sc.camera = cam
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = W, H, 100
+    sc.render.fps = int(p["fps"])
+    f0 = sc.frame_start if p.get("blend") else 1
+    sc.frame_start, sc.frame_end = f0, f0 + len(p["frames"]) - 1
+    cf = {"sensor_mm": p["sensor_mm"], "frames": [{"m": f["matrix_world"], "lens": f["lens_mm"]} for f in p["frames"]]}
+    prev = None
+    for i in range(len(p["frames"])):
+        camfile_set(cam, cf, i)
+        if prev is not None:
+            e = cam.rotation_euler.copy()
+            e.make_compatible(prev)
+            cam.rotation_euler = e
+        prev = cam.rotation_euler.copy()
+        for path in ("location", "rotation_euler"):
+            cam.keyframe_insert(path, frame=f0 + i)
+        cam.data.keyframe_insert("lens", frame=f0 + i)
+    worst = 0.0
+    for i, pts in enumerate(p.get("checks", [])):
+        sc.frame_set(f0 + i)
+        for q, uv in pts:
+            v = world_to_camera_view(sc, cam, Vector(q))
+            worst = max(worst, abs(v.x - uv[0]), abs(v.y - uv[1]))
+    path = os.path.join(p["out"], "camplan.blend")
+    bpy.ops.wm.save_as_mainfile(filepath=path)
+    return {"blend": path, "camera": cam.name, "frame_start": f0, "frame_end": sc.frame_end,
+            "max_uv_diff": round(worst, 5)}
+
+
 ACTIONS = {"inspect": act_inspect, "encode": act_encode, "render": act_render, "match": act_match, "convert": act_convert,
            "printable": act_printable, "union": act_union, "crowd": act_crowd, "duel": act_duel, "turnaround": act_turnaround,
-           "mark": act_mark, "lineup": act_lineup, "sprite": act_sprite}
+           "mark": act_mark, "lineup": act_lineup, "sprite": act_sprite,
+           "camtrack": act_camtrack, "camplan": act_camplan}
 
 
 def main():

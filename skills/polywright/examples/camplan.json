@@ -1,0 +1,9 @@
+{"fps": 24, "duration_sec": 4, "size": [1920, 1080],
+ "camera": {"pos": [6, 0, 1.6], "aim": "hero", "lens_mm": 35},
+ "subjects": {"hero": {"path": [[0, [0, 0, 0]], [4, [0, 2, 0]]], "height": 1.62}},
+ "framing": {"subject": "hero", "height_fraction": 0.45, "tolerance": 0.12},
+ "operations": [
+  {"op_id": 1, "method": "Position Follow", "start_sec": 0, "end_sec": 4},
+  {"op_id": 2, "method": "Dolly In", "start_sec": 0, "end_sec": 4},
+  {"op_id": 3, "method": "Orbit", "start_sec": 1, "end_sec": 4},
+  {"op_id": 4, "method": "Pedestal Up", "start_sec": 2, "end_sec": 4, "parameters": {"metres": 0.8}}]}
