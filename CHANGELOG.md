@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.15 · 2026-11-19
+
+- polywright-finish: PBR value ranges and specular aliasing (Real-Time Rendering 4e) (#75).
+
 ## 0.6.14 · 2026-11-18
 
 - polywright-references: a blockout's depth pass can be painted with MOSS-Image depth control (layout agreement 0.84-0.89 vs 0.72). Find route: search owned packs with AssetCat before downloading or generating (17/25 hits in the top 5). Reason: technique-harvest GPU test.
