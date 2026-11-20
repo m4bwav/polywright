@@ -438,6 +438,201 @@ def decimate_to(obj, max_tris):
     return len(obj.data.loop_triangles)
 
 
+# ------------------------------------------------- clean-first decimation and its verify gate
+# After RemeshingAgent (arXiv:2611.20533), written fresh from the paper's description: weld seam duplicates and
+# drop dust components before collapsing, then check the result against the input and retry the weld distance.
+
+WELD_LADDER = (1e-3, 3e-4, 1e-4, 1e-6, 3e-3)  # fractions of the bounding diagonal; the chosen --weld goes first
+
+
+def world_tris(objs):
+    """All objects' loop triangles in world space: (corners (n, 3, 3) float64)."""
+    out = []
+    for o in objs:
+        me = o.data
+        me.calc_loop_triangles()
+        nt = len(me.loop_triangles)
+        if not nt:
+            continue
+        tv = np.empty(nt * 3, dtype=np.int64)
+        me.loop_triangles.foreach_get("vertices", tv)
+        out.append(world_coords(o, me)[tv.reshape(-1, 3)])
+    return np.concatenate(out) if out else np.zeros((0, 3, 3))
+
+
+def tri_metrics(T, span=None):
+    """Faces, boundary and non-manifold edges and connected parts of a triangle soup, on positions welded at 1e-6
+    of the span (the way inspect counts them: glTF splits vertices at UV seams and hard edges)."""
+    nt = len(T)
+    if not nt:
+        return {"faces": 0, "boundary_edges": 0, "non_manifold_edges": 0, "components": 0}
+    co = T.reshape(-1, 3)
+    span = span or float(np.ptp(co, axis=0).max()) or 1.0
+    _, w = np.unique(np.round(co / (span * 1e-6)).astype(np.int64), axis=0, return_inverse=True)
+    t = w.reshape(-1, 3)
+    t = t[(t[:, 0] != t[:, 1]) & (t[:, 1] != t[:, 2]) & (t[:, 0] != t[:, 2])]
+    e = np.sort(np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]), axis=1)
+    ue, counts = np.unique(e, axis=0, return_counts=True)
+    labels = np.asarray(islands(int(w.max()) + 1, ue.tolist()))
+    return {"faces": int(nt), "boundary_edges": int((counts == 1).sum()), "non_manifold_edges": int((counts > 2).sum()),
+            "components": int(len(np.unique(labels[np.unique(t)])))}
+
+
+def area_samples(T, n, seed=11):
+    """n points on the surface, area-weighted."""
+    if not len(T):
+        return np.zeros((0, 3))
+    a = 0.5 * np.linalg.norm(np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]), axis=1)
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(len(T), n, p=a / a.sum()) if a.sum() > 0 else rng.integers(0, len(T), n)
+    r1, r2 = rng.random(n), rng.random(n)
+    s = np.sqrt(r1)
+    u, v = 1 - s, s * (1 - r2)
+    P = T[idx]
+    return P[:, 0] * u[:, None] + P[:, 1] * v[:, None] + P[:, 2] * (1 - u - v)[:, None]
+
+
+def tri_bvh(T):
+    from mathutils.bvhtree import BVHTree
+    return BVHTree.FromPolygons(T.reshape(-1, 3).tolist(), np.arange(len(T) * 3).reshape(-1, 3).tolist())
+
+
+def mean_dist(points, bvh):
+    d = []
+    for p_ in points.tolist():
+        hit = bvh.find_nearest(p_)
+        if hit[0] is not None:
+            d.append(hit[3])
+    return float(np.mean(d)) if d else math.inf
+
+
+def chamfer(Ta, bvh_a, Tb, diag, n=20000):
+    """Symmetric mean point-to-surface distance between two meshes, over the input's bounding diagonal."""
+    if not len(Tb):
+        return math.inf
+    d = 0.5 * (mean_dist(area_samples(Ta, n), tri_bvh(Tb)) + mean_dist(area_samples(Tb, n, seed=12), bvh_a))
+    return round(d / diag, 6)
+
+
+def weld_and_dust(objs, weld_dist, dust_faces):
+    """Weld vertices closer than weld_dist, dissolve faces that collapsed, then delete connected parts with fewer
+    than dust_faces faces (never an object's largest). Merging keeps per-loop UVs. Returns counts."""
+    welded = dust = 0
+    for o in objs:
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        n0 = len(bm.verts)
+        if weld_dist > 0:
+            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=weld_dist)
+            bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=weld_dist * 1e-3)
+        welded += n0 - len(bm.verts)
+        if dust_faces > 0 and len(bm.faces):
+            bm.verts.index_update()
+            labels = islands(len(bm.verts), [(e.verts[0].index, e.verts[1].index) for e in bm.edges])
+            size = {}
+            for f in bm.faces:
+                k = labels[f.verts[0].index]
+                size[k] = size.get(k, 0) + 1
+            big = max(size, key=size.get)
+            kill = [f for f in bm.faces if labels[f.verts[0].index] != big and size[labels[f.verts[0].index]] < dust_faces]
+            if kill:
+                bmesh.ops.delete(bm, geom=kill, context="FACES")
+                loose = [v for v in bm.verts if not v.link_faces]
+                if loose:
+                    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+                dust += len(kill)
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.update()
+    return {"verts_welded": welded, "dust_faces_removed": dust}
+
+
+def decimate_objs(objs, target_total, passes=3):
+    """Collapse every object in proportion until the total is within 5% of target_total (collapse can stop short
+    once seams are welded, so it repeats up to passes times)."""
+    for _ in range(passes):
+        total = sum(len(o.data.loop_triangles) for o in objs if o.data.calc_loop_triangles() is None)
+        if total <= target_total * 1.05:
+            break
+        for o in objs:
+            o.data.calc_loop_triangles()
+            n = len(o.data.loop_triangles)
+            decimate_to(o, max(int(n * target_total / float(total)), 4))
+    return sum(len(o.data.loop_triangles) for o in objs if o.data.calc_loop_triangles() is None)
+
+
+def judge(m, inp, target, max_chamfer, band=0.2):
+    """Failed checks of one try against the input: faces in band, no new open or non-manifold edges, no new
+    parts, Chamfer under max_chamfer."""
+    fails = []
+    if not (target * (1 - band) <= m["faces"] <= target * (1 + band)):
+        fails.append("faces %d outside %d +-%d%%" % (m["faces"], target, round(band * 100)))
+    for k in ("boundary_edges", "non_manifold_edges", "components"):
+        if m[k] > inp[k]:
+            fails.append("%s %d > input %d" % (k, m[k], inp[k]))
+    if m["chamfer"] > max_chamfer:
+        fails.append("chamfer %.5f > %.5f" % (m["chamfer"], max_chamfer))
+    return fails
+
+
+def clean_decimate(objs, target, p):
+    """--clean-first [--verify]: weld + dust, then decimate; with verify, measure each try against the input and
+    walk the weld ladder until one passes, keeping the best. Returns (objs, report)."""
+    T_in = world_tris(objs)
+    span = float(np.ptp(T_in.reshape(-1, 3), axis=0).max()) if len(T_in) else 1.0
+    diag = float(np.linalg.norm(np.ptp(T_in.reshape(-1, 3), axis=0))) if len(T_in) else 1.0
+    dust_faces = float(p.get("dust", 0.001)) * len(T_in)
+    first = float(p.get("weld", 1e-3))
+    ladder = [first] + [w for w in WELD_LADDER if abs(w - first) > 1e-12] if p.get("verify") else [first]
+    rep = {"weld_ladder": ladder, "dust_faces_below": int(dust_faces), "target": int(target)}
+    verify = bool(p.get("verify"))
+    if verify:
+        inp = tri_metrics(T_in, span)
+        bvh_in = tri_bvh(T_in)
+        rep["input"] = inp
+        max_ch = float(p.get("max_chamfer") or 0.005)
+        rep["max_chamfer"] = max_ch
+    originals = {o.name: o.data.copy() for o in objs}
+    tries, best = [], None
+    for i, wf in enumerate(ladder):
+        if i:
+            for o in objs:
+                old = o.data
+                o.data = originals[o.name].copy()
+                bpy.data.meshes.remove(old)
+        t1 = time.time()
+        row = {"weld": wf}
+        row.update(weld_and_dust(objs, wf * diag, dust_faces))
+        decimate_objs(objs, target)
+        if verify:
+            T = world_tris(objs)
+            row.update(tri_metrics(T, span))
+            row["chamfer"] = chamfer(T_in, bvh_in, T, diag)
+            row["fails"] = judge(row, inp, target, max_ch)
+            row["seconds"] = round(time.time() - t1, 2)
+            # budget and shape first (a torn-free mesh that missed the budget or melted is no use), then topology
+            shape = sum(f.startswith(("faces", "chamfer")) for f in row["fails"])
+            excess = sum(max(0, row[k] - inp[k]) for k in ("boundary_edges", "non_manifold_edges", "components"))
+            key = (shape, len(row["fails"]), excess, row["chamfer"])
+            if best is None or key < best[0]:
+                best = (key, i, {o.name: o.data.copy() for o in objs})
+        tries.append(row)
+        if not verify or not row["fails"]:
+            break
+    if verify:
+        _, bi, keep = best
+        for o in objs:
+            old = o.data
+            o.data = keep[o.name]
+            bpy.data.meshes.remove(old)
+        rep.update(tries=tries, chosen=bi, ok=not tries[bi]["fails"])
+    else:
+        rep.update(tries=tries)
+    for m in originals.values():
+        bpy.data.meshes.remove(m)
+    return objs, rep
+
+
 # ---------------------------------------------------------------- actions
 
 def act_inspect(p):
@@ -930,21 +1125,31 @@ def act_convert(p):
         off = [-(lo[0] + hi[0]) / 2 if p.get("center") else 0, -(lo[1] + hi[1]) / 2 if p.get("center") else 0, -lo[2] if p.get("ground") else 0]
         for o in objs:
             transform_mesh(o, 1.0, off)
-    if p.get("ratio") or p.get("max_tris"):
-        for o in objs:
-            o.data.calc_loop_triangles()
-        total = sum(len(o.data.loop_triangles) for o in objs)
-        for o in objs:
-            o.data.calc_loop_triangles()
-            n = len(o.data.loop_triangles)
-            target = int(n * float(p["ratio"])) if p.get("ratio") else int(n * min(1.0, float(p["max_tris"]) / max(total, 1)))
-            decimate_to(o, max(target, 4))
-    if p.get("drop_interior"):
+    if p.get("drop_interior"):  # before decimating, so hidden shells are not paid for in the budget
         objs = [o for o in objs if o.type == "MESH"] or mesh_objects()
         t1 = time.time()
         n = drop_interior(objs, int(p.get("interior_grid", 256)))
         notes.append("%d interior face(s) removed (%.2f s)" % (n, time.time() - t1))
         p["_interior"] = n
+    if p.get("ratio") or p.get("max_tris"):
+        for o in objs:
+            o.data.calc_loop_triangles()
+        total = sum(len(o.data.loop_triangles) for o in objs)
+        goal = int(total * float(p["ratio"])) if p.get("ratio") else min(total, int(p["max_tris"]))
+        if p.get("clean_first") or p.get("verify"):
+            objs, p["_clean"] = clean_decimate(objs, max(goal, 4), p)
+        elif goal < total:
+            before = tri_metrics(world_tris(objs))
+            for o in objs:
+                o.data.calc_loop_triangles()
+                n = len(o.data.loop_triangles)
+                decimate_to(o, max(int(n * goal / float(max(total, 1))), 4))
+            after = tri_metrics(world_tris(objs))
+            p["_topology"] = {"before": before, "after": after}
+            if after["boundary_edges"] > 2 * before["boundary_edges"] + 50 or after["components"] > 2 * before["components"] + 10:
+                p["_warn"] = ("decimation tore the mesh: open edges %d -> %d, parts %d -> %d (UV-seam splits pulled apart); "
+                              "rerun with --clean-first --verify" % (before["boundary_edges"], after["boundary_edges"],
+                                                                     before["components"], after["components"]))
     if p.get("fix_winding"):
         n = sum(fix_winding(o) for o in objs)
         notes.append("%d face(s) flipped to agree with their neighbours" % n)
@@ -970,6 +1175,12 @@ def act_convert(p):
         res["faces_flipped"] = p["_flipped"]
     if "_interior" in p:
         res["interior_removed"] = p["_interior"]
+    if "_clean" in p:
+        res["clean"] = p["_clean"]
+    if "_topology" in p:
+        res["topology"] = p["_topology"]
+    if "_warn" in p:
+        res["warnings"] = [p["_warn"]]
     return res
 
 

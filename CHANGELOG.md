@@ -2,6 +2,11 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.17 · 2026-11-20
+
+- Hub: `pw.py convert` and `pw.py lods` take `--clean-first` (weld UV-seam splits, drop dust parts, then collapse) and `--verify` (open and non-manifold edges, parts, faces within 20% of the target, Chamfer against the input; a ladder of weld distances, best kept, exit 1 if none passes). `--drop-interior` now runs before decimation, and plain decimation warns when it tears the mesh. On a 699k-triangle generated GLB at 1%: open edges 8,869 and 847 parts before, 1 and 7 after (Chamfer 0.0005 of the diagonal). polywright-finish route row names the flags. Idea from RemeshingAgent, arXiv:2611.20533 (clean before decimating, verify after), written fresh.
+- October research findings (hub, finish) and polywright-blender learnings L-001 to L-009 moved to `ai-docs/` (pointers kept) to stay under the 800 KB install limit.
+
 ## 0.6.16 · 2026-11-20
 
 - Hub: `pw.py critique` renders the model from each reference's view, scores every grid region (shape, plus colour for non-clay renders), ranks the worst regions with crop boxes and a diff image, and caps fix rounds in a ledger that names the best model to deliver. Reason: technique-harvest Reddit post 1x9z82z (blender-asset-studio, MIT; method only, written fresh).
