@@ -50,7 +50,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.15"
+VERSION = "0.6.16"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -3017,6 +3017,264 @@ def cmd_overlaps(a):
     return emit(res)
 
 
+# ------------------------------------------------------------------------------------------ critique (region diff against references)
+# Idea from a technique harvest of a Reddit post on self-reviewing Blender assets (blender-asset-studio, MIT,
+# new-experement): pair every region as reference -> model -> difference -> fix, and cap the fix rounds while
+# keeping the best checkpoint. Written fresh for polywright; no code was taken from that project.
+
+CRITIQUE_VIEWS = ("front", "back", "right", "left", "top", "bottom", "iso", "iso_back")
+
+
+def load_rgba(path):
+    """(w, h, channels, bytes) through Pillow when present, else the stdlib PNG reader."""
+    try:
+        from PIL import Image
+    except ImportError:
+        with open(path, "rb") as f:
+            return png_decode(f.read())
+    with Image.open(path) as im:
+        im = im.convert("RGBA")
+        return im.size[0], im.size[1], 4, im.tobytes()
+
+
+def png_encode(w, h, rgb):
+    """8-bit RGB PNG from a flat bytes-like of w*h*3 values."""
+    raw = b"".join(b"\x00" + bytes(rgb[y * w * 3:(y + 1) * w * 3]) for y in range(h))
+
+    def chunk(t, d):
+        return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw, 6)) + chunk(b"IEND", b""))
+
+
+class Silhouette:
+    """An image split into subject and background: the background is the corners' colour (or transparency)."""
+
+    def __init__(self, path, thr=30):
+        self.path = path
+        self.w, self.h, self.ch, self.px = load_rgba(path)
+        w, h, ch, px = self.w, self.h, self.ch, self.px
+        corners = []
+        for cx, cy in ((0, 0), (w - 4, 0), (0, h - 4), (w - 4, h - 4)):
+            for y in range(max(cy, 0), min(cy + 4, h)):
+                for x in range(max(cx, 0), min(cx + 4, w)):
+                    i = (y * w + x) * ch
+                    corners.append(px[i:i + ch])
+        med = lambda k: sorted(c[k] for c in corners)[len(corners) // 2]
+        self.bg = [med(k) for k in range(3)]
+        self.alpha_bg = ch == 4 and med(3) < 128
+        self.thr = thr
+        step = max(1, max(w, h) // 512)
+        x0, y0, x1, y1 = w, h, -1, -1
+        for y in range(0, h, step):
+            for x in range(0, w, step):
+                if self.fg(x, y):
+                    x0, x1 = min(x0, x), max(x1, x)
+                    y0, y1 = min(y0, y), max(y1, y)
+        if x1 < 0:
+            raise ValueError("%s: no subject found (everything matches the corner colour)" % path)
+        self.box = (max(x0 - step + 1, 0), max(y0 - step + 1, 0), min(x1 + step, w), min(y1 + step, h))
+
+    def fg(self, x, y):
+        i = (y * self.w + x) * self.ch
+        p = self.px
+        if self.ch == 4 and p[i + 3] < 128:
+            return False
+        if self.alpha_bg:
+            return True
+        b = self.bg
+        return max(abs(p[i] - b[0]), abs(p[i + 1] - b[1]), abs(p[i + 2] - b[2])) > self.thr
+
+    def frame(self, align):
+        """(left, top, side_x, side_y) in pixels: the square region the comparison grid covers."""
+        x0, y0, x1, y1 = self.box
+        bw, bh = x1 - x0, y1 - y0
+        if align == "frame":
+            return 0, 0, self.w, self.h
+        if align == "width":  # one scale from the width, bottom on the bottom: a missing top part shows as missing
+            return x0, y1 - bw, bw, bw
+        if align == "height":  # one scale from the height, centred: a missing side part shows as missing
+            return (x0 + x1) / 2 - bh / 2, y0, bh, bh
+        return x0, y0, bw, bh  # bbox: each subject stretched to the square, proportions reported apart
+
+    def sample(self, align, n):
+        """n x n samples (rgb tuple for subject, None for background) over the aligned square, row 0 at the top."""
+        left, top, sx, sy = self.frame(align)
+        out = []
+        for j in range(n):
+            y = int(top + (j + 0.5) * sy / n)
+            row = []
+            for i in range(n):
+                x = int(left + (i + 0.5) * sx / n)
+                if 0 <= x < self.w and 0 <= y < self.h and self.fg(x, y):
+                    k = (y * self.w + x) * self.ch
+                    row.append(tuple(self.px[k:k + 3]))
+                else:
+                    row.append(None)
+            out.append(row)
+        return out
+
+
+def region_name(r, c, grid):
+    third = lambda v: 0 if v < 1 / 3 else (1 if v < 2 / 3 else 2)
+    vy, vx = third((r + 0.5) / grid), third((c + 0.5) / grid)
+    name = ("upper", "middle", "lower")[vy] + " " + ("left", "centre", "right")[vx]
+    return "centre" if name == "middle centre" else name
+
+
+def region_diff(ref, mod, align="bbox", grid=4, per=12, color_weight=0.0):
+    """Per-region difference of two Silhouettes: shape = share of samples where exactly one image has subject,
+    colour = distance of the regions' mean subject colours (0-1). Returns (cells, diff_rgb, side)."""
+    n = grid * per
+    A, B = ref.sample(align, n), mod.sample(align, n)
+    cells = []
+    tot = per * per
+    for r in range(grid):
+        for c in range(grid):
+            xor = 0
+            sa, sb = [0, 0, 0, 0], [0, 0, 0, 0]
+            for j in range(r * per, (r + 1) * per):
+                for i in range(c * per, (c + 1) * per):
+                    a, b = A[j][i], B[j][i]
+                    if a:
+                        sa = [sa[0] + a[0], sa[1] + a[1], sa[2] + a[2], sa[3] + 1]
+                    if b:
+                        sb = [sb[0] + b[0], sb[1] + b[1], sb[2] + b[2], sb[3] + 1]
+                    if (a is None) != (b is None):
+                        xor += 1
+            colour = 0.0
+            if sa[3] >= tot * 0.1 and sb[3] >= tot * 0.1:
+                colour = math.sqrt(sum((sa[k] / sa[3] - sb[k] / sb[3]) ** 2 for k in range(3))) / 441.673
+            cells.append({"region": "r%dc%d" % (r + 1, c + 1), "where": region_name(r, c, grid),
+                          "row": r, "col": c, "shape": round(xor / tot, 4), "cover_ref": round(sa[3] / tot, 4),
+                          "cover_model": round(sb[3] / tot, 4), "colour": round(colour, 4),
+                          "score": round(xor / tot + color_weight * colour, 4)})
+    diff = bytearray(n * n * 3)
+    for j in range(n):
+        for i in range(n):
+            a, b = A[j][i], B[j][i]
+            rgb = (205, 205, 205) if a and b else (220, 40, 40) if a else (40, 90, 220) if b else (255, 255, 255)
+            if i % per == 0 or j % per == 0:
+                rgb = tuple(v * 3 // 4 for v in rgb)
+            diff[(j * n + i) * 3:(j * n + i) * 3 + 3] = bytes(rgb)
+    return cells, diff, n
+
+
+def cell_hint(c, pass_at):
+    if c["cover_ref"] - c["cover_model"] > 0.15:
+        return "missing or too small in the model"
+    if c["cover_model"] - c["cover_ref"] > 0.15:
+        return "extra or too big in the model"
+    if c["shape"] >= pass_at:
+        return "shape or position differs"
+    if c["score"] >= pass_at:
+        return "colour or tone differs"
+    return "close"
+
+
+def pixel_box(sil, align, grid, r, c):
+    left, top, sx, sy = sil.frame(align)
+    x0, y0 = left + c * sx / grid, top + r * sy / grid
+    return [max(int(x0), 0), max(int(y0), 0), min(int(x0 + sx / grid), sil.w), min(int(y0 + sy / grid), sil.h)]
+
+
+def cmd_critique(a):
+    refs = {}
+    for item in a.ref:
+        view, _, path = item.partition("=")
+        if view not in CRITIQUE_VIEWS or not path:
+            return emit({"ok": False, "error": "--ref takes VIEW=IMAGE with VIEW one of %s, got %r" % (", ".join(CRITIQUE_VIEWS), item)}, 1)
+        if not os.path.isfile(path):
+            return emit({"ok": False, "error": "reference not found: %s" % path}, 1)
+        refs[view] = os.path.abspath(path)
+    if not refs:
+        return emit({"ok": False, "error": "give at least one --ref VIEW=IMAGE"}, 1)
+    if not 1 <= a.grid <= 12:
+        return emit({"ok": False, "error": "--grid must be 1 to 12"}, 1)
+    out = os.path.abspath(a.out)
+    os.makedirs(out, exist_ok=True)
+    ledger_path = os.path.abspath(a.ledger or os.path.join(out, "critique.json"))
+    ledger = {"rounds": []}
+    if os.path.isfile(ledger_path):
+        with open(ledger_path, encoding="utf-8") as fh:
+            ledger = json.load(fh)
+    max_rounds = a.max_rounds or ledger.get("max_rounds") or 4
+    ledger["max_rounds"] = max_rounds
+    rounds = ledger.setdefault("rounds", [])
+    best = min(rounds, key=lambda r: r["total"]) if rounds else None
+    if len(rounds) >= max_rounds:
+        return emit({"ok": True, "recorded": False, "stop": True, "stop_reason": "fix-round cap reached (%d)" % max_rounds,
+                     "rounds": len(rounds), "max_rounds": max_rounds, "ledger": ledger_path,
+                     "deliver": best["model"] if best else None, "best_round": best["round"] if best else None,
+                     "remaining": best.get("remaining", []) if best else [],
+                     "next": "Deliver the best round's model and list the remaining regions as known defects; do not start another round"})
+    n_round = len(rounds) + 1
+    if a.renders:
+        renders = {v: os.path.join(os.path.abspath(a.renders), "view_%s.png" % v) for v in refs}
+        missing = [p for p in renders.values() if not os.path.isfile(p)]
+        if missing:
+            return emit({"ok": False, "error": "renders missing: %s" % ", ".join(missing)}, 1)
+    else:
+        if not a.model or not os.path.isfile(a.model):
+            return emit({"ok": False, "error": "model not found: %s (or pass --renders DIR with view_<view>.png files)" % a.model}, 1)
+        rdir = os.path.join(out, "round_%d" % n_round)
+        res = bpy_action("render", {"file": os.path.abspath(a.model), "out": rdir, "size": a.size, "color": a.color,
+                                    "engine": a.engine, "views": list(refs), "sheet": False, "cols": 3})
+        if not res.get("ok"):
+            return emit(res, 1)
+        renders = {s["view"]: s["path"] for s in res["shots"]}
+    cw = a.color_weight if a.color_weight is not None else (0.0 if a.color == "clay" and not a.renders else 0.5)
+    views, every = {}, []
+    for v, rp in refs.items():
+        ref, mod = Silhouette(rp, a.threshold), Silhouette(renders[v], a.threshold)
+        cells, diff, n = region_diff(ref, mod, a.align, a.grid, 12, cw)
+        dpath = os.path.join(out, "round_%d_diff_%s.png" % (n_round, v))
+        with open(dpath, "wb") as fh:
+            fh.write(png_encode(n, n, diff))
+        asp = lambda s: round((s.box[2] - s.box[0]) / max(s.box[3] - s.box[1], 1), 3)
+        info = {"reference": rp, "render": renders[v], "diff": dpath,
+                "score": round(sum(c["score"] for c in cells) / len(cells), 4), "aspect_ref": asp(ref), "aspect_model": asp(mod)}
+        info["proportion_off"] = abs(info["aspect_model"] / info["aspect_ref"] - 1) > 0.1
+        views[v] = info
+        for c in cells:
+            c.update(view=v, ref_box=pixel_box(ref, a.align, a.grid, c["row"], c["col"]),
+                     model_box=pixel_box(mod, a.align, a.grid, c["row"], c["col"]), hint=cell_hint(c, a.pass_at))
+            del c["row"], c["col"]
+            every.append(c)
+    every.sort(key=lambda c: -c["score"])
+    worst = [c for c in every if c["score"] > 0][:a.top]
+    over = [c for c in every if c["score"] >= a.pass_at]
+    total = round(sum(v["score"] for v in views.values()) / len(views), 4)
+    entry = {"round": n_round, "model": os.path.abspath(a.model) if a.model else None, "renders": renders, "total": total,
+             "align": a.align, "grid": a.grid, "time": time.strftime("%Y-%m-%dT%H:%M:%S"),
+             "remaining": [{k: c[k] for k in ("view", "region", "where", "score", "hint")} for c in over[:a.top]]}
+    rounds.append(entry)
+    best = min(rounds, key=lambda r: r["total"])
+    with open(ledger_path, "w", encoding="utf-8") as fh:
+        json.dump(ledger, fh, indent=1)
+    prev = rounds[-2]["total"] if len(rounds) > 1 else None
+    res = {"ok": True, "recorded": True, "round": n_round, "max_rounds": max_rounds, "rounds_left": max_rounds - n_round,
+           "total": total, "previous_total": prev, "improved": None if prev is None else total < prev,
+           "best_round": best["round"], "best_model": best["model"], "align": a.align, "grid": a.grid,
+           "colour_weight": cw, "views": views, "worst": worst, "regions_over_pass": len(over), "ledger": ledger_path}
+    if not over:
+        res.update(stop=True, stop_reason="every region under --pass %.2f" % a.pass_at,
+                   next="Shape agrees with the references. Still read the renders against them: a low diff measures the "
+                        "silhouette, it never accepts the look (materials, detail, style)")
+    elif n_round >= max_rounds:
+        res.update(stop=True, stop_reason="fix-round cap reached (%d)" % max_rounds, deliver=best["model"],
+                   remaining=best["remaining"],
+                   next="Deliver round %d's model (lowest total) and list its remaining regions as known defects" % best["round"])
+    else:
+        res.update(stop=False, next="For each worst region write 'reference -> model -> difference -> fix' (crop ref_box and "
+                   "model_box, read the diff image: red = only in the reference, blue = only in the model), fix the top "
+                   "ones, save a new numbered .blend, then run critique again")
+    if a.align == "bbox" and any(v["proportion_off"] for v in views.values()):
+        res["note"] = "proportions differ in a view; rerun with --align width (or height) to see which part is missing or extra"
+    return emit(res)
+
+
 # ------------------------------------------------------------------------------------------ main
 
 def main(argv=None):
@@ -3384,6 +3642,25 @@ def main(argv=None):
     p.add_argument("boxes", help="JSON: a list (or {boxes: [...]}) of {name, min, max | center, size, group?, filler?}")
     p.add_argument("--shrink", type=float, default=0.02, help="shrink every box by this much first, so touching is not a clash")
     p.set_defaults(fn=cmd_overlaps)
+    p = sub.add_parser("critique", help="region-by-region diff of a model's renders against reference images, worst regions first, fix rounds capped in a ledger")
+    p.add_argument("model", nargs="?", help="the model to render (any file pw.py render reads); optional with --renders")
+    p.add_argument("--ref", action="append", default=[], help="VIEW=IMAGE, a reference picture for one view (front, back, right, left, top, bottom, iso, iso_back); repeat per view")
+    p.add_argument("--out", required=True, help="folder for renders, diff images and the ledger")
+    p.add_argument("--renders", help="use view_<view>.png files from this folder instead of rendering")
+    p.add_argument("--grid", type=int, default=4, help="regions per side of each view (default 4, so 16 regions)")
+    p.add_argument("--align", choices=["bbox", "width", "height", "frame"], default="bbox",
+                   help="bbox stretches each subject to the grid; width or height keep one scale, bottom aligned, so a missing part shows; frame compares whole images")
+    p.add_argument("--top", type=int, default=6, help="how many worst regions to list")
+    p.add_argument("--pass", dest="pass_at", type=float, default=0.1, help="a region scoring at or above this still needs work")
+    p.add_argument("--color-weight", type=float, help="weight of the mean-colour difference (default 0 for clay renders, 0.5 otherwise)")
+    p.add_argument("--threshold", type=int, default=30, help="how far from the corner colour a pixel must be to count as subject (0-255)")
+    p.add_argument("--max-rounds", type=int, help="fix-round cap kept in the ledger (default 4)")
+    p.add_argument("--ledger", help="round ledger JSON (default OUT/critique.json)")
+    p.add_argument("--size", type=int, default=512)
+    p.add_argument("--color", choices=["clay", "material", "texture"], default="clay")
+    p.add_argument("--engine", choices=["workbench", "eevee", "cycles"], default="workbench")
+    p.set_defaults(fn=cmd_critique)
+
     p = sub.add_parser("texture", help="quick height, normal and roughness maps from a photo")
     p.add_argument("image")
     p.add_argument("--out", required=True)

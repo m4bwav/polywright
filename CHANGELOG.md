@@ -2,6 +2,11 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.16 · 2026-11-20
+
+- Hub: `pw.py critique` renders the model from each reference's view, scores every grid region (shape, plus colour for non-clay renders), ranks the worst regions with crop boxes and a diff image, and caps fix rounds in a ledger that names the best model to deliver. Reason: technique-harvest Reddit post 1x9z82z (blender-asset-studio, MIT; method only, written fresh).
+- Skill changelog entries before 2026-11-10 moved to `ai-docs/archive/` (pointers kept) so the installed size stays under the 800 KB limit.
+
 ## 0.6.15 · 2026-11-19
 
 - polywright-finish: PBR value ranges and specular aliasing (Real-Time Rendering 4e) (#75).

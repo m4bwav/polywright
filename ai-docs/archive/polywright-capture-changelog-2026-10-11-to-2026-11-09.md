@@ -1,0 +1,18 @@
+# polywright-capture changelog, 2026-10-11 to 2026-11-09
+
+Moved out of [skills/polywright-capture/CHANGELOG.md](../../skills/polywright-capture/CHANGELOG.md) to keep the installed size under budget.
+
+### C-20261017-1 · 2026-10-17 · place builds min_height, building parts and roof shapes
+- because: R-20261017-1, HANDOFF owed item 4
+- files: SKILL.md (What place gives you); references/places.md (notes from runs); ../polywright/scripts/pw.py building_mesh, roof_solid, min_rect, place
+- Buildings follow Simple 3D Buildings: parts replace outlines, min_height lifts parts (prints stand them on the ground), four roof shapes on near-rectangular footprints, `counts.roofs`.
+
+### C-20261011-2 · 2026-10-11 · Description says when to fire
+- because: T-20261011-2 first pass (undertriggering: prompts answered without the skill; hub and finish both claimed game-readiness)
+- files: SKILL.md frontmatter description, evals/evals.json action-1
+- Descriptions open with 'Use whenever ...' and name the requests each skill owns; the hub only takes requests no sibling owns.
+
+### C-20261011-1 · 2026-10-11 · Created as an evergreen unit
+- because: user request (an evergreen 3D modelling plugin); research R-20261011-1 to R-20261011-3
+- files: SKILL.md, references/, RESEARCH.md, LEARNINGS.md, TESTS.md, evals/evals.json, evergreen.json
+- Initial version, tier `moderate`, interval 30d, written from the five research notes of 2026-10-11 and the verified runs logged in LEARNINGS.md.
