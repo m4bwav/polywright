@@ -4,6 +4,11 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261120-3 · 2026-11-20 · `pw.py camplan`: timed, overlapping camera moves with a framing check
+- because: user request (technique-harvest paper arXiv:2610.30753 FilmFlow, verdict adopt-partly; operation names, defaults, overlap rules and smoothstep from the paper, no code released, written fresh), R-20261120-1, L-023
+- files: SKILL.md (crowd section, two lines), references/cli.md, references/crowd-blockouts.md ("Camera moves"), examples/camplan.json, scripts/pw.py (cmd_camplan, load_camera_file, crowd and duel --camera-file), scripts/pw_camplan.py (new), scripts/pw_bpy.py (camtrack, camplan, camfile_set), tests/test_camplan.py
+- Test on our own shot (walk 2 m in 4 s; follow + dolly in 0.72 + orbit 28 from 1 s + pedestal 0.8 from 2 s, 35 mm): 97 frames, height 0.459 to 0.573, 0 out of frame, FAIL at 0.45 +-0.12 (max error 0.126); 0.373 at 50 mm; adding Frame Subject 0.45 passes. Blender 5.2.1 keyframed camera matches the planner's projection (max uv difference below 1e-5). The old route (`crowd --move`, a static duel camera) had no timing, no combinations and no framing number. Triggers unchanged, evals not re-run.
+
 ### C-20261120-2 · 2026-11-20 · `pw.py convert` and `lods`: --clean-first, --verify, tear warning
 - because: user request (technique-harvest paper arXiv:2611.20533 RemeshingAgent; written fresh from the paper's description, no code was released)
 - files: scripts/pw.py, scripts/pw_bpy.py, tests/test_pw.py
@@ -14,38 +19,11 @@ Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and wh
 - files: SKILL.md (Step 4 critique paragraph), references/cli.md, scripts/pw.py (cmd_critique, Silhouette, region_diff, png_encode), tests/test_pw.py
 - New command scores every grid region of each view against its reference, ranks the worst with a hint and crop boxes, writes a diff image and keeps the rounds in a ledger that stops at the cap and names the best model to deliver. Test on our own inputs: a tower model (base plus head) as reference, `--align width`: identical model 0.0, head missing 0.125 (worst region upper centre, "missing"), head shifted 0.073 (upper right, "extra"), head thinner 0.062 (upper centre, "missing"); the old route (read sheet.png) gives no number and no region. `--align bbox` stretches a stump to the reference's square, so a missing top part shows as a proportion change instead; the output says to rerun with width or height. Triggers unchanged, evals not re-run.
 
-### C-20261118-1 · 2026-11-18 · Find route: search owned packs with AssetCat first
-- because: user request (technique-harvest GPU test 2026-11-18, posts 1xsh4xq and 1xuksmh)
-- files: references/routes.md (find)
-
-### C-20261117-2 · 2026-11-17 · pw.py texture prints seam_rank
-- because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
-- files: scripts/pw.py (cmd_texture), tests/test_pw.py
-- Every texture run reports the seam rank (h, v) and warns above 90%. Triggers unchanged, evals not re-run.
-
-### C-20261117-1 · 2026-11-17 · patch.gg row in routes.md, unverified
-- because: R-20261117-1
-- files: references/routes.md
-
-### C-20261114-1 · 2026-11-14 · routes.md: scatter is Geometry Nodes
-- because: user request (books track blender-books-2026-11-14: *Blender 3D Environment Design*)
-- files: references/routes.md
-- One-line pointer to polywright-blender gn-scatter and its per-instance vertex budget.
-
-### C-20261112-2 · 2026-11-12 · 3DREAL clay-to-real note in crowd-blockouts
-- because: user request (technique harvest post 1ugg4tb, GPU test 2026-11-12)
-- files: references/crowd-blockouts.md (Driving the video model; Open trimmed)
-
-### C-20261112-1 · 2026-11-12 · place prefers LoD2 CityGML and 1 m DGM where published
-- because: user request (technique harvest 2026-11-12, C-20261112-C)
-- files: references/cli.md (place row)
-- A note only; pw.py unchanged.
-
-### C-20261110-1 · 2026-11-10 · harvest.json: technique-harvest targets for this unit
-- because: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json)
-- files: harvest.json (new)
-- Data file only; no skill text or version changed.
-
-Entries 2026-10-25 to 2026-11-09: [ai-docs/archive/polywright-changelog-2026-10-25-to-2026-11-09.md](../../ai-docs/archive/polywright-changelog-2026-10-25-to-2026-11-09.md).
-Entries 2026-10-17 to 2026-10-25: [ai-docs/archive/polywright-changelog-2026-10-17-to-10-25.md](../../ai-docs/archive/polywright-changelog-2026-10-17-to-10-25.md).
-Entries before 2026-10-17: [ai-docs/archive/polywright-changelog-before-2026-10-17.md](../../ai-docs/archive/polywright-changelog-before-2026-10-17.md).
+Archived 2026-11-20 to save install size (full text in the repo at ai-docs/archive/polywright-changelog-2026-11-10-to-2026-11-18.md, not installed):
+- C-20261118-1 · 2026-11-18 · Find route: search owned packs with AssetCat first
+- C-20261117-2 · 2026-11-17 · pw.py texture prints seam_rank
+- C-20261117-1 · 2026-11-17 · patch.gg row in routes.md, unverified
+- C-20261114-1 · 2026-11-14 · routes.md: scatter is Geometry Nodes
+- C-20261112-2 · 2026-11-12 · 3DREAL clay-to-real note in crowd-blockouts
+- C-20261112-1 · 2026-11-12 · place prefers LoD2 CityGML and 1 m DGM where published
+- C-20261110-1 · 2026-11-10 · harvest.json: technique-harvest targets for this unit

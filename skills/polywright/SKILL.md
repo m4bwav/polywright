@@ -136,9 +136,11 @@ Video models break on crowds; Blender does not. Let Blender place the army and t
 3. Repaint clay frame 1 into an approved start still; drive Wan VACE or Wan 2.2 Fun Control with the depth video
    and that still. Prompt costume, colour per side, light and haze, not the head count.
 
-Overlap check for a generated scene: dump each piece's bounds to JSON and run `pw.py overlaps scene.json` (filler such as pilasters or pipes marked `filler`, intended layers sharing a `group`). It names struts across doors and props in doorways.
+Overlap check for a generated scene: dump each piece's bounds to JSON and run `pw.py overlaps scene.json` (filler marked `filler`, intended layers sharing a `group`); it names struts across doors and props in doorways.
 
 Details and what is untested: [references/crowd-blockouts.md](references/crowd-blockouts.md). Shot planning is cinewright's.
+Timed or combined camera moves: `pw.py camplan shot.json --check` gives framing PASS/FAIL; `--out DIR`
+writes camera.json for `--camera-file` on crowd or duel (crowd-blockouts.md, "Camera moves").
 
 Two fighters: `pw.py duel shot.json --preview` poses two mannequins at their marks in the set, through the
 shot's camera (`examples/duel.json`); read `sheet.png`, then drop `--preview` for each control's mp4.

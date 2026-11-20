@@ -1531,5 +1531,9 @@ class Critique(unittest.TestCase):
         self.assertIn("VIEW=IMAGE", res["error"])
 
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from test_camplan import CamplanCli, CamplanMaths, CamplanWithBlender  # noqa: E402,F401  camplan tests run here too (CI runs this file)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

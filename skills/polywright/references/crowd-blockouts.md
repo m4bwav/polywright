@@ -155,6 +155,36 @@ Check also that each end state is inside the shot's own frame (L-005).
 - Not yet run through Wan VACE or Fun Control; not yet tested with pose, or with a repainted clay start frame.
 - Whether a gamma on the depth (more tones for the front ranks) beats plain inverse depth.
 
+## Camera moves (`pw.py camplan`)
+
+`crowd --move` has four fixed moves; `duel` holds one camera. For a timed move, or several at once, write a shot
+file and plan it: `pw.py camplan shot.json --check` (start from [../examples/camplan.json](../examples/camplan.json)).
+The file holds `fps`, `duration_sec`, `size`, a start `camera` (`pos`, `aim` as a point or a subject name,
+`lens_mm`; or `preset` from `pw.py framecam` with `--presets cameras.json`), `subjects` (`pos`, a `path` of
+`[t, [x, y, z]]` feet keys, or an `object` in the `--blend` room; `height`, `width`), `framing` (`subject`,
+`height_fraction` 0.45, `tolerance` 0.12, optional `screen_uv` and `uv_tolerance`) and `operations`
+`[{op_id, method, start_sec, end_sec, parameters}]` whose intervals may overlap.
+
+| method | default | combines by |
+|---|---|---|
+| Dolly In / Dolly Out | `distance_scale` 0.72 / 1.35 (ground distance to the pivot) | ratios multiply |
+| Orbit | `orbit_angle_deg` 28, `direction` right | angles add |
+| Truck, Pedestal (Up, Down) | `metres` 1.0 | added after dolly and orbit |
+| Position Follow, Height Follow | `strength` 1.0 | the pivot moves with the subject over the interval |
+| Pan, Tilt, Roll | 20, 15, 10 degrees | angles add on the aim |
+| Aim Follow, Screen Position Lock | lock `uv` [0.5, 0.5] | the lock holds from its start |
+| Zoom, Frame Subject | `focal_target` 50 mm; `height_fraction` 0.65 | lens ratios multiply |
+| Handheld, Horizon Lock, Static | 0.5 degrees, 0.01 m, 1.2 Hz, `seed` | noise is seeded; the lock levels roll |
+
+Each operation eases with smoothstep over its own interval (`"easing": "linear"` per operation). The check projects
+the subject's feet, head and sides through Blender's pinhole every frame: height as a fraction of the frame
+height, centre against `screen_uv`, points out of frame; exit 1 on FAIL. `--out DIR` writes `camera.json` (per
+frame `pos`, `aim`, `lens_mm`, `roll_deg`, `matrix_world`) and `framing.json`; `--blend [ROOM.blend]` keyframes a
+`pw_camplan` camera and saves `DIR/camplan.blend` (the room is never overwritten). Then
+`crowd ... --camera-file DIR/camera.json` or `duel shot.json --camera-file DIR/camera.json`; a shorter file holds
+its last frame. Names, defaults and overlap rules follow FilmFlow (arXiv:2610.30753), whose agent loop and VLM
+critic are left out; the framing check is ours.
+
 Sources: Wan VACE (github.com/ali-vilab/VACE), ComfyUI WanVaceToVideo and Wan 2.2 Fun Control docs
 (docs.comfy.org, checked 2026-10-13); RunComfy Blender to ComfyUI AI Renderer 2.0 workflow (2026); smixs
 visual-skills blockout rules (CC BY 4.0, idea only); seedance.tv ComfyUI crowd workflow (2026-09-13);

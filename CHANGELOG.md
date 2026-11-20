@@ -2,6 +2,11 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.18 · 2026-11-20
+
+- Hub: `pw.py camplan SHOT.json --check | --out DIR [--blend [ROOM.blend]]` plans timed camera operations whose intervals may overlap (dolly, orbit, truck, pedestal, follow, pan, tilt, roll, zoom, frame subject, screen lock, handheld, horizon lock) into a per-frame camera.json, a keyframed camera in camplan.blend (headless Blender 5.x) and framing.json with PASS/FAIL against a subject-height target and points in frame. `crowd` and `duel` take `--camera-file camera.json`. On a walk with follow, dolly in, a late orbit and a pedestal: subject height 0.459 to 0.573, 0 frames out, FAIL at 0.45 +-0.12; Blender's projection matches within 1e-5. Operation names, defaults and overlap rules from FilmFlow, arXiv:2610.30753 (no code released; written fresh).
+- Install size: hub changelog entries 2026-11-10 to 2026-11-18 and learnings L-013, L-014 moved to `ai-docs/` (pointers kept); the six sibling MAINTENANCE.md files now point to the hub's.
+
 ## 0.6.17 · 2026-11-20
 
 - Hub: `pw.py convert` and `pw.py lods` take `--clean-first` (weld UV-seam splits, drop dust parts, then collapse) and `--verify` (open and non-manifold edges, parts, faces within 20% of the target, Chamfer against the input; a ladder of weld distances, best kept, exit 1 if none passes). `--drop-interior` now runs before decimation, and plain decimation warns when it tears the mesh. On a 699k-triangle generated GLB at 1%: open edges 8,869 and 847 parts before, 1 and 7 after (Chamfer 0.0005 of the diagonal). polywright-finish route row names the flags. Idea from RemeshingAgent, arXiv:2611.20533 (clean before decimating, verify after), written fresh.

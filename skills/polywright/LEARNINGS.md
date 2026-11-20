@@ -6,6 +6,13 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-023 · 2026-11-20 · A lock eased like a move only holds at its end
+- Trigger: a Screen Position Lock over the whole shot left the subject 0.21 off its screen point on early frames; smoothstep eased the lock in from zero.
+- Rule: in `pw.py camplan`, locks (Screen Position Lock, Horizon Lock) hold from their start; moves ease. Give a lock `"easing": "smoothstep"` only to blend into it.
+- Evidence: tests/test_camplan.py screen-lock case, max uv error 0.21 before, under 0.02 after.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-20
+
 Archived 2026-11-17 to save install size (full text in the repo at ai-docs/notes/polywright-learnings-archive.md, not installed):
 - L-022 · 2026-10-25 · Turning off anti-aliasing is not enough for an exact-colour pass: dither adds +-1 noise
 - L-021 · 2026-10-25 · A crowd blockout cut down to two figures keeps crowd defaults that hide them
@@ -55,16 +62,8 @@ Archived 2026-11-17 to save install size (full text in the repo at ai-docs/notes
 - moved 2026-11-18 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
 
 ### L-013 · 2026-10-23 · crowd PNGs differ byte for byte between identical runs: compare decoded pixels
-- Trigger: two runs of the same `crowd` command on the same build gave different SHA-256 for every depth, mask and clay frame; 30 bytes differed in the header chunks (Blender writes an eXIf chunk), while the decoded pixels were equal.
-- Rule: to prove a change leaves a pass untouched, compare decoded pixels (`png_decode` or Pillow `tobytes()`), not file hashes. A 16-bit pass (Mist) opens in Pillow as `I;16` and clips to white through `convert("RGB")`; scale by 1/257 first (`crowd_sheet` does).
-- Evidence: 17-frame crowd at 320x192, Blender 5.2.1, before and after the Mist pass: every pass pixel-identical, no file hash equal
-- Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+- moved 2026-11-20 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
 
 ### L-014 · 2026-10-23 · `pw.py bpy` swallows a script flag that shares a name with its own options
-- Trigger: `pw.py bpy build_sets.py -- --blend` never saved the .blend; the script saw no `--blend`, though `--people` passed through.
-- Hypothesis: argparse in `pw.py bpy` matches `--blend` (its own "open this .blend first") even after the script name, so the flag is consumed before it reaches the script.
-- Rule: give script flags names `pw.py bpy` does not own (`--save-blend`, not `--blend`; avoid `--timeout`, `--lines`); when a flag seems ignored, print `sys.argv` in the script.
-- Evidence: siege-news blockout (D:/<folder>/siege_news/sets/blockout/build_sets.py), 2026-10-23: `--blend` wrote nothing, `--save-blend` wrote four .blend files.
-- Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
+- moved 2026-11-20 (budget): [ai-docs/notes/polywright-learnings-archive.md](../../ai-docs/notes/polywright-learnings-archive.md)
+

@@ -45,6 +45,9 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261120-1 · 2026-11-20 · Subject: camera operation plans (FilmFlow)
+- FilmFlow (https://arxiv.org/abs/2610.30753, CC BY 4.0, no code): a shot is a JSON list of 22 camera operations with overlapping intervals; translations add, angles add (aim, pan, tilt, roll), radius and focal ratios multiply, orbit and dolly before truck and pedestal, smoothstep easing; defaults dolly 0.72/1.35, orbit 28, pan 20, tilt 15, zoom 50 mm, frame subject 0.65. Ablations: sequential-only and no critic each cost about 0.05 probe score; no framing metric in the paper. applied: `pw.py camplan` with our geometric framing check in place of the VLM critic. magnitude: minor
+
 ### R-20261117-1 · 2026-11-17 · Testing: VibePrevisBench and an asset aggregator
 - VibePrevisBench (https://arxiv.org/abs/2611.15789): 242 previs tasks in Blender, checked against hidden scene facts and a VLM screen check; agents look at their renders but fail to fix errors. Fact-list rule added to polywright-blender Step 4. Running the benchmark needs Docker and paid VLM calls: not run. m 0.5.
 - patch.gg toolbox (https://www.reddit.com/r/aigamedev/comments/1xt0uwn/): vendor claim of ~50k aggregated assets with CLI/MCP search; licences per source store, sign-in to download. Added to routes.md as unverified. applied: routes.md row.
