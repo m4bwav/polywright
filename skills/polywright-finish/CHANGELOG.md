@@ -1,8 +1,12 @@
 # Changelog: polywright-finish
 
-Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
+Changes to [SKILL.md](SKILL.md) and companions, newest first, citing [RESEARCH.md](RESEARCH.md) `R-`, [LEARNINGS.md](LEARNINGS.md) `L-`, [TESTS.md](TESTS.md) `T-`. State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
+Entry: `### C-YYYYMMDD-n · date · summary`, `because:`, `files:`, one sentence.
+
+### C-20261119-1 · 2026-11-19 · PBR value ranges
+- because: user request (Real-Time Rendering 4e)
+- files: SKILL.md Step 4
 
 ### C-20261117-2 · 2026-11-17 · Godot glTF loop note
 - because: technique-harvest post yt-B-vI6rRxfIk (Back To Code video, ideas only, no code copied), user request
