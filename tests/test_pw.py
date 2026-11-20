@@ -533,6 +533,28 @@ class WithBlender(unittest.TestCase):
             self.assertTrue(os.path.isfile(res[k]), k)
         self.assertGreaterEqual(res["mask_bbox"][0], 95 - 10)  # the hidden box stays out of the mask
 
+    def test_critique_renders_the_model_and_finds_the_missing_top(self):
+        base, head = pw.Mesh("base", (1, 1, 1)), pw.Mesh("head", (1, 1, 1))
+        base.v, base.f = pw.prism([(0, 0), (4, 0), (4, 2), (0, 2)], 0, 2)
+        head.v, head.f = pw.prism([(1, 0.5), (3, 0.5), (3, 1.5), (1, 1.5)], 2, 4)
+        tower, stump = os.path.join(self.tmp, "tower.glb"), os.path.join(self.tmp, "stump.glb")
+        pw.write_glb(tower, [base, head])
+        pw.write_glb(stump, [base])
+        refdir = os.path.join(self.tmp, "crit_ref")
+        code, out = run("render", tower, "--out", refdir, "--views", "front", "--size", "160", "--no-sheet")
+        self.assertEqual(code, 0, out)
+        ref = os.path.join(refdir, "view_front.png")
+        d = os.path.join(self.tmp, "crit")
+        code, same = run("critique", tower, "--ref", "front=" + ref, "--out", d, "--size", "160", "--align", "width")
+        self.assertEqual(code, 0, same)
+        self.assertLess(same["total"], 0.02, same)
+        code, res = run("critique", stump, "--ref", "front=" + ref, "--out", d, "--size", "160", "--align", "width")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["round"], 2)
+        self.assertGreater(res["total"], 0.1, res)
+        self.assertTrue(res["worst"][0]["where"].startswith("upper"), res["worst"][0])
+        self.assertEqual(res["best_round"], 1)
+
     def write_obj(self, name, verts, faces, uvs=None):
         path = os.path.join(self.tmp, name)
         with open(path, "w") as f:
@@ -1356,6 +1378,99 @@ class OverlapTests(unittest.TestCase):
         boxes = [{"name": "A", "min": [0, 0, 0], "max": [1, 1, 1]}, {"name": "B", "min": [1, 0, 0], "max": [2, 1, 1]}]
         self.assertEqual(pw.box_overlaps(boxes), ([], []))
 
+
+
+def figure_png(path, boxes, colour=(60, 60, 60), size=96, bg=200):
+    """A flat-grey picture with filled boxes (x0, y0, x1, y1), standing in for a reference or a render."""
+    rows = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            inside = any(x0 <= x < x1 and y0 <= y < y1 for x0, y0, x1, y1 in boxes)
+            row += list(colour) if inside else [bg, bg, bg]
+        rows.append(row)
+    with open(path, "wb") as f:
+        f.write(make_png(size, size, rows))
+    return path
+
+
+TOWER = [(10, 50, 86, 90), (30, 12, 66, 50)]  # a wide base and a narrower head on top
+BASE = [(10, 50, 86, 90)]
+
+
+class Critique(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="pwtest_crit_")
+        self.ref = figure_png(os.path.join(self.tmp, "ref_front.png"), TOWER)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def renders(self, name, boxes, colour=(60, 60, 60)):
+        d = os.path.join(self.tmp, name)
+        os.makedirs(d)
+        figure_png(os.path.join(d, "view_front.png"), boxes, colour)
+        return d
+
+    def test_identical_views_pass_and_stop(self):
+        code, res = run("critique", "--ref", "front=" + self.ref, "--renders", self.renders("same", TOWER), "--out", os.path.join(self.tmp, "o"))
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["total"], 0)
+        self.assertTrue(res["stop"])
+        self.assertIn("never accepts the look", res["next"])
+        self.assertEqual(res["regions_over_pass"], 0)
+
+    def test_missing_head_ranks_the_upper_regions_first(self):
+        out = os.path.join(self.tmp, "o")
+        code, res = run("critique", "--ref", "front=" + self.ref, "--renders", self.renders("base", BASE), "--out", out, "--align", "width")
+        self.assertEqual(code, 0, res)
+        self.assertFalse(res["stop"])
+        top = res["worst"][0]
+        self.assertTrue(top["where"].startswith("upper"), top)
+        self.assertEqual(top["hint"], "missing or too small in the model")
+        self.assertTrue(all(c["cover_ref"] >= c["cover_model"] for c in res["worst"]))
+        with open(res["views"]["front"]["diff"], "rb") as f:
+            w, h, _ch, _px = pw.png_decode(f.read())
+        self.assertEqual((w, h), (48, 48))  # 4 regions x 12 samples per side
+        self.assertEqual(len(res["worst"][0]["ref_box"]), 4)
+
+    def test_bbox_alignment_reports_the_proportion_change(self):
+        code, res = run("critique", "--ref", "front=" + self.ref, "--renders", self.renders("base", BASE), "--out", os.path.join(self.tmp, "o"))
+        self.assertEqual(code, 0, res)
+        self.assertTrue(res["views"]["front"]["proportion_off"])
+        self.assertIn("--align width", res["note"])
+
+    def test_colour_counts_for_coloured_renders(self):
+        code, res = run("critique", "--ref", "front=" + self.ref, "--renders", self.renders("red", TOWER, (160, 30, 30)),
+                        "--out", os.path.join(self.tmp, "o"))
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["colour_weight"], 0.5)
+        self.assertEqual(res["worst"][0]["shape"], 0)
+        self.assertEqual(res["worst"][0]["hint"], "colour or tone differs")
+
+    def test_rounds_are_capped_and_the_best_is_delivered(self):
+        out = os.path.join(self.tmp, "o")
+        bad, better = self.renders("base", BASE), self.renders("narrow", [(10, 50, 86, 90), (36, 12, 60, 50)])
+        args = ["--ref", "front=" + self.ref, "--out", out, "--align", "width", "--max-rounds", "2"]
+        code, r1 = run("critique", "v1.blend", "--renders", bad, *args)
+        self.assertEqual((code, r1["round"], r1["rounds_left"], r1["stop"]), (0, 1, 1, False), r1)
+        code, r2 = run("critique", "v2.blend", "--renders", better, *args)
+        self.assertEqual(code, 0, r2)
+        self.assertTrue(r2["improved"])
+        self.assertTrue(r2["stop"])
+        self.assertIn("cap", r2["stop_reason"])
+        self.assertTrue(r2["deliver"].endswith("v2.blend"))
+        code, r3 = run("critique", "v3.blend", "--renders", bad, *args)
+        self.assertEqual(code, 0, r3)
+        self.assertFalse(r3["recorded"])
+        self.assertEqual(r3["best_round"], 2)
+        with open(os.path.join(out, "critique.json"), encoding="utf-8") as f:
+            self.assertEqual(len(json.load(f)["rounds"]), 2)
+
+    def test_bad_reference_view_fails_soft(self):
+        code, res = run("critique", "--ref", "sideways=" + self.ref, "--renders", self.tmp, "--out", os.path.join(self.tmp, "o"))
+        self.assertEqual(code, 1)
+        self.assertIn("VIEW=IMAGE", res["error"])
 
 
 if __name__ == "__main__":
