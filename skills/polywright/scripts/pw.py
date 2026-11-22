@@ -51,7 +51,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.18"
+VERSION = "0.6.19"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")

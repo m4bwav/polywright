@@ -4,6 +4,10 @@ Every change to [SKILL.md](SKILL.md) and its companions, newest first, each with
 
 Entry shape: `C-YYYYMMDD-n · date · summary`, then `because:`, `files:` and what changed.
 
+### C-20261121-1 · 2026-11-21 · routes.md: vinish.dev and more free model libraries
+- because: user request, R-20261121-1
+- files: references/routes.md (five rows, biggest-libraries line), RESEARCH.md. SKILL.md unchanged; triggers unchanged, evals not re-run.
+
 ### C-20261120-3 · 2026-11-20 · `pw.py camplan`: timed, overlapping camera moves with a framing check
 - because: user request (technique-harvest paper arXiv:2610.30753 FilmFlow, verdict adopt-partly; operation names, defaults, overlap rules and smoothstep from the paper, no code released, written fresh), R-20261120-1, L-023
 - files: SKILL.md (crowd section, two lines), references/cli.md, references/crowd-blockouts.md ("Camera moves"), examples/camplan.json, scripts/pw.py (cmd_camplan, load_camera_file, crowd and duel --camera-file), scripts/pw_camplan.py (new), scripts/pw_bpy.py (camtrack, camplan, camfile_set), tests/test_camplan.py

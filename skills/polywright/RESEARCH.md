@@ -45,6 +45,10 @@ Best sources: project repositories' releases and READMEs, official docs, dated p
 
 ## Findings log
 
+### R-20261121-1 · 2026-11-21 · Sources: vinish.dev free 3D models and the big free libraries
+- vinish.dev/free-3d-models (fetched 2026-11-21): 469 models, 42 categories, GLB/glTF/OBJ/STL, no login, "Every model is original, made by vinish.dev, and free for personal and commercial projects under CC BY 4.0". No AI disclosure either way. Verdict: usable with credit; small solo site, so record author and URL in the manifest.
+- Added rows for Poly Pizza, Smithsonian 3D, NASA 3D, BlenderKit and store free sections from recall; flagged in routes.md to confirm at use.
+
 ### R-20261120-1 · 2026-11-20 · Subject: camera operation plans (FilmFlow)
 - FilmFlow (https://arxiv.org/abs/2610.30753, CC BY 4.0, no code): a shot is a JSON list of 22 camera operations with overlapping intervals; translations add, angles add (aim, pan, tilt, roll), radius and focal ratios multiply, orbit and dolly before truck and pedestal, smoothstep easing; defaults dolly 0.72/1.35, orbit 28, pan 20, tilt 15, zoom 50 mm, frame subject 0.65. Ablations: sequential-only and no critic each cost about 0.05 probe score; no framing metric in the paper. applied: `pw.py camplan` with our geometric framing check in place of the VLM critic. magnitude: minor
 

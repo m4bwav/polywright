@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.19 · 2026-11-21
+
+- Hub routes: vinish.dev free 3D models (469, CC BY 4.0) and Poly Pizza, Smithsonian, NASA, BlenderKit and store free sections added to the find table, with a biggest-libraries line.
+
 ## 0.6.18 · 2026-11-20
 
 - Hub: `pw.py camplan SHOT.json --check | --out DIR [--blend [ROOM.blend]]` plans timed camera operations whose intervals may overlap (dolly, orbit, truck, pedestal, follow, pan, tilt, roll, zoom, frame subject, screen lock, handheld, horizon lock) into a per-frame camera.json, a keyframed camera in camplan.blend (headless Blender 5.x) and framing.json with PASS/FAIL against a subject-height target and points in frame. `crowd` and `duel` take `--camera-file camera.json`. On a walk with follow, dolly in, a late orbit and a pedestal: subject height 0.459 to 0.573, 0 frames out, FAIL at 0.45 +-0.12; Blender's projection matches within 1e-5. Operation names, defaults and overlap rules from FilmFlow, arXiv:2610.30753 (no code released; written fresh).
