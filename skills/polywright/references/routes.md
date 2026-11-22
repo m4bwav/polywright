@@ -28,12 +28,19 @@ free Sketchfab model in one evening where scratch modelling would still look gen
 | Printables, MakerWorld, Thingiverse, Cults3D | printable models | per model, often non-commercial | already solid and print-tested; first stop for print jobs |
 | Fab (Epic), Unity Asset Store | game assets | store EULA | check engine and redistribution terms |
 | patch.gg toolbox (unverified) | ~50k models, textures, splats, audio, mostly aggregated from open stores; CLI and MCP search | per asset, from its source store | sign-in to download; verify each asset's origin and licence ([post](https://www.reddit.com/r/aigamedev/comments/1xt0uwn/)) |
+| vinish.dev/free-3d-models | 469 original models in 42 categories (vehicles, dinosaurs, kitchen, rigged mannequin with 36 clips) | CC BY 4.0, commercial use, credit required | no sign-up; GLB, glTF, OBJ, STL; one small solo site, originality is its own claim (checked 2026-11-21) |
+| Poly Pizza (poly.pizza) | ~10k low-poly models, incl. the rescued Google Poly archive | CC0 or CC-BY per model | API; good for stylised placeholders |
+| Smithsonian 3D, NASA 3D Resources | scanned artefacts, spacecraft | Smithsonian Open Access CC0; NASA media guidelines | real objects, heavy scans that need decimating |
+| BlenderKit | models, materials, HDRIs inside Blender | royalty-free (free tier) or CC0 | add-on and account; no redistribution of raw files |
+| Free3D, TurboSquid free, CGTrader free | large mixed free sections of paid stores | store licence per model, often personal-use only | quality and licence vary most here; read each page |
 | Objaverse / Objaverse-XL | research datasets | ODC-By dataset, per-object licences in metadata | filter by licence before use |
 
 Before downloading or generating, search packs you already own: [AssetCat](https://github.com/digitalhobbit/assetcat) (MIT, local, read-only; link, do not vendor) finds images by meaning (`assetcat search --meaning "oak barrel" --json`); in a 2026-11-18 test on two 16 px tile packs it put 17 of 25 right hits in the top 5, weak on characters and creatures, so look at the top 10.
 
 Record every download: `pw.py manifest <dir> --add-source <url> --what <what> --author <a> --licence <l>`.
-Licence secondary-sourced for Poly Haven, Kenney and Quaternius (CC0); confirm on the site at use.
+Licence secondary-sourced for Poly Haven, Kenney and Quaternius (CC0); confirm on the site at use. vinish.dev fetched 2026-11-21 (R-20261121-1); the Poly Pizza, Smithsonian, NASA, BlenderKit and store free-section rows are from recall, so confirm each licence on its page.
+
+Biggest libraries by count, for ideas or a fast find: Sketchfab (largest downloadable pool), the print sites, Poly Haven, Poly Pizza, Free3D and the store free sections; for CC0 only, Poly Haven, Kenney, Quaternius, ambientCG, Smithsonian. Any of them is also a reference source for a model you then build yourself (polywright-references).
 
 ## Disclosure rules for AI-made content (2026)
 
