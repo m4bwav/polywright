@@ -2,6 +2,10 @@
 
 Plugin versions. Reasoned changes per skill are in each `skills/<name>/CHANGELOG.md`.
 
+## 0.6.20 · 2026-11-22
+
+- Hub: `pw.py render --cull --mannequin M` (back faces culled as game engines do, a human-height figure beside the model), `pw.py snap FILE --points pts.json` (raycast hardpoint markers onto the surface) and `pw.py light FILE --out DIR --tris N --size PX` (voxel remesh, decimate, shrinkwrap, Smart UV, bake base colour, normal and ORM into one atlas, GLB). On a 695,741-triangle generated GLB: 19,957 triangles, 0 winding mismatches (source 11), bakes 66 s on CPU at 4096 px. After a solo developer's routine on r/ClaudeGameDev (ideas only).
+
 ## 0.6.19 · 2026-11-21
 
 - Hub routes: vinish.dev free 3D models (469, CC BY 4.0) and Poly Pizza, Smithsonian, NASA, BlenderKit and store free sections added to the find table, with a biggest-libraries line.

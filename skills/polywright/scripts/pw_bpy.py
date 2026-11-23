@@ -835,6 +835,14 @@ def act_render(p):
     os.makedirs(out, exist_ok=True)
     size = setup_render(p)
     lo, hi = bounds(objs)
+    if p.get("cull"):
+        # what a game or web engine shows: back faces culled, so holes and flipped faces read as background
+        bpy.context.scene.display.shading.show_backface_culling = True
+        for m in bpy.data.materials:
+            m.use_backface_culling = True
+    if p.get("mannequin"):
+        objs = objs + add_mannequin(lo, hi, float(p["mannequin"]))
+        lo, hi = bounds(objs)
     c = Vector([(lo[i] + hi[i]) / 2 for i in range(3)])
     ext = Vector([hi[i] - lo[i] for i in range(3)])
     radius = max(ext.length / 2, 1e-6)
@@ -3306,10 +3314,205 @@ def act_camplan(p):
             "max_uv_diff": round(worst, 5)}
 
 
+# ------------------------------------------------- review extras and the light version (after an r/ClaudeGameDev
+# routine for generated meshes, 2026-11; written fresh from the description)
+
+def add_mannequin(lo, hi, height):
+    """A grey human-height stand-in (cylinder body, sphere head) beside the model's -X side, feet on its floor."""
+    r = height * 0.12
+    x = lo[0] - r * 3
+    y = (lo[1] + hi[1]) / 2
+    body_h = height * 0.86
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=body_h, location=(x, y, lo[2] + body_h / 2))
+    body = bpy.context.active_object
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=height * 0.07, location=(x, y, lo[2] + height - height * 0.07))
+    head = bpy.context.active_object
+    for o in (body, head):
+        o.name = "pw_mannequin"
+    return [body, head]
+
+
+def snap_points(objs, points):
+    """Raycast markers along their direction (default down) onto the surface; misses cast back, then nearest."""
+    from mathutils.bvhtree import BVHTree
+    T = world_tris(objs)
+    bvh = BVHTree.FromPolygons([tuple(v) for v in T.reshape(-1, 3)], [(3 * i, 3 * i + 1, 3 * i + 2) for i in range(len(T))])
+    out = []
+    for pt in points:
+        o = Vector(pt["at"])
+        d = Vector(pt.get("dir", (0, 0, -1))).normalized()
+        hit = bvh.ray_cast(o, d)
+        how = "ray"
+        if hit[0] is None:
+            hit, how = bvh.ray_cast(o, -d), "ray_back"
+        if hit[0] is None:
+            hit, how = bvh.find_nearest(o), "nearest"
+        loc, nrm, _, dist = hit
+        out.append({"name": pt.get("name", "p%d" % len(out)), "at": [round(v, 5) for v in loc],
+                    "normal": [round(v, 4) for v in nrm], "moved": round(dist, 5), "how": how})
+    return out
+
+
+def act_snap(p):
+    return {"points": snap_points(load(p["file"]), p["points"])}
+
+
+def _bake(img, kind, high, low, extrusion, margin, **kw):
+    nt = low.active_material.node_tree
+    nt.nodes.active = next(n for n in nt.nodes if n.type == "TEX_IMAGE" and n.image == img)
+    bpy.ops.object.select_all(action="DESELECT")
+    for h in high:
+        h.select_set(True)
+    low.select_set(True)
+    bpy.context.view_layer.objects.active = low
+    t = time.time()
+    bpy.ops.object.bake(type=kind, use_selected_to_active=True, cage_extrusion=extrusion, margin=margin, **kw)
+    return round(time.time() - t, 1)
+
+
+def _metal_swap(objs):
+    """Metallic has no bake pass: route each source material's Metallic into an emission shader for an EMIT bake."""
+    swaps = []
+    for o in objs:
+        for slot in o.material_slots:
+            mm = slot.material
+            if not mm or not mm.use_nodes or any(s[0] is mm for s in swaps):
+                continue
+            b = next((n for n in mm.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+            outn = next((n for n in mm.node_tree.nodes if n.type == "OUTPUT_MATERIAL"), None)
+            if not b or not outn:
+                continue
+            old = [l.from_socket for l in outn.inputs["Surface"].links]
+            em = mm.node_tree.nodes.new("ShaderNodeEmission")
+            src = b.inputs["Metallic"]
+            if src.links:
+                mm.node_tree.links.new(src.links[0].from_socket, em.inputs["Color"])
+            else:
+                v = src.default_value
+                em.inputs["Color"].default_value = (v, v, v, 1)
+            mm.node_tree.links.new(em.outputs[0], outn.inputs["Surface"])
+            swaps.append((mm, em, outn, old))
+    return swaps
+
+
+def act_light(p):
+    """Remesh, decimate, shrinkwrap and Smart UV a copy; bake base colour, normal and ORM from the source."""
+    t0 = time.time()
+    high = load(p["file"])
+    if not high:
+        raise ValueError("no mesh objects")
+    sc = bpy.context.scene
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "CPU"
+    sc.cycles.samples = int(p.get("samples", 16))
+    lo, hi = bounds(high)
+    diag = (Vector(hi) - Vector(lo)).length
+    src_tris = len(world_tris(high))
+    select_only(high, high[0])
+    bpy.ops.object.duplicate()
+    dup = list(bpy.context.selected_objects)
+    select_only(dup, dup[0])
+    if len(dup) > 1:
+        bpy.ops.object.join()
+    low = bpy.context.active_object
+    low.name = "light"
+    voxel = float(p.get("voxel") or diag / int(p.get("voxel_div", 200)))
+    m = low.modifiers.new("pw_remesh", "REMESH")
+    m.mode, m.voxel_size = "VOXEL", voxel
+    apply_modifier(low, m)
+    t_remesh = round(time.time() - t0, 1)
+    tris = decimate_to(low, int(p.get("tris", 20000)))
+    select_only(high, high[0])
+    bpy.ops.object.duplicate()
+    if len(high) > 1:
+        bpy.ops.object.join()
+    tgt = bpy.context.active_object
+    tgt.hide_render = True
+    sw = low.modifiers.new("pw_shrink", "SHRINKWRAP")
+    sw.wrap_method, sw.target = "NEAREST_SURFACEPOINT", tgt
+    apply_modifier(low, sw)
+    bpy.data.objects.remove(tgt, do_unlink=True)
+    for poly in low.data.polygons:
+        poly.use_smooth = True
+    select_only([low], low)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(island_margin=float(p.get("island_margin", 0.003)))
+    bpy.ops.object.mode_set(mode="OBJECT")
+    low.data.materials.clear()
+    mat = bpy.data.materials.new("light")
+    low.data.materials.append(mat)
+    nt = mat.node_tree
+    bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    size = int(p.get("size", 4096))
+    out = p["out"]
+    os.makedirs(out, exist_ok=True)
+    imgs = {}
+    for key, cs in (("basecolor", "sRGB"), ("normal", "Non-Color"), ("ao", "Non-Color"), ("rough", "Non-Color"), ("metal", "Non-Color")):
+        img = bpy.data.images.new("light_" + key, size, size, alpha=False)
+        img.colorspace_settings.name = cs
+        nt.nodes.new("ShaderNodeTexImage").image = img
+        imgs[key] = img
+    ext = float(p.get("extrusion") or diag * 0.01)
+    margin = int(p.get("margin", 8))
+    times = {"remesh": t_remesh}
+    times["basecolor"] = _bake(imgs["basecolor"], "DIFFUSE", high, low, ext, margin, pass_filter={"COLOR"})
+    times["normal"] = _bake(imgs["normal"], "NORMAL", high, low, ext, margin, normal_space="TANGENT")
+    times["roughness"] = _bake(imgs["rough"], "ROUGHNESS", high, low, ext, margin)
+    if not p.get("no_ao"):
+        times["ao"] = _bake(imgs["ao"], "AO", high, low, ext, margin)
+    swaps = _metal_swap(high)
+    times["metallic"] = _bake(imgs["metal"], "EMIT", high, low, ext, margin)
+    for mm, em, outn, old in swaps:
+        mm.node_tree.nodes.remove(em)
+        for s in old:
+            mm.node_tree.links.new(s, outn.inputs["Surface"])
+    n = size * size * 4
+    ch = {}
+    for k in ("ao", "rough", "metal"):
+        a = np.empty(n, dtype=np.float32)
+        imgs[k].pixels.foreach_get(a)
+        ch[k] = a.reshape(-1, 4)[:, 0]
+    orm = bpy.data.images.new("light_orm", size, size, alpha=False)
+    orm.colorspace_settings.name = "Non-Color"
+    o4 = np.ones((size * size, 4), dtype=np.float32)
+    o4[:, 0] = 1.0 if p.get("no_ao") else ch["ao"]
+    o4[:, 1], o4[:, 2] = ch["rough"], ch["metal"]
+    orm.pixels.foreach_set(o4.reshape(-1))
+    files = {}
+    for k, img in (("basecolor", imgs["basecolor"]), ("normal", imgs["normal"]), ("orm", orm)):
+        img.filepath_raw = os.path.join(out, "light_%s.png" % k)
+        img.file_format = "PNG"
+        img.save()
+        files[k] = img.filepath_raw
+    for k in ("ao", "rough", "metal"):
+        for nd in [nd for nd in nt.nodes if nd.type == "TEX_IMAGE" and nd.image == imgs[k]]:
+            nt.nodes.remove(nd)
+    tb = next(nd for nd in nt.nodes if nd.type == "TEX_IMAGE" and nd.image == imgs["basecolor"])
+    nt.links.new(tb.outputs["Color"], bsdf.inputs["Base Color"])
+    to = nt.nodes.new("ShaderNodeTexImage")
+    to.image = orm
+    sep = nt.nodes.new("ShaderNodeSeparateColor")
+    nt.links.new(to.outputs["Color"], sep.inputs[0])
+    nt.links.new(sep.outputs[1], bsdf.inputs["Roughness"])
+    nt.links.new(sep.outputs[2], bsdf.inputs["Metallic"])
+    tn = next(nd for nd in nt.nodes if nd.type == "TEX_IMAGE" and nd.image == imgs["normal"])
+    nm = nt.nodes.new("ShaderNodeNormalMap")
+    nt.links.new(tn.outputs["Color"], nm.inputs["Color"])
+    nt.links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
+    glb = os.path.join(out, "light.glb")
+    select_only([low], low)
+    bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", use_selection=True)
+    return {"glb": glb, "bytes": os.path.getsize(glb), "source_tris": int(src_tris), "light_tris": int(tris),
+            "voxel": round(voxel, 6), "atlas_px": size, "maps": files, "seconds_by_step": times,
+            "total_seconds": round(time.time() - t0, 1)}
+
+
 ACTIONS = {"inspect": act_inspect, "encode": act_encode, "render": act_render, "match": act_match, "convert": act_convert,
            "printable": act_printable, "union": act_union, "crowd": act_crowd, "duel": act_duel, "turnaround": act_turnaround,
            "mark": act_mark, "lineup": act_lineup, "sprite": act_sprite,
-           "camtrack": act_camtrack, "camplan": act_camplan}
+           "camtrack": act_camtrack, "camplan": act_camplan,
+           "light": act_light, "snap": act_snap}
 
 
 def main():
