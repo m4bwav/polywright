@@ -253,6 +253,14 @@ class Commands(unittest.TestCase):
         self.assertEqual(man["reviews"][-1]["verdict"], "good: markings readable")
         self.assertEqual(man["reviews"][-1]["render"], "renders/turnaround/sheet.png")
 
+    def test_snap_rejects_bad_points(self):
+        pts = os.path.join(self.tmp, "bad.json")
+        with open(pts, "w") as f:
+            json.dump([{"at": [1, 2]}], f)
+        code, out = run("snap", os.path.join(self.tmp, "none.glb"), "--points", pts)
+        self.assertEqual(code, 1)
+        self.assertIn("points must be", out["error"])
+
     def test_mark_rejects_a_bad_colour(self):
         code, out = run("mark", os.path.join(self.tmp, "none.glb"), "--out", os.path.join(self.tmp, "x.glb"), "--colour", "1,0")
         self.assertEqual(code, 2)
@@ -511,6 +519,34 @@ class WithBlender(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def test_light_bakes_an_atlas_on_a_smaller_mesh(self):
+        out = os.path.join(self.tmp, "light")
+        code, res = run("light", self.glb, "--out", out, "--tris", "300", "--size", "128", "--samples", "2")
+        self.assertEqual(code, 0, res)
+        self.assertLessEqual(res["light_tris"], 300)
+        for k in ("basecolor", "normal", "orm"):
+            self.assertTrue(os.path.isfile(res["maps"][k]), k)
+        self.assertTrue(os.path.isfile(res["glb"]))
+
+    def test_snap_lands_a_marker_on_the_top(self):
+        pts = os.path.join(self.tmp, "pts.json")
+        with open(pts, "w") as f:
+            json.dump([{"name": "mast", "at": [1.5, 1.5, 10]}, {"name": "keel", "at": [1.5, 1.5, -10], "dir": [0, 0, -1]}], f)
+        code, res = run("snap", self.glb, "--points", pts)
+        self.assertEqual(code, 0, res)
+        top, keel = res["points"]
+        self.assertEqual(top["how"], "ray")
+        self.assertAlmostEqual(top["at"][2], 2.0, places=3)  # the taller box's top
+        self.assertEqual(keel["how"], "ray_back")  # below the model, cast back up
+        self.assertAlmostEqual(keel["at"][2], 0.0, places=3)
+
+    def test_render_cull_and_mannequin(self):
+        code, res = run("render", self.glb, "--out", os.path.join(self.tmp, "rc"), "--views", "front",
+                        "--size", "64", "--cull", "--mannequin", "1.78", "--no-sheet")
+        self.assertEqual(code, 0, res)
+        self.assertGreaterEqual(res["dims"][2], 2.0)  # the model is 2 tall, the figure 1.78
+        self.assertGreater(res["dims"][0], 3.0)  # the figure stands beside it
 
     def test_match_lands_the_aim_and_writes_paste_and_mask(self):
         rod = pw.Mesh("rod", (0.1, 0.1, 0.1))

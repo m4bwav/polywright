@@ -51,7 +51,7 @@ import urllib.request
 import uuid
 import zlib
 
-VERSION = "0.6.19"
+VERSION = "0.6.20"
 HERE = os.path.dirname(os.path.abspath(__file__))
 BPY_SCRIPT = os.path.join(HERE, "pw_bpy.py")
 SCENE_SCRIPT = os.path.join(HERE, "pw_scene.py")
@@ -790,9 +790,30 @@ def cmd_inspect(a):
     return emit(res, 0 if res.get("ok") else 1)
 
 
+def cmd_light(a):
+    params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "tris": a.tris, "size": a.size,
+              "voxel": a.voxel, "voxel_div": a.voxel_div, "samples": a.samples, "no_ao": a.no_ao}
+    res = bpy_action("light", params, timeout=7200)
+    if res.get("ok"):
+        res["next"] = "pw.py render light.glb --color texture beside the source; pw.py check against the target budget"
+    return emit(res, 0 if res.get("ok") else 1)
+
+
+def cmd_snap(a):
+    try:
+        pts = json.load(open(a.points, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return emit({"ok": False, "error": "cannot read points: %s" % e}, 1)
+    if not isinstance(pts, list) or not all(isinstance(q, dict) and len(q.get("at", [])) == 3 for q in pts):
+        return emit({"ok": False, "error": "points must be a list of {name, at: [x, y, z], dir?}"}, 1)
+    res = bpy_action("snap", {"file": os.path.abspath(a.file), "points": pts})
+    return emit(res, 0 if res.get("ok") else 1)
+
+
 def cmd_render(a):
     params = {"file": os.path.abspath(a.file), "out": os.path.abspath(a.out), "size": a.size, "color": a.color,
-              "engine": a.engine, "views": a.views.split(","), "sheet": not a.no_sheet, "cols": a.cols}
+              "engine": a.engine, "views": a.views.split(","), "sheet": not a.no_sheet, "cols": a.cols,
+              "cull": a.cull, "mannequin": a.mannequin}
     res = bpy_action("render", params)
     if res.get("ok"):
         res["next"] = "Read sheet.png (one image) and judge silhouette, proportions, scale, missing parts, shading artifacts"
@@ -3425,7 +3446,25 @@ def main(argv=None):
     p.add_argument("--engine", choices=["workbench", "eevee", "cycles"], default="workbench")
     p.add_argument("--cols", type=int, default=3)
     p.add_argument("--no-sheet", action="store_true")
+    p.add_argument("--cull", action="store_true", help="cull back faces as engines do: holes and flipped faces show as background")
+    p.add_argument("--mannequin", type=float, default=0.0, metavar="M", help="stand a figure this tall (e.g. 1.78) beside the model for scale")
     p.set_defaults(fn=cmd_render)
+
+    p = sub.add_parser("light", help="light version: voxel remesh, decimate, shrinkwrap, bake base colour, normal and ORM to one atlas")
+    p.add_argument("file")
+    p.add_argument("--out", required=True)
+    p.add_argument("--tris", type=int, default=20000)
+    p.add_argument("--size", type=int, default=4096, help="atlas pixels per side")
+    p.add_argument("--voxel", type=float, default=0.0, help="remesh voxel size (default bounding diagonal / --voxel-div)")
+    p.add_argument("--voxel-div", type=int, default=200)
+    p.add_argument("--samples", type=int, default=16)
+    p.add_argument("--no-ao", action="store_true", help="skip the AO bake (ORM red = 1)")
+    p.set_defaults(fn=cmd_light)
+
+    p = sub.add_parser("snap", help="raycast hardpoint markers onto a model's surface")
+    p.add_argument("file")
+    p.add_argument("--points", required=True, help='JSON file: [{"name":..,"at":[x,y,z],"dir":[0,0,-1]}]')
+    p.set_defaults(fn=cmd_snap)
 
     p = sub.add_parser("spritecam", help="fit a game's orthographic sprite camera from ground diamonds (groundBase corners) in a JSON file")
     p.add_argument("bases", help="any JSON holding groundBase {front,left,right} corners (a building registry) or bare {front,left,right} objects")

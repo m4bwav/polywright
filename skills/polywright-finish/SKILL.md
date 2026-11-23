@@ -16,7 +16,9 @@ Meshes that bend, shade and texture well: [references/topology.md](references/to
 `pw.py inspect <file>` and `pw.py check <file> --target <t> --real-size-m X`. The failures say what to do:
 too many triangles, no UVs, too many materials, wrong size, open edges, and for game, web and AR targets flipped
 or stacked faces and uneven UV density (`inspect --topology`; flipped faces: `convert --fix-winding`). Render
-before and after every destructive step (`pw.py render`).
+before and after every destructive step (`pw.py render`); for an engine target add `--cull --mannequin 1.78`
+(back faces culled as engines do, so holes and flipped faces show as background, and a 1.78 m figure for scale).
+Hardpoints (mounts, sockets) read off a render: `pw.py snap FILE --points pts.json` raycasts them onto the surface.
 
 ## Step 2: scale, orientation, pivot
 
@@ -36,6 +38,7 @@ before and after every destructive step (`pw.py render`).
 | Clean quads for deformation or sculpting | voxel remesh first (closes it), then QuadriFlow (recipe in polywright-blender), Instant Meshes, Quad Remesher (paid), or a hosted quad remesh; characters: by hand |
 | Hidden shells inside a generated mesh (`pw.py inspect --interior` counts them) | drop them before rigging, baking or printing: `pw.py convert --drop-interior` keeps UVs and skin weights |
 | Generated mesh (dense, lumpy, soft edges) | static prop: decimate and re-bake; hero or animated: retopology and re-bake; or regenerate with better references |
+| Generated prop, one batchable light version | `pw.py light FILE --out DIR --tris N --size 4096`: voxel remesh, decimate, shrinkwrap back, Smart UV, bake base colour, normal and ORM into one atlas, GLB (699k to 20k tris, 66 s of bakes on CPU) |
 | Many parts that should be one | `--join`; for a solid, `pw.py union` |
 | Collision | a box, capsule or convex hull per part; Unreal UCX_ prefix; Roblox CollisionFidelity Box or Hull; never the render mesh for moving objects |
 
