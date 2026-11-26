@@ -87,7 +87,7 @@ plugins use (folder layout, `manifest.json`): [contract.md](skills/polywright/re
 The skills install nothing and spend nothing on their own. Blender, ComfyUI and its model weights, hosted
 generators, slicers and MCP servers are yours to install or pay for; `pw.py doctor` says what is missing.
 
-As a Claude Code plugin:
+In Claude Code:
 
     /plugin marketplace add m4bwav/polywright
     /plugin install polywright@polywright
